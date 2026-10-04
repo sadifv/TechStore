@@ -1,0 +1,60 @@
+<!-- Hero / Inicio -->
+<section id="inicio" class="hero">
+    <header>
+        <h1>TechStore - Tecnología a tu alcance</h1>
+        <p>Descubre los mejores productos con la mejor garantía</p>
+    </header>
+    <a href="/#catalogo" class="btn btn-primary">Ver catálogo</a>
+    <figure>
+        <img src="/images/hero-product.jpg" alt="Producto destacado" />
+    </figure>
+</section>
+
+<!-- Catálogo -->
+<section id="catalogo" class="products-section">
+    <h2>Nuestro Catálogo</h2>
+    
+    <% if (typeof products !== 'undefined' && products.length > 0) { %>
+        <div class="products-grid">
+            <% products.forEach(product => { %>
+                <article class="product-card">
+                    <img src="<%= product.image %>" alt="<%= product.name %>" />
+                    <h3><%= product.name %></h3>
+                    <p class="price"><%= product.price %> €</p>
+                    <button type="button" data-id="<%= product.id %>">Añadir al carrito</button>
+                </article>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <p class="empty-msg">Pronto tendremos novedades. ¡Vuelve a visitarnos!</p>
+    <% } %>
+</section>
+
+<!-- IA Assistant -->
+<section id="ia-assistant" class="ai-section">
+    <h2>Asistente IA</h2>
+    <aside class="chat-widget">
+        <section class="chat-history" aria-live="polite"></section>
+        <form class="chat-form">
+            <input type="text" name="message" placeholder="Escribe tu consulta..." required />
+            <button type="submit">Enviar</button>
+        </form>
+    </aside>
+</section>
+
+<!-- Contacto -->
+<section id="contacto" class="contact-section">
+    <h2>Contacto</h2>
+    <form action="/api/contact" method="POST">
+        <label for="name">Nombre</label>
+        <input type="text" id="name" name="name" required />
+        
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required />
+        
+        <label for="message">Mensaje</label>
+        <textarea id="message" name="message" rows="5" required></textarea>
+        
+        <button type="submit">Enviar mensaje</button>
+    </form>
+</section>
