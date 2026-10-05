@@ -15,6 +15,10 @@
             <h3>Mensajes Recibidos</h3>
             <p class="stat-number"><%= stats.messagesCount %></p>
         </article>
+        <article class="stat-card">
+            <h3>Suscriptores Boletín</h3>
+            <p class="stat-number"><%= typeof stats.subscribersCount !== 'undefined' ? stats.subscribersCount : (typeof subscribers !== 'undefined' ? subscribers.length : 0) %></p>
+        </article>
     </section>
 
     <!-- Gestión del Catálogo (CRUD) -->
@@ -66,6 +70,33 @@
                 <% } else { %>
                     <tr>
                         <td colspan="4">No hay mensajes registrados.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Suscriptores al Boletín -->
+    <section class="dashboard-newsletter">
+        <h2>Suscriptores al Boletín</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Fecha de Suscripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (typeof subscribers !== 'undefined' && subscribers && subscribers.length > 0) { %>
+                    <% subscribers.forEach(sub => { %>
+                        <tr>
+                            <td><%= sub.email %></td>
+                            <td><%= new Date(sub.createdAt).toLocaleDateString() %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="2">No hay suscriptores registrados al boletín.</td>
                     </tr>
                 <% } %>
             </tbody>

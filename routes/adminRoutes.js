@@ -5,23 +5,33 @@ const { loginUser } = require('../controllers/authController');
 const { createProduct, updateProduct, deleteProduct } = require('../controllers/productController');
 const Product = require('../models/Product');
 const Contact = require('../models/Contact');
+const Newsletter = require('../models/Newsletter');
 
 router.post('/login', loginUser);
 
 // Vista del Dashboard (Protegida)
 router.get('/dashboard', requireAdmin, async (req, res) => {
     try {
+        // 1. Obtener conteos para las métricas
         const productsCount = await Product.countDocuments();
         const messagesCount = await Contact.countDocuments();
+        const subscribersCount = await Newsletter.countDocuments();
+
+        // 2. Obtener datos para las tablas
+        const products = await Product.find().sort({ createdAt: -1 }).lean();
         const recentMessages = await Contact.find().sort({ createdAt: -1 }).limit(5).lean();
+        const subscribers = await Newsletter.find().sort({ createdAt: -1 }).lean();
 
         res.render('admin/dashboard', {
             title: 'TechStore - Panel de Administración',
             stats: {
                 productsCount,
-                messagesCount
+                messagesCount,
+                subscribersCount
             },
-            messages: recentMessages
+            products,
+            messages: recentMessages,
+            subscribers
         });
     } catch (error) {
         console.error('Error al cargar dashboard:', error);
