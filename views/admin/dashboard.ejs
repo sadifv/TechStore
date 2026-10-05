@@ -1,50 +1,136 @@
 <%- include('../partials/header') %>
 
 <main class="admin-dashboard container">
-  <header class="dashboard-header">
-    <h1>Panel de Administración</h1>
-    <p>Bienvenido al sistema de gestión de TechStore.</p>
-  </header>
+    <header class="dashboard-header">
+        <h1>Panel de Administración</h1>
+        <p>Bienvenido al sistema de gestión de TechStore.</p>
+    </header>
 
-  <section class="dashboard-stats">
-    <article class="stat-card">
-      <h3>Productos Totales</h3>
-      <p class="stat-number"><%= stats.productsCount %></p>
-    </article>
+    <section class="dashboard-stats">
+        <article class="stat-card">
+            <h3>Productos Totales</h3>
+            <p class="stat-number"><%= stats.productsCount %></p>
+        </article>
+        <article class="stat-card">
+            <h3>Mensajes Recibidos</h3>
+            <p class="stat-number"><%= stats.messagesCount %></p>
+        </article>
+    </section>
 
-    <article class="stat-card">
-      <h3>Mensajes Recibidos</h3>
-      <p class="stat-number"><%= stats.messagesCount %></p>
-    </article>
-  </section>
+    <!-- Gestión del Catálogo (CRUD) -->
+    <section class="dashboard-products">
+        <header class="section-header">
+            <h2>Gestión de Catálogo</h2>
+            <button id="btn-open-create-modal" class="btn btn-primary">+ Nuevo Producto</button>
+        </header>
 
-  <section class="dashboard-messages">
-    <h2>Últimos Mensajes de Contacto</h2>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Email</th>
-          <th>Mensaje</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if (messages.length > 0) { %>
-          <% messages.forEach(msg => { %>
-            <tr>
-              <td><%= msg.name %></td>
-              <td><%= msg.email %></td>
-              <td><%= msg.message %></td>
-              <td><%= new Date(msg.createdAt).toLocaleDateString() %></td>
-            </tr>
-          <% }) %>
-        <% } else { %>
-          <tr>
-            <td colspan="4">No hay mensajes registrados.</td>
-          </tr>
-        <% } %>
-      </tbody>
-    </table>
-  </section>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Imagen</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="admin-products-list">
+                <!-- Se poblará vía JS -->
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Mensajes de Contacto Recientes -->
+    <section class="dashboard-messages">
+        <h2>Últimos Mensajes de Contacto</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Mensaje</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (messages && messages.length > 0) { %>
+                    <% messages.forEach(msg => { %>
+                        <tr>
+                            <td><%= msg.name %></td>
+                            <td><%= msg.email %></td>
+                            <td><%= msg.message %></td>
+                            <td><%= new Date(msg.createdAt).toLocaleDateString() %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="4">No hay mensajes registrados.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </section>
 </main>
+
+<!-- Modal Semántico (Dialog) -->
+<dialog id="product-modal" class="modal-dialog">
+    <article class="modal-card">
+        <header class="modal-header">
+            <h3 id="modal-title">Agregar Producto</h3>
+            <button id="btn-close-modal" class="btn-close">&times;</button>
+        </header>
+        
+        <form id="product-form">
+            <input type="hidden" id="product-id" />
+            
+            <p class="form-field">
+                <label for="prod-name">Nombre del Producto</label>
+                <input type="text" id="prod-name" name="name" required />
+            </p>
+
+            <p class="form-field">
+                <label for="prod-description">Descripción</label>
+                <textarea id="prod-description" name="description" rows="3" required></textarea>
+            </p>
+
+            <fieldset class="form-group-inline">
+                <p class="form-field">
+                    <label for="prod-price">Precio ($)</label>
+                    <input type="number" id="prod-price" name="price" step="0.01" min="0" required />
+                </p>
+
+                <p class="form-field">
+                    <label for="prod-stock">Stock</label>
+                    <input type="number" id="prod-stock" name="stock" min="0" required />
+                </p>
+            </fieldset>
+
+            <fieldset class="form-group-inline">
+                <p class="form-field">
+                    <label for="prod-category">Categoría</label>
+                    <select id="prod-category" name="category" required>
+                        <option value="Laptops">Laptops</option>
+                        <option value="Smartphones">Smartphones</option>
+                        <option value="Audio">Audio</option>
+                        <option value="Accesorios">Accesorios</option>
+                    </select>
+                </p>
+
+                <p class="form-field">
+                    <label for="prod-image">URL Imagen</label>
+                    <input type="text" id="prod-image" name="image" placeholder="https://..." required />
+                </p>
+            </fieldset>
+
+            <footer class="modal-actions">
+                <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Producto</button>
+            </footer>
+        </form>
+    </article>
+</dialog>
+
+<script src="/js/admin-crud.js"></script>
+
+<%- include('../partials/footer') %>
