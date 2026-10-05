@@ -1,0 +1,48 @@
+<main class="admin-dashboard container">
+  <header class="dashboard-header">
+    <h1>Panel de Administración</h1>
+    <p>Bienvenido al sistema de gestión de TechStore.</p>
+  </header>
+
+  <section class="dashboard-stats">
+    <article class="stat-card">
+      <h3>Productos Totales</h3>
+      <p class="stat-number"><%= stats.productsCount %></p>
+    </article>
+
+    <article class="stat-card">
+      <h3>Mensajes Recibidos</h3>
+      <p class="stat-number"><%= stats.messagesCount %></p>
+    </article>
+  </section>
+
+  <section class="dashboard-messages">
+    <h2>Últimos Mensajes de Contacto</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Mensaje</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (messages.length > 0) { %>
+          <% messages.forEach(msg => { %>
+            <tr>
+              <td><%= msg.name %></td>
+              <td><%= msg.email %></td>
+              <td><%= msg.message %></td>
+              <td><%= new Date(msg.createdAt).toLocaleDateString() %></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="4">No hay mensajes registrados.</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </section>
+</main>

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const session = require('express-session');
 const connectDB = require('./config/db');
 
 const app = express();
@@ -11,6 +12,18 @@ connectDB();
 // 2. Middlewares para parsear datos
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Configuración de Sesiones
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'secreto_techstore',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false, // Usar true solo si estás usando HTTPS
+    maxAge: 1000 * 60 * 60 * 24 // 24 horas
+  }
+}));
 
 // 3. Configuración del motor de plantillas EJS
 app.set('view engine', 'ejs');

@@ -20,4 +20,11 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Vista de Login
+router.get('/login', (req, res) => {
+    res.render('admin/login', {
+        title: 'TechStore - Iniciar Sesión'
+    });
+});
+
 module.exports = router;
