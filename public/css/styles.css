@@ -1024,6 +1024,63 @@ h1, h2, h3, h4 {
   cursor: pointer;
 }
 
+/* ==========================================
+   Estilos Básicos del Panel Administrativo
+   ========================================== */
+.admin-dashboard {
+  padding: 2rem 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.stat-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card h3 {
+  font-size: 0.9rem;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.stat-card .stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color, #2563eb);
+}
+
+.messages-section {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.messages-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.message-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color, #f1f5f9);
+}
+
+.message-item:last-child {
+  border-bottom: none;
+}
+
 /* ========================================
    12. RESPONSIVE
    ======================================== */
