@@ -1,8 +1,55 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
+// @desc    Registrar un nuevo usuario
+// @route   POST /api/auth/register
+// @access  Public
+const registerUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: 'Por favor, ingresa todos los campos requeridos.'
+            });
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                error: 'El correo electrónico ya está registrado.'
+            });
+        }
+
+        const newUser = new User({ name, email, password, role: 'user' });
+        await newUser.save();
+
+        // Autenticar al usuario automáticamente en la sesión
+        req.session.user = {
+            id: newUser._id,
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role
+        };
+
+        res.status(201).json({
+            success: true,
+            message: 'Usuario registrado con éxito.',
+            user: req.session.user
+        });
+    } catch (error) {
+        console.error('Error en registerUser:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error en el servidor al registrar usuario.'
+        });
+    }
+};
+
 // @desc    Procesar inicio de sesión
-// @route   POST /api/auth/login
+// @route   POST /admin/login o /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
     try {
@@ -38,17 +85,11 @@ const loginUser = async (req, res) => {
             email: user.email,
             role: user.role
         };
-        
-        // Aquí puedes gestionar la sesión o JWT según el flujo de la app
+
         res.status(200).json({
             success: true,
             message: 'Inicio de sesión exitoso.',
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
+            user: req.session.user
         });
 
     } catch (error) {
@@ -60,6 +101,51 @@ const loginUser = async (req, res) => {
     }
 };
 
+// @desc    Cerrar sesión de usuario
+// @route   POST /api/auth/logout o GET /admin/logout
+// @access  Private
+const logoutUser = (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Error al destruir sesión:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'No se pudo cerrar la sesión.'
+            });
+        }
+        res.clearCookie('connect.sid');
+        
+        // Si la petición viene de la web navegable, redirigir al login
+        if (req.accepts('html')) {
+            return res.redirect('/admin/login');
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Sesión cerrada correctamente.'
+        });
+    });
+};
+
+// @desc    Obtener datos del usuario actual
+// @route   GET /api/auth/me
+// @access  Private
+const getMe = (req, res) => {
+    if (!req.session || !req.session.user) {
+        return res.status(401).json({
+            success: false,
+            error: 'No autenticado.'
+        });
+    }
+    res.status(200).json({
+        success: true,
+        user: req.session.user
+    });
+};
+
 module.exports = {
-    loginUser
+    registerUser,
+    loginUser,
+    logoutUser,
+    getMe
 };

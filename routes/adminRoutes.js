@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { requireAdmin } = require('../middleware/authMiddleware');
-const { loginUser } = require('../controllers/authController');
+const { loginUser, logoutUser } = require('../controllers/authController');
 const { createProduct, updateProduct, deleteProduct } = require('../controllers/productController');
 const Product = require('../models/Product');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 
+// Autenticación de Administrador
 router.post('/login', loginUser);
+router.get('/logout', logoutUser);
 
 // Vista del Dashboard (Protegida)
 router.get('/dashboard', requireAdmin, async (req, res) => {
