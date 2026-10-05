@@ -35,13 +35,12 @@
     <h2>Asistente IA</h2>
     <p>¿Tienes dudas sobre qué producto elegir? Pregúntale a nuestro asistente virtual.</p>
     <aside class="chat-widget">
-        <section class="chat-history" aria-live="polite"></section>
-        <form class="chat-form">
-            <input type="text" name="message" placeholder="Escribe tu consulta..." required />
-            <button type="submit">Enviar</button>
-        </form>
-    </aside>
-</section>
+    <section id="ai-chat-messages" class="chat-history" aria-live="polite"></section>
+    <form id="ai-chat-form" class="chat-form">
+        <input id="ai-chat-input" type="text" name="message" placeholder="Escribe tu consulta..." required />
+        <button type="submit">Enviar</button>
+    </form>
+</aside>
 
 <!-- Blog / Artículos -->
 <section id="blog" class="blog-section">
