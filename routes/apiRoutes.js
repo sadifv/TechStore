@@ -11,6 +11,5 @@ router.post('/contact', sendContactMessage);
 router.post('/newsletter', subscribeNewsletter);
 router.get('/products', getAllProducts);
 router.post('/ai/chat', processAiChat);
-router.post('/login', loginUser);
 
 module.exports = router;
