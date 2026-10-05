@@ -1,40 +1,39 @@
-<%- include('partials/header') %>
+<<%- include('partials/header') %>
 
 <!-- Hero / Inicio -->
 <section id="inicio" class="hero">
-    <header>
-        <h1>TechStore - Tecnología a tu alcance</h1>
-        <p>Descubre los mejores productos con la mejor garantía</p>
-    </header>
-    <a href="/#catalogo" class="btn btn-primary">Ver catálogo</a>
-    <figure>
-        <img src="/images/hero-gadgets.jpg" alt="Producto destacado" />
+    <div class="hero-content">
+        <header>
+            <h1>TechStore - Tecnología a tu alcance</h1>
+            <p>Descubre los mejores gadgets con envío rápido y garantía asegurada.</p>
+        </header>
+        <a href="#catalogo" class="btn btn-primary">Ver catálogo</a>
+    </div>
+    <figure class="hero-media">
+        <img src="/images/hero-gadgets.jpg" alt="Gadgets tecnológicos destacados" />
     </figure>
 </section>
 
-<!-- Catálogo -->
-<section id="catalogo" class="products-section">
-    <h2>Nuestro Catálogo</h2>
-    
-    <% if (typeof products !== 'undefined' && products.length > 0) { %>
-        <div class="products-grid">
-            <% products.forEach(product => { %>
-                <article class="product-card">
-                    <img src="<%= product.image %>" alt="<%= product.name %>" />
-                    <h3><%= product.name %></h3>
-                    <p class="price"><%= product.price %> €</p>
-                    <button type="button" data-id="<%= product.id %>">Añadir al carrito</button>
-                </article>
-            <% }) %>
+<!-- Oferta Relámpago (Flash Sale) -->
+<section class="flash-sale-section">
+    <div class="flash-sale-card">
+        <img src="/images/flash-sale.jpg" alt="Oferta Relámpago Tech" />
+        <div class="flash-sale-info">
+            <span class="badge">¡Oferta por Tiempo Limitado!</span>
+            <h2>Descuentos de hasta el 50% en Tech Seleccionado</h2>
+            <p>Aprovecha nuestras promociones exclusivas del mes. Unidades limitadas.</p>
+            <a href="#catalogo" class="btn btn-secondary">Comprar Ahora</a>
         </div>
-    <% } else { %>
-        <p class="empty-msg">Pronto tendremos novedades. ¡Vuelve a visitarnos!</p>
-    <% } %>
+    </div>
 </section>
 
-<!-- IA Assistant -->
+<!-- Partial: Catálogo -->
+<%- include('partials/catalog') %>
+
+<!-- Asistente IA -->
 <section id="ia-assistant" class="ai-section">
     <h2>Asistente IA</h2>
+    <p>¿Tienes dudas sobre qué producto elegir? Pregúntale a nuestro asistente virtual.</p>
     <aside class="chat-widget">
         <section class="chat-history" aria-live="polite"></section>
         <form class="chat-form">
@@ -44,21 +43,72 @@
     </aside>
 </section>
 
-<!-- Contacto -->
-<section id="contacto" class="contact-section">
-    <h2>Contacto</h2>
-    <form action="/api/contact" method="POST">
-        <label for="name">Nombre</label>
-        <input type="text" id="name" name="name" required />
-        
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required />
-        
-        <label for="message">Mensaje</label>
-        <textarea id="message" name="message" rows="5" required></textarea>
-        
-        <button type="submit">Enviar mensaje</button>
-    </form>
+<!-- Blog / Artículos -->
+<section id="blog" class="blog-section">
+    <h2>Últimas Novedades en Tecnología</h2>
+    <div class="blog-grid">
+        <article class="blog-card">
+            <img src="/images/blog-gadgets.jpg" alt="Top Gadgets del Año" />
+            <div class="blog-content">
+                <h3>Los mejores Gadgets para potenciar tu Setup en 2026</h3>
+                <p>Descubre los accesorios indispensables para optimizar tu espacio de trabajo.</p>
+            </div>
+        </article>
+        <article class="blog-card">
+            <img src="/images/blog-headphones.jpg" alt="Guía de Audífonos" />
+            <div class="blog-content">
+                <h3>Guía de compra: Audífonos con Cancelación de Ruido</h3>
+                <p>Te enseñamos a elegir el modelo ideal según tu presupuesto y necesidades.</p>
+            </div>
+        </article>
+        <article class="blog-card">
+            <img src="/images/blog-smartwatch.jpg" alt="Smartwatches recomendados" />
+            <div class="blog-content">
+                <h3>Smartwatches: Monitoreo de salud y rendimiento</h3>
+                <p>Analizamos las funciones clave de los relojes inteligentes más avanzados.</p>
+            </div>
+        </article>
+    </div>
 </section>
+
+<!-- Testimonios de Clientes -->
+<section class="testimonials-section">
+    <h2>Lo que dicen nuestros clientes</h2>
+    <div class="testimonials-grid">
+        <article class="testimonial-card">
+            <img src="/images/testimonial-carlos.jpg" alt="Foto de Carlos M." />
+            <blockquote>"Excelente servicio y entrega rapidísima. Los audífonos llegaron en perfecto estado."</blockquote>
+            <cite>- Carlos M.</cite>
+        </article>
+        <article class="testimonial-card">
+            <img src="/images/testimonial-laura.jpg" alt="Foto de Laura G." />
+            <blockquote>"Compré una cámara y un smartwatch. La calidad superó mis expectativas totalmente."</blockquote>
+            <cite>- Laura G.</cite>
+        </article>
+        <article class="testimonial-card">
+            <img src="/images/testimonial-maria.jpg" alt="Foto de María R." />
+            <blockquote>"El asistente de IA me ayudó a elegir el cargador correcto para mis dispositivos."</blockquote>
+            <cite>- María R.</cite>
+        </article>
+    </div>
+</section>
+
+<!-- Newsletter / Suscripción -->
+<section class="newsletter-section">
+    <div class="newsletter-container">
+        <img src="/images/newsletter.jpg" alt="Boletín de novedades" class="newsletter-img" />
+        <div class="newsletter-content">
+            <h2>Suscríbete a nuestras ofertas</h2>
+            <p>Recibe cupones de descuento exclusivos y entérate antes que nadie de los lanzamientos.</p>
+            <form action="/api/newsletter" method="POST" class="newsletter-form">
+                <input type="email" name="email" placeholder="Ingresa tu correo electrónico" required />
+                <button type="submit" class="btn btn-primary">Suscribirme</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Partial: Contacto -->
+<%- include('partials/contact') %>
 
 <%- include('partials/footer') %>
