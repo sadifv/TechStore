@@ -13,6 +13,29 @@
         <li role="none"><a href="/#catalogo" role="menuitem"><i class="ri-shopping-bag-line"></i> Catálogo</a></li>
         <li role="none"><a href="/#contacto" role="menuitem"><i class="ri-mail-line"></i> Contacto</a></li>
         <li role="none"><a href="/#ia-assistant" role="menuitem"><i class="ri-robot-line"></i> IA Assistant</a></li>
-        <li role="none"><a href="/admin/login" class="btn btn-primary" role="menuitem"><i class="ri-admin-line"></i> Admin Login</a></li>
+
+        <!-- Ícono del Carrito con Contador -->
+        <li role="none">
+            <button id="cart-btn" class="cart-btn-nav" aria-label="Ver carrito">
+                <i class="ri-shopping-cart-2-line"></i>
+                <span id="cart-count" class="cart-badge">0</span>
+            </button>
+        </li>
+
+        <!-- Solo se renderiza si hay usuario autenticado y su rol es 'admin' -->
+  <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+    <li>
+      <a href="/admin/dashboard" class="btn btn-primary">
+        <i class="ri-user-settings-line"></i> Panel Admin
+      </a>
+    </li>
+  <% } else if (typeof user === 'undefined' || !user) { %>
+    <!-- Si nadie ha iniciado sesión, opcionalmente puedes mostrar un login general o dejarlo oculto -->
+    <li>
+      <a href="/login" class="btn btn-secondary">
+        <i class="ri-user-line"></i> Iniciar Sesión
+      </a>
+    </li>
+  <% } %>
     </ul>
 </nav>
