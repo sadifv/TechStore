@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+  
   // 1. Manejo del Formulario de Contacto
+
   const contactForm = document.querySelector('#contact-form');
   const statusOutput = document.querySelector('#contact-status');
 

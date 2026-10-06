@@ -1,14 +1,14 @@
-<<%- include('partials/header') %>
+<%- include('partials/header') %>
 
 <!-- Hero / Inicio -->
 <section id="inicio" class="hero">
-    <div class="hero-content">
+    <article class="hero-content">
         <header>
             <h1>TechStore - Tecnología a tu alcance</h1>
             <p>Descubre los mejores gadgets con envío rápido y garantía asegurada.</p>
         </header>
-        <a href="#catalogo" class="btn btn-primary">Ver catálogo</a>
-    </div>
+        <a href="/catalogo" class="btn btn-primary">Ver catálogo completo</a>
+    </article>
     <figure class="hero-media">
         <img src="/images/hero-gadgets.jpg" alt="Gadgets tecnológicos destacados" />
     </figure>
@@ -16,80 +16,137 @@
 
 <!-- Oferta Relámpago (Flash Sale) -->
 <section class="flash-sale-section">
-    <div class="flash-sale-card">
+    <article class="flash-sale-card">
         <img src="/images/flash-sale.jpg" alt="Oferta Relámpago Tech" />
-        <div class="flash-sale-info">
+        <header class="flash-sale-info">
             <span class="badge">¡Oferta por Tiempo Limitado!</span>
             <h2>Descuentos de hasta el 50% en Tech Seleccionado</h2>
             <p>Aprovecha nuestras promociones exclusivas del mes. Unidades limitadas.</p>
-            <a href="#catalogo" class="btn btn-secondary">Comprar Ahora</a>
-        </div>
-    </div>
+            <a href="/catalogo" class="btn btn-secondary">Comprar Ahora</a>
+        </header>
+    </article>
 </section>
 
-<!-- Partial: Catálogo -->
-<%- include('partials/catalog') %>
+<!-- Sección de Productos Destacados (Máximo 6 productos) -->
+<section id="destacados" class="products-section" aria-labelledby="featured-heading">
+    <header class="section-header">
+        <h2 id="featured-heading">Productos Destacados</h2>
+    </header>
+
+    <% if (typeof products !== 'undefined' && products.length > 0) { %>
+        <ul id="featured-grid" class="products-grid">
+            <% products.forEach(product => { %>
+                <li>
+                    <article class="product-card">
+                        <img src="<%= product.image || '/images/placeholder.jpg' %>" alt="<%= product.name %>" loading="lazy" />
+                        <header>
+                            <h3><%= product.name %></h3>
+                        </header>
+                        <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
+                        <footer>
+                            <button type="button" class="btn btn-primary add-to-cart-btn" data-id="<%= product._id %>">
+                                Agregar al Carrito
+                            </button>
+                        </footer>
+                    </article>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <ul id="featured-grid" class="products-grid">
+            <li class="empty-state-item">
+                <p class="empty-msg">No hay productos destacados disponibles en este momento.</p>
+            </li>
+        </ul>
+    <% } %>
+
+    <!-- CTA para dirigir al catálogo completo -->
+    <footer class="catalog-cta">
+        <a href="/catalogo" class="btn btn-secondary btn-large">
+            Ver catálogo completo con filtros y búsqueda →
+        </a>
+    </footer>
+</section>
 
 <!-- Asistente IA -->
 <section id="ia-assistant" class="ai-section">
-    <h2>Asistente IA</h2>
-    <p>¿Tienes dudas sobre qué producto elegir? Pregúntale a nuestro asistente virtual.</p>
-    <aside class="chat-widget">
-    <section id="ai-chat-messages" class="chat-history" aria-live="polite"></section>
-    <form id="ai-chat-form" class="chat-form">
-        <input id="ai-chat-input" type="text" name="message" placeholder="Escribe tu consulta..." required />
-        <button type="submit">Enviar</button>
-    </form>
-</aside>
+    <header>
+        <h2>Asistente IA</h2>
+        <p>¿Tienes dudas sobre qué producto elegir? Pregúntale a nuestro asistente virtual.</p>
+    </header>
+    <article class="chat-widget">
+        <section id="ai-chat-messages" class="chat-history" aria-live="polite"></section>
+        <form id="ai-chat-form" class="chat-form">
+            <input id="ai-chat-input" type="text" name="message" placeholder="Escribe tu consulta..." required />
+            <button type="submit" class="btn btn-primary">Enviar</button>
+        </form>
+    </article>
+</section>
 
 <!-- Blog / Artículos -->
 <section id="blog" class="blog-section">
-    <h2>Últimas Novedades en Tecnología</h2>
-    <div class="blog-grid">
-        <article class="blog-card">
-            <img src="/images/blog-gadgets.jpg" alt="Top Gadgets del Año" />
-            <div class="blog-content">
-                <h3>Los mejores Gadgets para potenciar tu Setup en 2026</h3>
-                <p>Descubre los accesorios indispensables para optimizar tu espacio de trabajo.</p>
-            </div>
-        </article>
-        <article class="blog-card">
-            <img src="/images/blog-headphones.jpg" alt="Guía de Audífonos" />
-            <div class="blog-content">
-                <h3>Guía de compra: Audífonos con Cancelación de Ruido</h3>
-                <p>Te enseñamos a elegir el modelo ideal según tu presupuesto y necesidades.</p>
-            </div>
-        </article>
-        <article class="blog-card">
-            <img src="/images/blog-smartwatch.jpg" alt="Smartwatches recomendados" />
-            <div class="blog-content">
-                <h3>Smartwatches: Monitoreo de salud y rendimiento</h3>
-                <p>Analizamos las funciones clave de los relojes inteligentes más avanzados.</p>
-            </div>
-        </article>
-    </div>
+    <header class="section-header">
+        <h2>Últimas Novedades en Tecnología</h2>
+    </header>
+    <ul class="blog-grid">
+        <li>
+            <article class="blog-card">
+                <img src="/images/blog-gadgets.jpg" alt="Top Gadgets del Año" />
+                <header class="blog-content">
+                    <h3>Los mejores Gadgets para potenciar tu Setup en 2026</h3>
+                    <p>Descubre los accesorios indispensables para optimizar tu espacio de trabajo.</p>
+                </header>
+            </article>
+        </li>
+        <li>
+            <article class="blog-card">
+                <img src="/images/blog-headphones.jpg" alt="Guía de Audífonos" />
+                <header class="blog-content">
+                    <h3>Guía de compra: Audífonos con Cancelación de Ruido</h3>
+                    <p>Te enseñamos a elegir el modelo ideal según tu presupuesto y necesidades.</p>
+                </header>
+            </article>
+        </li>
+        <li>
+            <article class="blog-card">
+                <img src="/images/blog-smartwatch.jpg" alt="Smartwatches recomendados" />
+                <header class="blog-content">
+                    <h3>Smartwatches: Monitoreo de salud y rendimiento</h3>
+                    <p>Analizamos las funciones clave de los relojes inteligentes más avanzados.</p>
+                </header>
+            </article>
+        </li>
+    </ul>
 </section>
 
 <!-- Testimonios de Clientes -->
 <section class="testimonials-section">
-    <h2>Lo que dicen nuestros clientes</h2>
-    <div class="testimonials-grid">
-        <article class="testimonial-card">
-            <img src="/images/testimonial-carlos.jpg" alt="Foto de Carlos M." />
-            <blockquote>"Excelente servicio y entrega rapidísima. Los audífonos llegaron en perfecto estado."</blockquote>
-            <cite>- Carlos M.</cite>
-        </article>
-        <article class="testimonial-card">
-            <img src="/images/testimonial-laura.jpg" alt="Foto de Laura G." />
-            <blockquote>"Compré una cámara y un smartwatch. La calidad superó mis expectativas totalmente."</blockquote>
-            <cite>- Laura G.</cite>
-        </article>
-        <article class="testimonial-card">
-            <img src="/images/testimonial-maria.jpg" alt="Foto de María R." />
-            <blockquote>"El asistente de IA me ayudó a elegir el cargador correcto para mis dispositivos."</blockquote>
-            <cite>- María R.</cite>
-        </article>
-    </div>
+    <header class="section-header">
+        <h2>Lo que dicen nuestros clientes</h2>
+    </header>
+    <ul class="testimonials-grid">
+        <li>
+            <article class="testimonial-card">
+                <img src="/images/testimonial-carlos.jpg" alt="Foto de Carlos M." />
+                <blockquote>"Excelente servicio y entrega rapidísima. Los audífonos llegaron en perfecto estado."</blockquote>
+                <cite>- Carlos M.</cite>
+            </article>
+        </li>
+        <li>
+            <article class="testimonial-card">
+                <img src="/images/testimonial-laura.jpg" alt="Foto de Laura G." />
+                <blockquote>"Compré una cámara y un smartwatch. La calidad superó mis expectativas totalmente."</blockquote>
+                <cite>- Laura G.</cite>
+            </article>
+        </li>
+        <li>
+            <article class="testimonial-card">
+                <img src="/images/testimonial-maria.jpg" alt="Foto de María R." />
+                <blockquote>"El asistente de IA me ayudó a elegir el cargador correcto para mis dispositivos."</blockquote>
+                <cite>- María R.</cite>
+            </article>
+        </li>
+    </ul>
 </section>
 
 <!-- Newsletter / Suscripción -->

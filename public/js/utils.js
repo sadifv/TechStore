@@ -41,3 +41,20 @@ function showToast(message, type = 'info', duration = 3000) {
 }
 
 window.showToast = showToast;
+
+/**
+ * Delegación de eventos global para añadir productos al carrito
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('click', (e) => {
+        const addBtn = e.target.closest('.add-to-cart-btn, .btn-add-cart');
+        
+        if (addBtn) {
+            const productId = addBtn.dataset.id;
+            
+            if (productId && typeof addToCart === 'function') {
+                addToCart(productId);
+            }
+        }
+    });
+});

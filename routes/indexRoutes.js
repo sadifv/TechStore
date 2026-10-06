@@ -1,16 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
-const { requireAuth } = require('../middleware/authMiddleware'); // Importación corregida
+const { requireAuth } = require('../middleware/authMiddleware');
 
-// Ruta principal para renderizar la Landing Page
+// Ruta principal (Home) - Carga solo 6 productos destacados
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find().lean();
+        const featuredProducts = await Product.find()
+            .sort({ createdAt: -1 })
+            .limit(6)
+            .lean();
         
         res.render('index', {
             title: 'TechStore - Inicio',
-            products: products
+            products: featuredProducts
         });
     } catch (error) {
         console.error('Error al cargar la página principal:', error);
@@ -19,6 +22,13 @@ router.get('/', async (req, res) => {
             products: []
         });
     }
+});
+
+// Vista dedicada para el Catálogo Completo (con filtros y paginación)
+router.get('/catalogo', (req, res) => {
+    res.render('partials/catalog', {
+        title: 'Catálogo de Productos - TechStore'
+    });
 });
 
 // Vista de Login
