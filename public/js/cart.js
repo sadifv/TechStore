@@ -70,24 +70,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cargar carrito desde MongoDB o LocalStorage
     async function fetchCart() {
+        // Si el usuario no está autenticado, cargamos directo LocalStorage sin consultar la API
+        if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
+            cart = getGuestCart();
+            updateCartCount();
+            renderCartItems();
+            return;
+        }
+
         try {
             const response = await fetch('/api/cart');
-            const data = await response.json();
 
-            if (response.ok && data.success && Array.isArray(data.items)) {
-                cart = data.items.map(item => ({
-                    id: item.product ? (item.product._id || item.product) : item.productId,
-                    name: item.product ? (item.product.name || 'Producto') : 'Producto',
-                    price: item.product ? (item.product.price || 0) : 0,
-                    image: item.product ? (item.product.image || '') : '',
-                    quantity: item.quantity
-                }));
+            if (response.status === 401) {
+                cart = getGuestCart();
+                return;
+            }
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && Array.isArray(data.items)) {
+                    cart = data.items.map(item => ({
+                        id: item.product ? (item.product._id || item.product) : item.productId,
+                        name: item.product ? (item.product.name || 'Producto') : 'Producto',
+                        price: item.product ? (item.product.price || 0) : 0,
+                        image: item.product ? (item.product.image || '') : '',
+                        quantity: item.quantity
+                    }));
+                } else {
+                    cart = getGuestCart();
+                }
             } else {
-                // Si no hay sesión iniciada, usar LocalStorage
                 cart = getGuestCart();
             }
         } catch (error) {
-            console.warn('Servidor sin sesión activa, cargando carrito local:', error);
             cart = getGuestCart();
         } finally {
             updateCartCount();
@@ -217,6 +232,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Agregar producto (MongoDB o LocalStorage)
     async function addToCart(productId, quantity = 1, productData = null) {
+        if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
+            addToGuestCart(productId, quantity, productData);
+            return;
+        }
+
         try {
             const response = await fetch('/api/cart/add', {
                 method: 'POST',
@@ -224,14 +244,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ productId, quantity })
             });
 
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                await fetchCart();
-            } else {
-                // Guardar en LocalStorage si no hay sesión
-                addToGuestCart(productId, quantity, productData);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    await fetchCart();
+                    return;
+                }
             }
+            addToGuestCart(productId, quantity, productData);
         } catch (error) {
             addToGuestCart(productId, quantity, productData);
         }
@@ -262,18 +282,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Eliminar producto
     async function removeFromCart(productId) {
+        if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
+            removeFromGuestCart(productId);
+            return;
+        }
+
         try {
             const response = await fetch(`/api/cart/remove/${productId}`, {
                 method: 'DELETE'
             });
 
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                await fetchCart();
-            } else {
-                removeFromGuestCart(productId);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    await fetchCart();
+                    return;
+                }
             }
+            removeFromGuestCart(productId);
         } catch (error) {
             removeFromGuestCart(productId);
         }

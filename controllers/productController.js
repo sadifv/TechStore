@@ -5,7 +5,12 @@ const Product = require('../models/Product');
 // @access  Public
 const getAllProducts = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, category, search, sort } = req.query;
+        const { page = 1, limit = 8, category, search, sort } = req.query;
+
+        // Sanitización defensiva de parámetros numéricos
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 8)); // Límite máximo de 50 por seguridad
+        const skip = (pageNum - 1) * limitNum;
 
         const query = {};
 
@@ -25,22 +30,25 @@ const getAllProducts = async (req, res, next) => {
         if (sort === 'price_desc') sortOption = { price: -1 };
         if (sort === 'name_asc') sortOption = { name: 1 };
 
-        const pageNum = parseInt(page, 10);
-        const limitNum = parseInt(limit, 10);
-        const skip = (pageNum - 1) * limitNum;
-
+        // Consultas en paralelo para optimizar tiempo de respuesta
         const [products, total] = await Promise.all([
             Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean(),
             Product.countDocuments(query)
         ]);
 
+        const totalPages = Math.ceil(total / limitNum) || 1;
+
         res.status(200).json({
             success: true,
-            count: products.length,
-            total,
-            page: pageNum,
-            pages: Math.ceil(total / limitNum) || 1,
-            data: products
+            products,
+            pagination: {
+                totalProducts: total,
+                totalPages,
+                currentPage: pageNum,
+                limit: limitNum,
+                hasNextPage: pageNum < totalPages,
+                hasPrevPage: pageNum > 1
+            }
         });
     } catch (error) {
         next(error);

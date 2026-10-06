@@ -1,20 +1,37 @@
-<section id="catalogo" class="products-section">
-    <h2>Nuestro Catálogo</h2>
+<!-- Sección Principal del Catálogo -->
+<section id="catalogo" class="products-section" aria-labelledby="catalog-heading">
+    <header class="section-header">
+        <h2 id="catalog-heading">Nuestro Catálogo</h2>
+    </header>
 
     <% if (typeof products !== 'undefined' && products.length > 0) { %>
-        <div class="products-grid">
+        <!-- Grid dinámico/SSR de productos (<article>) -->
+        <div id="products-grid" class="products-grid" aria-live="polite">
             <% products.forEach(product => { %>
                 <article class="product-card">
-                    <img src="<%= product.image %>" alt="<%= product.name %>" />
-                    <h3><%= product.name %></h3>
-                    <p class="product-price">$<%= product.price %></p>
-                    <button type="button" class="btn btn-secondary" data-id="<%= product._id %>">
-                        Añadir al carrito
-                    </button>
+                    <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy" />
+                    <header>
+                        <h3><%= product.name %></h3>
+                    </header>
+                    <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
+                    <footer>
+                        <button type="button" class="btn btn-secondary add-to-cart-btn" data-id="<%= product._id %>">
+                            Añadir al carrito
+                        </button>
+                    </footer>
                 </article>
             <% }) %>
         </div>
     <% } else { %>
-        <p class="empty-msg">Pronto tendremos novedades. ¡Vuelve a visitarnos!</p>
+        <!-- Grid contenedor para renderizado dinámico vía API -->
+        <div id="products-grid" class="products-grid" aria-live="polite">
+            <p class="empty-msg">Cargando productos...</p>
+        </div>
     <% } %>
+
+    <!-- Contenedor semántico para la navegación de paginación dinámicas (<nav>) -->
+    <div id="pagination-controls" class="pagination-container"></div>
 </section>
+
+<!-- Script de manipulación dinámica del DOM y paginación -->
+<script src="/js/catalog.js" defer></script>
