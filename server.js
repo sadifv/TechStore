@@ -69,6 +69,7 @@ app.use(setUserLocals);
 // 8. Definición de Rutas
 app.use('/', require('./routes/indexRoutes'));
 app.use('/api', require('./routes/apiRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes')); 
 app.use('/admin', require('./routes/adminRoutes'));
 
 const PORT = process.env.PORT || 3000;
