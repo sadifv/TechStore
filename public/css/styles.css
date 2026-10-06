@@ -1826,6 +1826,66 @@ dialog#checkout-modal {
   color: #2563eb;
 }
 
+/* Contenedor flotante de notificaciones */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+/* Tarjeta de Toast */
+.toast {
+    background-color: #1e293b;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    min-width: 250px;
+    max-width: 350px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: auto;
+    border-left: 4px solid #3b82f6;
+}
+
+/* Animación de entrada */
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Variantes según el tipo */
+.toast.toast-success {
+    border-left-color: #10b981;
+}
+.toast.toast-success i {
+    color: #10b981;
+}
+
+.toast.toast-error {
+    border-left-color: #ef4444;
+}
+.toast.toast-error i {
+    color: #ef4444;
+}
+
+.toast.toast-warning {
+    border-left-color: #f59e0b;
+}
+.toast.toast-warning i {
+    color: #f59e0b;
+}
+
 /* ========================================
    12. RESPONSIVE
    ======================================== */

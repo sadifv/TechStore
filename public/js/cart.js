@@ -68,9 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkoutStatus = document.getElementById('checkout-status');
     const checkoutModalTotal = document.getElementById('checkout-modal-total');
 
+    // Helper para invocación segura de toast
+    function notify(message, type = 'info') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        }
+    }
+
     // Cargar carrito desde MongoDB o LocalStorage
     async function fetchCart() {
-        // Si el usuario no está autenticado, cargamos directo LocalStorage sin consultar la API
         if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
             cart = getGuestCart();
             updateCartCount();
@@ -234,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function addToCart(productId, quantity = 1, productData = null) {
         if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
             addToGuestCart(productId, quantity, productData);
+            notify('Producto añadido al carrito', 'success');
             return;
         }
 
@@ -248,12 +255,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 if (data.success) {
                     await fetchCart();
+                    notify('Producto añadido al carrito', 'success');
                     return;
                 }
             }
             addToGuestCart(productId, quantity, productData);
+            notify('Producto añadido al carrito', 'success');
         } catch (error) {
             addToGuestCart(productId, quantity, productData);
+            notify('Producto añadido al carrito', 'success');
         }
     }
 
@@ -284,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function removeFromCart(productId) {
         if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
             removeFromGuestCart(productId);
+            notify('Producto eliminado del carrito', 'info');
             return;
         }
 
@@ -296,12 +307,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 if (data.success) {
                     await fetchCart();
+                    notify('Producto eliminado del carrito', 'info');
                     return;
                 }
             }
             removeFromGuestCart(productId);
+            notify('Producto eliminado del carrito', 'info');
         } catch (error) {
             removeFromGuestCart(productId);
+            notify('Producto eliminado del carrito', 'info');
         }
     }
 
@@ -383,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cartCheckoutBtn) {
         cartCheckoutBtn.addEventListener('click', () => {
             if (cart.length === 0) {
-                alert('Tu carrito está vacío. Agrega productos antes de continuar.');
+                notify('Tu carrito está vacío. Agrega productos antes de continuar.', 'warning');
                 return;
             }
 
@@ -446,6 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok && data.success) {
+                    notify('¡Pedido completado con éxito!', 'success');
                     if (checkoutStatus) {
                         checkoutStatus.textContent = '¡Pedido completado con éxito! Gracias por tu compra.';
                         checkoutStatus.className = 'form-status success';
@@ -465,17 +480,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 2000);
                 } else {
                     if (response.status === 401) {
+                        notify('Debes iniciar sesión para completar la compra.', 'error');
                         if (checkoutStatus) {
                             checkoutStatus.textContent = 'Debes iniciar sesión para completar la compra.';
                             checkoutStatus.className = 'form-status error';
                         }
-                    } else if (checkoutStatus) {
-                        checkoutStatus.textContent = data.error || 'Ocurrió un error al procesar el pedido.';
-                        checkoutStatus.className = 'form-status error';
+                    } else {
+                        const errorMsg = data.error || 'Ocurrió un error al procesar el pedido.';
+                        notify(errorMsg, 'error');
+                        if (checkoutStatus) {
+                            checkoutStatus.textContent = errorMsg;
+                            checkoutStatus.className = 'form-status error';
+                        }
                     }
                 }
             } catch (error) {
                 console.error('Error durante la orden:', error);
+                notify('Error de conexión con el servidor.', 'error');
                 if (checkoutStatus) {
                     checkoutStatus.textContent = 'Error de conexión con el servidor.';
                     checkoutStatus.className = 'form-status error';
