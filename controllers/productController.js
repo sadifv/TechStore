@@ -14,21 +14,24 @@ const getAllProducts = async (req, res, next) => {
 
         const query = {};
 
-        // Filtro por categoría exacta
-        if (category) {
+        // Filtro por categoría exacta (omitir si es 'all')
+        if (category && category !== 'all') {
             query.category = category;
         }
 
-        // Búsqueda por nombre de producto (case insensitive)
+        // Búsqueda por nombre o descripción (case insensitive)
         if (search) {
-            query.name = { $regex: search, $options: 'i' };
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
         }
 
         // Criterio de ordenamiento
         let sortOption = { createdAt: -1 };
-        if (sort === 'price_asc') sortOption = { price: 1 };
-        if (sort === 'price_desc') sortOption = { price: -1 };
-        if (sort === 'name_asc') sortOption = { name: 1 };
+        if (sort === 'price_asc' || sort === 'price-asc') sortOption = { price: 1 };
+        if (sort === 'price_desc' || sort === 'price-desc') sortOption = { price: -1 };
+        if (sort === 'name_asc' || sort === 'name-asc') sortOption = { name: 1 };
 
         // Consultas en paralelo para optimizar tiempo de respuesta
         const [products, total] = await Promise.all([

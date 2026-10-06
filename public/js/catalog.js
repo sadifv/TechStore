@@ -1,14 +1,33 @@
 let currentPage = 1;
 const limit = 8;
+let debounceTimer;
 
 async function loadProducts(page = 1) {
+    currentPage = page;
     const catalogContainer = document.getElementById('products-grid');
     const paginationContainer = document.getElementById('pagination-controls');
 
+    const searchInput = document.getElementById('search-input');
+    const categorySelect = document.getElementById('category-select');
+    const sortSelect = document.getElementById('sort-select');
+
     if (!catalogContainer) return;
 
+    // Obtención de parámetros de búsqueda y filtros
+    const search = searchInput ? searchInput.value.trim() : '';
+    const category = categorySelect ? categorySelect.value : 'all';
+    const sort = sortSelect ? sortSelect.value : 'recent';
+
+    const params = new URLSearchParams({
+        page: currentPage,
+        limit,
+        search,
+        category,
+        sort
+    });
+
     try {
-        const response = await fetch(`/api/products?page=${page}&limit=${limit}`);
+        const response = await fetch(`/api/products?${params.toString()}`);
         const data = await response.json();
 
         if (!data.success) return;
@@ -18,8 +37,30 @@ async function loadProducts(page = 1) {
             catalogContainer.removeChild(catalogContainer.firstChild);
         }
 
+        // Caso sin productos encontrados
+        if (data.products.length === 0) {
+            const emptyLi = document.createElement('li');
+            emptyLi.classList.add('empty-state-item');
+
+            const emptyMsg = document.createElement('p');
+            emptyMsg.classList.add('empty-msg');
+            emptyMsg.textContent = 'No se encontraron productos con los filtros seleccionados.';
+
+            emptyLi.appendChild(emptyMsg);
+            catalogContainer.appendChild(emptyLi);
+
+            if (paginationContainer) {
+                while (paginationContainer.firstChild) {
+                    paginationContainer.removeChild(paginationContainer.firstChild);
+                }
+            }
+            return;
+        }
+
         // Renderizado semántico de tarjetas de producto
         data.products.forEach(product => {
+            const li = document.createElement('li');
+
             const article = document.createElement('article');
             article.classList.add('product-card');
 
@@ -56,7 +97,8 @@ async function loadProducts(page = 1) {
             article.appendChild(pPrice);
             article.appendChild(footer);
 
-            catalogContainer.appendChild(article);
+            li.appendChild(article);
+            catalogContainer.appendChild(li);
         });
 
         // Renderizado del bloque de controles de paginación
@@ -86,8 +128,9 @@ function renderPagination(pagination, container) {
     prevBtn.textContent = '« Anterior';
     prevBtn.disabled = !pagination.hasPrevPage;
     prevBtn.addEventListener('click', () => {
-        currentPage--;
-        loadProducts(currentPage);
+        if (pagination.hasPrevPage) {
+            loadProducts(pagination.currentPage - 1);
+        }
     });
     nav.appendChild(prevBtn);
 
@@ -103,8 +146,9 @@ function renderPagination(pagination, container) {
     nextBtn.textContent = 'Siguiente »';
     nextBtn.disabled = !pagination.hasNextPage;
     nextBtn.addEventListener('click', () => {
-        currentPage++;
-        loadProducts(currentPage);
+        if (pagination.hasNextPage) {
+            loadProducts(pagination.currentPage + 1);
+        }
     });
     nav.appendChild(nextBtn);
 
@@ -112,5 +156,25 @@ function renderPagination(pagination, container) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('search-input');
+    const categorySelect = document.getElementById('category-select');
+    const sortSelect = document.getElementById('sort-select');
+
+    // Listeners de eventos de filtros
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => loadProducts(1), 300);
+        });
+    }
+
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => loadProducts(1));
+    }
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => loadProducts(1));
+    }
+
     loadProducts(currentPage);
 });

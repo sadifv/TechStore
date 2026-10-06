@@ -4,33 +4,72 @@
         <h2 id="catalog-heading">Nuestro Catálogo</h2>
     </header>
 
+    <!-- Barra de Filtros Semántica -->
+    <form id="catalog-filters-form" class="catalog-filters" role="search" aria-label="Filtros de catálogo" onsubmit="return false;">
+        <!-- Búsqueda por palabra clave -->
+        <fieldset class="filter-group search-group">
+            <legend class="sr-only">Búsqueda de productos</legend>
+            <i class="ri-search-line search-icon" aria-hidden="true"></i>
+            <input type="search" id="search-input" name="search" placeholder="Buscar productos por nombre o descripción..." aria-label="Buscar productos">
+        </fieldset>
+
+        <!-- Filtro por Categoría -->
+        <fieldset class="filter-group">
+            <label for="category-select">Categoría:</label>
+            <select id="category-select" name="category">
+                <option value="all">Todas las categorías</option>
+                <option value="Laptops">Laptops</option>
+                <option value="Monitores">Monitores</option>
+                <option value="Periféricos">Periféricos</option>
+                <option value="Audio">Audio</option>
+                <option value="Muebles">Muebles</option>
+                <option value="Componentes">Componentes</option>
+            </select>
+        </fieldset>
+
+        <!-- Ordenamiento -->
+        <fieldset class="filter-group">
+            <label for="sort-select">Ordenar por:</label>
+            <select id="sort-select" name="sort">
+                <option value="recent">Más recientes</option>
+                <option value="price_asc">Precio: Menor a Mayor</option>
+                <option value="price_desc">Precio: Mayor a Menor</option>
+                <option value="name_asc">Nombre (A - Z)</option>
+            </select>
+        </fieldset>
+    </form>
+
     <% if (typeof products !== 'undefined' && products.length > 0) { %>
-        <!-- Grid dinámico/SSR de productos (<article>) -->
-        <div id="products-grid" class="products-grid" aria-live="polite">
+        <!-- Grid dinámico/SSR de productos semántico -->
+        <ul id="products-grid" class="products-grid" aria-live="polite">
             <% products.forEach(product => { %>
-                <article class="product-card">
-                    <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy" />
-                    <header>
-                        <h3><%= product.name %></h3>
-                    </header>
-                    <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
-                    <footer>
-                        <button type="button" class="btn btn-secondary add-to-cart-btn" data-id="<%= product._id %>">
-                            Añadir al carrito
-                        </button>
-                    </footer>
-                </article>
+                <li>
+                    <article class="product-card">
+                        <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy" />
+                        <header>
+                            <h3><%= product.name %></h3>
+                        </header>
+                        <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
+                        <footer>
+                            <button type="button" class="btn btn-secondary add-to-cart-btn" data-id="<%= product._id %>">
+                                Añadir al carrito
+                            </button>
+                        </footer>
+                    </article>
+                </li>
             <% }) %>
-        </div>
+        </ul>
     <% } else { %>
-        <!-- Grid contenedor para renderizado dinámico vía API -->
-        <div id="products-grid" class="products-grid" aria-live="polite">
-            <p class="empty-msg">Cargando productos...</p>
-        </div>
+        <!-- Contenedor para renderizado dinámico vía API -->
+        <ul id="products-grid" class="products-grid" aria-live="polite">
+            <li class="empty-state-item">
+                <p class="empty-msg">Cargando productos...</p>
+            </li>
+        </ul>
     <% } %>
 
-    <!-- Contenedor semántico para la navegación de paginación dinámicas (<nav>) -->
-    <div id="pagination-controls" class="pagination-container"></div>
+    <!-- Navegación de paginación dinámicas (<nav>) -->
+    <nav id="pagination-controls" class="pagination-container" aria-label="Navegación de páginas"></nav>
 </section>
 
 <!-- Script de manipulación dinámica del DOM y paginación -->
