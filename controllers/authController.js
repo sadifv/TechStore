@@ -105,6 +105,13 @@ const loginUser = async (req, res) => {
 // @route   POST /api/auth/logout o GET /admin/logout
 // @access  Private
 const logoutUser = (req, res) => {
+    if (!req.session) {
+        return res.status(200).json({
+            success: true,
+            message: 'No había una sesión activa.'
+        });
+    }
+
     req.session.destroy((err) => {
         if (err) {
             console.error('Error al destruir sesión:', err);
@@ -113,10 +120,12 @@ const logoutUser = (req, res) => {
                 error: 'No se pudo cerrar la sesión.'
             });
         }
-        res.clearCookie('connect.sid');
         
-        // Si la petición viene de la web navegable, redirigir al login
-        if (req.accepts('html')) {
+        // Limpiar cookie de sesión en el navegador
+        res.clearCookie('connect.sid', { path: '/' });
+
+        // Si la solicitud es explícitamente navegación HTML directa (e.g., clic en enlace GET)
+        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
             return res.redirect('/login');
         }
 
