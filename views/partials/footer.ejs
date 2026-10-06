@@ -27,6 +27,42 @@
     </section>
 </aside>
 
+<!-- Modal Semántico de Checkout / Confirmación de Pago -->
+<dialog id="checkout-modal" class="checkout-modal">
+    <div class="modal-container">
+        <header class="modal-header">
+            <h3><i class="ri-secure-payment-line"></i> Finalizar Compra</h3>
+            <button id="close-checkout-modal" type="button" class="modal-close-btn" aria-label="Cerrar modal">
+                <i class="ri-close-line"></i>
+            </button>
+        </header>
+        
+        <form id="checkout-form" class="modal-body">
+            <div class="form-group">
+                <label for="payment-method">Método de Pago</label>
+                <select id="payment-method" name="paymentMethod" class="form-control" required>
+                    <option value="card">Tarjeta de Crédito / Débito</option>
+                    <option value="transfer">Transferencia Bancaria Directa</option>
+                    <option value="cash">Pago contra entrega (Efectivo)</option>
+                </select>
+            </div>
+
+            <div class="checkout-summary-box">
+                <span>Monto Total a Pagar:</span>
+                <strong id="checkout-modal-total">$0.00</strong>
+            </div>
+
+            <div id="checkout-status" class="form-status" aria-live="polite"></div>
+
+            <footer class="modal-footer">
+                <button type="submit" id="btn-confirm-order" class="btn btn-primary btn-block">
+                    Confirmar Pedido
+                </button>
+            </footer>
+        </form>
+    </div>
+</dialog>
+
 <footer class="footer" role="contentinfo">
     <section class="footer-info">
         <h3><i class="ri-store-line"></i> TechStore</h3>

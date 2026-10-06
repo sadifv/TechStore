@@ -71,6 +71,7 @@ app.use(setUserLocals);
 app.use('/', require('./routes/indexRoutes'));
 app.use('/api', require('./routes/apiRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes')); 
+app.use('/api/orders', require('./routes/orderRoutes')); // Enrutador de Checkout / Ordenes
 app.use('/admin', require('./routes/adminRoutes'));
 
 // 9. Middleware global para manejo de errores

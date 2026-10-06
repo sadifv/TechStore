@@ -60,6 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartDrawerBody = document.getElementById('cart-drawer-body');
     const cartTotalEl = document.getElementById('cart-total');
 
+    // Elementos del Modal de Checkout
+    const cartCheckoutBtn = document.getElementById('cart-checkout-btn');
+    const checkoutModal = document.getElementById('checkout-modal');
+    const closeCheckoutModalBtn = document.getElementById('close-checkout-modal');
+    const checkoutForm = document.getElementById('checkout-form');
+    const checkoutStatus = document.getElementById('checkout-status');
+    const checkoutModalTotal = document.getElementById('checkout-modal-total');
+
     // Cargar carrito desde MongoDB o LocalStorage
     async function fetchCart() {
         try {
@@ -277,13 +285,13 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchCart();
     }
 
+    // Eventos Globales Delegados
     document.addEventListener('click', async (e) => {
         const addBtn = e.target.closest('button[data-id]');
         if (addBtn && !addBtn.classList.contains('cart-item-remove')) {
             const productId = addBtn.getAttribute('data-id');
             const card = addBtn.closest('.product-card');
 
-            // Extraer metadatos por si el usuario es un visitante
             const productData = card ? {
                 name: card.querySelector('h3')?.textContent || 'Producto',
                 price: parseFloat(card.querySelector('.product-price')?.textContent.replace('$', '') || 0),
@@ -342,6 +350,118 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     });
+
+    // --- Flujo de Checkout ---
+
+    // Abrir Modal de Checkout
+    if (cartCheckoutBtn) {
+        cartCheckoutBtn.addEventListener('click', () => {
+            if (cart.length === 0) {
+                alert('Tu carrito está vacío. Agrega productos antes de continuar.');
+                return;
+            }
+
+            if (checkoutModalTotal && cartTotalEl) {
+                checkoutModalTotal.textContent = cartTotalEl.textContent;
+            }
+
+            if (checkoutStatus) {
+                checkoutStatus.textContent = '';
+                checkoutStatus.className = 'form-status';
+            }
+
+            closeCart();
+
+            if (checkoutModal) {
+                if (typeof checkoutModal.showModal === 'function') {
+                    checkoutModal.showModal();
+                } else {
+                    checkoutModal.setAttribute('open', 'true');
+                }
+            }
+        });
+    }
+
+    // Cerrar Modal de Checkout
+    if (closeCheckoutModalBtn && checkoutModal) {
+        closeCheckoutModalBtn.addEventListener('click', () => {
+            if (typeof checkoutModal.close === 'function') {
+                checkoutModal.close();
+            } else {
+                checkoutModal.removeAttribute('open');
+            }
+        });
+    }
+
+    // Enviar Orden / Confirmar Pago
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('btn-confirm-order');
+            const paymentMethodSelect = document.getElementById('payment-method');
+            const paymentMethod = paymentMethodSelect ? paymentMethodSelect.value : 'card';
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Procesando pedido...';
+            }
+
+            try {
+                const response = await fetch('/api/orders/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ paymentMethod })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    if (checkoutStatus) {
+                        checkoutStatus.textContent = '¡Pedido completado con éxito! Gracias por tu compra.';
+                        checkoutStatus.className = 'form-status success';
+                    }
+
+                    clearGuestCart();
+                    await fetchCart();
+
+                    setTimeout(() => {
+                        if (checkoutModal) {
+                            if (typeof checkoutModal.close === 'function') {
+                                checkoutModal.close();
+                            } else {
+                                checkoutModal.removeAttribute('open');
+                            }
+                        }
+                    }, 2000);
+                } else {
+                    if (response.status === 401) {
+                        if (checkoutStatus) {
+                            checkoutStatus.textContent = 'Debes iniciar sesión para completar la compra.';
+                            checkoutStatus.className = 'form-status error';
+                        }
+                    } else if (checkoutStatus) {
+                        checkoutStatus.textContent = data.error || 'Ocurrió un error al procesar el pedido.';
+                        checkoutStatus.className = 'form-status error';
+                    }
+                }
+            } catch (error) {
+                console.error('Error durante la orden:', error);
+                if (checkoutStatus) {
+                    checkoutStatus.textContent = 'Error de conexión con el servidor.';
+                    checkoutStatus.className = 'form-status error';
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Confirmar Pedido';
+                }
+            }
+        });
+    }
 
     // Cargar productos al inicio
     fetchCart();
