@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+
+<main class="checkout-success-container" style="text-align: center; padding: 4rem 1rem; max-width: 600px; margin: 0 auto;">
+    <article class="success-card">
+        <header>
+            <i class="ri-checkbox-circle-line" style="font-size: 4rem; color: #10B981;" aria-hidden="true"></i>
+            <h1>¡Gracias por tu compra!</h1>
+        </header>
+
+        <section class="order-details" style="margin: 1.5rem 0;">
+            <p>Tu pedido con ID <strong><%= order._id %></strong> ha sido procesado correctamente.</p>
+            <p>Total pagado: <strong>$<%= Number(order.totalAmount).toFixed(2) %></strong></p>
+            <p>Hemos actualizado nuestro inventario y pronto prepararemos tu paquete.</p>
+        </section>
+
+        <footer>
+            <a href="/catalogo" class="btn btn-primary">Volver al Catálogo</a>
+        </footer>
+    </article>
+</main>
+
+<%- include('partials/footer') %>

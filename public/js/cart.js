@@ -24,22 +24,28 @@ async function syncGuestCartToUser() {
 
     try {
         for (const item of localCart) {
-            await fetch('/api/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    productId: item.id || item.productId || item._id,
-                    quantity: item.quantity || 1
-                })
-            });
+            const validId = item.id || item.productId || item._id;
+            // Solo enviar al backend si el ID es un valor real y no nulo/indefinido
+            if (validId && validId !== 'undefined' && validId !== 'null') {
+                await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId: validId,
+                        quantity: item.quantity || 1
+                    })
+                });
+            }
         }
-        clearGuestCart();
-        console.log('Carrito local sincronizado exitosamente con MongoDB.');
     } catch (error) {
         console.error('Error al sincronizar el carrito local:', error);
+    } finally {
+        // Garantiza que el localStorage quede limpio tras intentar la sincronización
+        clearGuestCart();
+        console.log('Carrito local limpiado tras la sincronización.');
     }
 }
 
@@ -88,20 +94,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/cart');
 
             if (response.status === 401) {
+                window.IS_AUTHENTICATED = false;
                 cart = getGuestCart();
                 return;
             }
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && Array.isArray(data.items)) {
-                    cart = data.items.map(item => ({
-                        id: item.product ? (item.product._id || item.product) : item.productId,
-                        name: item.product ? (item.product.name || 'Producto') : 'Producto',
-                        price: item.product ? (item.product.price || 0) : 0,
-                        image: item.product ? (item.product.image || '') : '',
-                        quantity: item.quantity
-                    }));
+                // Extraer lista de ítems soportando la respuesta del controlador
+                const itemsList = data.data ? (data.data.items || data.data) : (data.items || []);
+                
+                if (Array.isArray(itemsList)) {
+                    cart = itemsList
+                        // Filtro de seguridad: Omite ítems huérfanos sin datos de producto reales
+                        .filter(item => item && (item.product || item.productId || item.id))
+                        .map(item => {
+                            const prod = item.product || {};
+                            return {
+                                id: prod._id || item.productId || item.id || item._id,
+                                name: prod.name || item.name || 'Producto Desconocido',
+                                price: prod.price !== undefined ? Number(prod.price) : Number(item.price || 0),
+                                image: prod.image || item.image || '/images/default-product.png',
+                                quantity: item.quantity || 1
+                            };
+                        });
                 } else {
                     cart = getGuestCart();
                 }
@@ -120,14 +136,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cartDrawer) {
             cartDrawer.classList.add('open');
             cartDrawer.setAttribute('aria-hidden', 'false');
+            cartDrawer.removeAttribute('inert');
             fetchCart();
+
+            if (cartCloseBtn) {
+                cartCloseBtn.focus();
+            }
         }
     }
 
     function closeCart() {
         if (cartDrawer) {
+            // Quita el foco activo de cualquier elemento interno antes de ocultar
+            if (document.activeElement && cartDrawer.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
             cartDrawer.classList.remove('open');
             cartDrawer.setAttribute('aria-hidden', 'true');
+            cartDrawer.setAttribute('inert', ''); // Desactiva interacción para lectores de pantalla
+
+            if (cartBtn) {
+                cartBtn.focus();
+            }
         }
     }
 
@@ -328,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Eventos Globales Delegados
     document.addEventListener('click', async (e) => {
         const addBtn = e.target.closest('button[data-id]');
-        if (addBtn && !addBtn.classList.contains('cart-item-remove')) {
+        if (addBtn && !addBtn.classList.contains('cart-item-remove') && !addBtn.classList.contains('btn-qty-minus') && !addBtn.classList.contains('btn-qty-plus')) {
             const productId = addBtn.getAttribute('data-id');
             const card = addBtn.closest('.product-card');
 
@@ -391,9 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Flujo de Checkout ---
+    // --- Flujo de Checkout con Redirección a Stripe ---
 
-    // Abrir Modal de Checkout
     if (cartCheckoutBtn) {
         cartCheckoutBtn.addEventListener('click', () => {
             if (cart.length === 0) {
@@ -422,7 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cerrar Modal de Checkout
     if (closeCheckoutModalBtn && checkoutModal) {
         closeCheckoutModalBtn.addEventListener('click', () => {
             if (typeof checkoutModal.close === 'function') {
@@ -433,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Enviar Orden / Confirmar Pago
+    // Enviar Orden / Iniciar Sesión de Stripe Checkout
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -444,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Procesando pedido...';
+                submitBtn.textContent = 'Redirigiendo a Stripe...';
             }
 
             try {
@@ -459,25 +487,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const data = await response.json();
 
-                if (response.ok && data.success) {
-                    notify('¡Pedido completado con éxito!', 'success');
-                    if (checkoutStatus) {
-                        checkoutStatus.textContent = '¡Pedido completado con éxito! Gracias por tu compra.';
-                        checkoutStatus.className = 'form-status success';
-                    }
-
+                if (response.ok && data.success && data.url) {
                     clearGuestCart();
-                    await fetchCart();
-
-                    setTimeout(() => {
-                        if (checkoutModal) {
-                            if (typeof checkoutModal.close === 'function') {
-                                checkoutModal.close();
-                            } else {
-                                checkoutModal.removeAttribute('open');
-                            }
-                        }
-                    }, 2000);
+                    // Redirección oficial a la pasarela de pago de Stripe
+                    window.location.href = data.url;
                 } else {
                     if (response.status === 401) {
                         notify('Debes iniciar sesión para completar la compra.', 'error');

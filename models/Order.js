@@ -33,10 +33,18 @@ const orderSchema = new mongoose.Schema({
         enum: ['card', 'transfer', 'cash'],
         default: 'card'
     },
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'failed'],
+        default: 'pending'
+    },
     status: {
         type: String,
         enum: ['pending', 'completed', 'cancelled'],
-        default: 'completed'
+        default: 'pending'
+    },
+    stripeSessionId: {
+        type: String
     },
     shippingAddress: {
         street: { type: String, default: 'Dirección estándar' },

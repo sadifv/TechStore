@@ -1,19 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, getUserOrders } = require('../controllers/orderController');
+const { createOrder, confirmOrderPayment, getUserOrders } = require('../controllers/orderController');
+const { requireAuth } = require('../middleware/authMiddleware');
 
-// Middleware para verificar autenticación
-const requireAuth = (req, res, next) => {
-    if (!req.session || !req.session.user) {
-        return res.status(401).json({
-            success: false,
-            error: 'Debes iniciar sesión para realizar un pedido.'
-        });
-    }
-    next();
-};
+// Middleware de autenticación para todas las rutas de órdenes
+router.use(requireAuth);
 
-router.post('/checkout', requireAuth, createOrder);
-router.get('/', requireAuth, getUserOrders);
+// Crear sesión de pago en Stripe
+router.post('/checkout', createOrder);
+
+// Confirmar pago desde Stripe (callback tras pago exitoso)
+router.get('/confirm', confirmOrderPayment);
+
+// Obtener historial de órdenes del usuario
+router.get('/', getUserOrders);
 
 module.exports = router;

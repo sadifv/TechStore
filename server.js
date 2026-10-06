@@ -1,4 +1,5 @@
 require('dotenv').config();
+const MongoStore = require('connect-mongo');
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -44,15 +45,27 @@ app.use('/api', apiLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4. Configuración de Sesiones con Cookies Seguras y CSRF nativo
+// 4. Configuración de Sesiones Persistentes en MongoDB (connect-mongo)
+const storeOptions = {
+  mongoUrl: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/techstore',
+  collectionName: 'sessions'
+};
+
+const sessionStore = typeof MongoStore.create === 'function'
+  ? MongoStore.create(storeOptions)
+  : (MongoStore.default && typeof MongoStore.default.create === 'function')
+    ? MongoStore.default.create(storeOptions)
+    : new MongoStore(storeOptions);
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secreto_techstore',
   resave: false,
   saveUninitialized: false,
+  store: sessionStore,
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // true solo en producción (HTTPS)
-    sameSite: 'strict', // Protección CSRF nativa
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax', // Conserva la sesión al ser redirigido desde Stripe
     maxAge: 1000 * 60 * 60 * 24 // 24 horas
   }
 }));
