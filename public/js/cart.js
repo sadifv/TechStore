@@ -1,3 +1,54 @@
+// Constante para el manejo de carrito en LocalStorage (Visitantes)
+const GUEST_CART_KEY = 'techstore_guest_cart';
+
+// Utilidades de LocalStorage para usuarios no autenticados
+function getGuestCart() {
+    const data = localStorage.getItem(GUEST_CART_KEY);
+    return data ? JSON.parse(data) : [];
+}
+
+function saveGuestCart(cartArray) {
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartArray));
+}
+
+function clearGuestCart() {
+    localStorage.removeItem(GUEST_CART_KEY);
+}
+
+/**
+ * Sincroniza los productos guardados en localStorage con MongoDB al iniciar sesión
+ */
+async function syncGuestCartToUser() {
+    const localCart = getGuestCart();
+    if (!localCart || localCart.length === 0) return;
+
+    try {
+        for (const item of localCart) {
+            await fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    productId: item.id || item.productId || item._id,
+                    quantity: item.quantity || 1
+                })
+            });
+        }
+        clearGuestCart();
+        console.log('Carrito local sincronizado exitosamente con MongoDB.');
+    } catch (error) {
+        console.error('Error al sincronizar el carrito local:', error);
+    }
+}
+
+// Exponer funciones globalmente
+window.syncGuestCartToUser = syncGuestCartToUser;
+window.getGuestCart = getGuestCart;
+window.saveGuestCart = saveGuestCart;
+window.clearGuestCart = clearGuestCart;
+
 document.addEventListener('DOMContentLoaded', () => {
     let cart = [];
 
@@ -9,26 +60,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartDrawerBody = document.getElementById('cart-drawer-body');
     const cartTotalEl = document.getElementById('cart-total');
 
-    // Cargar carrito desde MongoDB
+    // Cargar carrito desde MongoDB o LocalStorage
     async function fetchCart() {
         try {
             const response = await fetch('/api/cart');
             const data = await response.json();
 
-            if (data.success && Array.isArray(data.items)) {
-                // Mapear la estructura poblada de MongoDB a objetos de interfaz
+            if (response.ok && data.success && Array.isArray(data.items)) {
                 cart = data.items.map(item => ({
-                    id: item.product._id || item.product,
-                    name: item.product.name || 'Producto',
-                    price: item.product.price || 0,
-                    image: item.product.image || '',
+                    id: item.product ? (item.product._id || item.product) : item.productId,
+                    name: item.product ? (item.product.name || 'Producto') : 'Producto',
+                    price: item.product ? (item.product.price || 0) : 0,
+                    image: item.product ? (item.product.image || '') : '',
                     quantity: item.quantity
                 }));
-                updateCartCount();
-                renderCartItems();
+            } else {
+                // Si no hay sesión iniciada, usar LocalStorage
+                cart = getGuestCart();
             }
         } catch (error) {
-            console.error('Error al cargar el carrito desde el servidor:', error);
+            console.warn('Servidor sin sesión activa, cargando carrito local:', error);
+            cart = getGuestCart();
+        } finally {
+            updateCartCount();
+            renderCartItems();
         }
     }
 
@@ -63,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCartItems() {
         if (!cartDrawerBody || !cartTotalEl) return;
 
-        // Limpieza segura del contenedor sin utilizar innerHTML
         while (cartDrawerBody.firstChild) {
             cartDrawerBody.removeChild(cartDrawerBody.firstChild);
         }
@@ -153,8 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
         cartTotalEl.textContent = `$${total.toFixed(2)}`;
     }
 
-    // Guardar/Añadir a la base de datos
-    async function addToCart(productId, quantity = 1) {
+    // Agregar producto (MongoDB o LocalStorage)
+    async function addToCart(productId, quantity = 1, productData = null) {
         try {
             const response = await fetch('/api/cart/add', {
                 method: 'POST',
@@ -164,17 +218,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            if (data.success) {
+            if (response.ok && data.success) {
                 await fetchCart();
             } else {
-                alert(data.error || 'Debes iniciar sesión para añadir productos.');
+                // Guardar en LocalStorage si no hay sesión
+                addToGuestCart(productId, quantity, productData);
             }
         } catch (error) {
-            console.error('Error al agregar al carrito:', error);
+            addToGuestCart(productId, quantity, productData);
         }
     }
 
-    // Eliminar producto de la base de datos
+    function addToGuestCart(productId, quantity, productData) {
+        let localCart = getGuestCart();
+        const index = localCart.findIndex(i => i.id === productId);
+
+        if (index > -1) {
+            localCart[index].quantity += quantity;
+            if (localCart[index].quantity <= 0) {
+                localCart.splice(index, 1);
+            }
+        } else if (quantity > 0) {
+            localCart.push({
+                id: productId,
+                name: productData ? productData.name : 'Producto',
+                price: productData ? productData.price : 0,
+                image: productData ? productData.image : '',
+                quantity: quantity
+            });
+        }
+
+        saveGuestCart(localCart);
+        fetchCart();
+    }
+
+    // Eliminar producto
     async function removeFromCart(productId) {
         try {
             const response = await fetch(`/api/cart/remove/${productId}`, {
@@ -183,20 +261,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            if (data.success) {
+            if (response.ok && data.success) {
                 await fetchCart();
+            } else {
+                removeFromGuestCart(productId);
             }
         } catch (error) {
-            console.error('Error al eliminar del carrito:', error);
+            removeFromGuestCart(productId);
         }
+    }
+
+    function removeFromGuestCart(productId) {
+        let localCart = getGuestCart().filter(i => i.id !== productId);
+        saveGuestCart(localCart);
+        fetchCart();
     }
 
     document.addEventListener('click', async (e) => {
         const addBtn = e.target.closest('button[data-id]');
         if (addBtn && !addBtn.classList.contains('cart-item-remove')) {
             const productId = addBtn.getAttribute('data-id');
+            const card = addBtn.closest('.product-card');
+
+            // Extraer metadatos por si el usuario es un visitante
+            const productData = card ? {
+                name: card.querySelector('h3')?.textContent || 'Producto',
+                price: parseFloat(card.querySelector('.product-price')?.textContent.replace('$', '') || 0),
+                image: card.querySelector('img')?.src || ''
+            } : null;
+
             if (productId) {
-                await addToCart(productId, 1);
+                await addToCart(productId, 1, productData);
                 
                 const icon = document.createElement('i');
                 icon.classList.add('ri-check-line');

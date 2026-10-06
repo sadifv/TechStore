@@ -28,27 +28,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    statusOutput.textContent = '¡Inicio de sesión exitoso! Redirigiendo...';
+                    statusOutput.textContent = '¡Inicio de sesión exitoso! Sincronizando carrito...';
                     statusOutput.className = 'form-status success';
-                    
+
+                    // Sincronizar el carrito de visitante guardado en localStorage a MongoDB
+                    if (typeof window.syncGuestCartToUser === 'function') {
+                        await window.syncGuestCartToUser();
+                    }
+
                     setTimeout(() => {
-                        // Redirigir siempre a la página principal
                         window.location.href = '/';
-                    }, 1200);
+                    }, 1000);
                 } else {
-                    // Limpiamos el mensaje anterior
                     statusOutput.textContent = ''; 
 
-                    // 1. Mensaje devuelto por el servidor
                     const messageText = data.error || 'El correo no está registrado.';
                     const errorTextNode = document.createTextNode(messageText + ' ');
 
-                    // 2. Enlace de registro programático y seguro (sin innerHTML)
                     const registerLink = document.createElement('a');
                     registerLink.href = '/register';
                     registerLink.textContent = '¿Deseas registrarte?';
 
-                    // 3. Insertamos ambos elementos en el <output>
                     statusOutput.appendChild(errorTextNode);
                     statusOutput.appendChild(registerLink);
                     statusOutput.className = 'form-status error';
