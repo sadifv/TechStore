@@ -193,4 +193,76 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Error de conexión con el servidor.');
         }
     }
+
+    // --- ELIMINAR MENSAJES DE CONTACTO, SUSCRIPTORES Y USUARIOS ---
+    document.addEventListener('click', async (e) => {
+        // Eliminar Mensaje de Contacto
+        const deleteMsgBtn = e.target.closest('.btn-delete-message');
+        if (deleteMsgBtn) {
+            const id = deleteMsgBtn.getAttribute('data-id');
+            if (!id || !confirm('¿Estás seguro de que deseas eliminar este mensaje?')) return;
+
+            try {
+                const res = await fetch(`/admin/messages/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    const tr = deleteMsgBtn.closest('tr');
+                    if (tr) tr.remove();
+                } else {
+                    alert(data.error || 'Error al eliminar el mensaje');
+                }
+            } catch (err) {
+                console.error('Error al eliminar mensaje:', err);
+                alert('Error de conexión con el servidor.');
+            }
+            return;
+        }
+
+        // Eliminar Suscriptor al Boletín
+        const deleteSubBtn = e.target.closest('.btn-delete-subscriber');
+        if (deleteSubBtn) {
+            const id = deleteSubBtn.getAttribute('data-id');
+            if (!id || !confirm('¿Estás seguro de que deseas eliminar este suscriptor?')) return;
+
+            try {
+                const res = await fetch(`/admin/subscribers/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    const tr = deleteSubBtn.closest('tr');
+                    if (tr) tr.remove();
+                } else {
+                    alert(data.error || 'Error al eliminar el suscriptor');
+                }
+            } catch (err) {
+                console.error('Error al eliminar suscriptor:', err);
+                alert('Error de conexión con el servidor.');
+            }
+            return;
+        }
+
+        // Eliminar Usuario Registrado
+        const deleteUserBtn = e.target.closest('.btn-delete-user');
+        if (deleteUserBtn) {
+            const id = deleteUserBtn.getAttribute('data-id');
+            if (!id || !confirm('¿Estás seguro de que deseas eliminar este usuario?')) return;
+
+            try {
+                const res = await fetch(`/admin/users/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    const tr = deleteUserBtn.closest('tr');
+                    if (tr) tr.remove();
+                } else {
+                    alert(data.error || 'Error al eliminar el usuario');
+                }
+            } catch (err) {
+                console.error('Error al eliminar usuario:', err);
+                alert('Error de conexión con el servidor.');
+            }
+            return;
+        }
+    });
 });
