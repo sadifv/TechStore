@@ -32,11 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusOutput.className = 'form-status success';
                     
                     setTimeout(() => {
-                        if (data.user && data.user.role === 'admin') {
-                            window.location.href = '/admin/dashboard';
-                        } else {
-                            window.location.href = '/';
-                        }
+                        // Redirigir siempre a la página principal
+                        window.location.href = '/';
                     }, 1200);
                 } else {
                     // Limpiamos el mensaje anterior

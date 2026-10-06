@@ -23,21 +23,22 @@
         </li>
 
         <% if (typeof user !== 'undefined' && user) { %>
+            <!-- Saludo con el nombre del Usuario (Cliente o Admin) -->
+            <li role="none">
+                <span class="user-greeting" role="menuitem">
+                    <i class="ri-user-smile-line"></i> <%= user.name %>
+                </span>
+            </li>
+
             <% if (user.role === 'admin') { %>
-                <!-- Panel del Administrador -->
+                <!-- Acceso al Panel para Administradores -->
                 <li role="none">
                     <a href="/admin/dashboard" role="menuitem" class="btn btn-primary">
                         <i class="ri-user-settings-line"></i> Panel Admin
                     </a>
                 </li>
-            <% } else { %>
-                <!-- Nombre del Cliente Autenticado -->
-                <li role="none">
-                    <span class="user-greeting" role="menuitem">
-                        <i class="ri-user-smile-line"></i> <%= user.name %>
-                    </span>
-                </li>
             <% } %>
+
             <!-- Botón de Salir/Logout -->
             <li role="none">
                 <a href="/admin/logout" role="menuitem" class="btn btn-secondary">
@@ -45,7 +46,7 @@
                 </a>
             </li>
         <% } else { %>
-            <!-- Usuario Invitado (Sin Sesión Active) -->
+            <!-- Usuario Invitado (Sin Sesión Activa) -->
             <li role="none">
                 <a href="/login" role="menuitem" class="btn btn-secondary">
                     <i class="ri-user-line"></i> Iniciar Sesión
