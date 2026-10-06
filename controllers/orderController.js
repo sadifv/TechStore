@@ -58,11 +58,12 @@ const createOrder = async (req, res, next) => {
             };
         });
 
-        // 5. Crear la orden en la BD con estado 'pending'
+        // 5. Crear la orden en la BD con estado 'pending' (asignamos tanto totalAmount como total)
         const order = await Order.create({
             user: userId,
             items: orderItems,
             totalAmount,
+            total: totalAmount,
             paymentMethod: 'card',
             paymentStatus: 'pending',
             status: 'pending'

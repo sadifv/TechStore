@@ -56,6 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 itemsList.classList.add('order-body');
 
                 const items = order.items || order.products || [];
+                
+                // Calcular el total dinámico por si no está presente order.totalAmount ni order.total
+                let calculatedTotal = 0;
+
                 items.forEach(item => {
                     const li = document.createElement('li');
                     li.classList.add('order-item');
@@ -66,8 +70,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     productName.textContent = `${nameText} (x${qty})`;
 
                     const priceVal = item.price || item.product?.price || 0;
+                    const subtotal = priceVal * qty;
+                    calculatedTotal += subtotal;
+
                     const productPrice = document.createElement('span');
-                    productPrice.textContent = `$${(priceVal * qty).toFixed(2)}`;
+                    productPrice.textContent = `$${subtotal.toFixed(2)}`;
 
                     li.appendChild(productName);
                     li.appendChild(productPrice);
@@ -87,8 +94,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const totalInfo = document.createElement('span');
                 totalInfo.classList.add('order-total');
                 totalInfo.textContent = 'Total: ';
+                
+                // Prioridad: totalAmount -> total -> suma dinámica
+                const finalTotal = order.totalAmount ?? order.total ?? calculatedTotal;
+                
                 const totalAmount = document.createElement('strong');
-                totalAmount.textContent = `$${(order.total || 0).toFixed(2)}`;
+                totalAmount.textContent = `$${Number(finalTotal).toFixed(2)}`;
                 totalInfo.appendChild(totalAmount);
 
                 footer.appendChild(paymentInfo);
