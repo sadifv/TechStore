@@ -1,29 +1,79 @@
 const Product = require('../models/Product');
 
-// @desc    Obtener todos los productos
+// @desc    Obtener todos los productos con filtros, búsqueda, ordenamiento y paginación
 // @route   GET /api/products
 // @access  Public
-const getAllProducts = async (req, res) => {
+const getAllProducts = async (req, res, next) => {
     try {
-        const products = await Product.find().lean();
+        const { page = 1, limit = 10, category, search, sort } = req.query;
+
+        const query = {};
+
+        // Filtro por categoría exacta
+        if (category) {
+            query.category = category;
+        }
+
+        // Búsqueda por nombre de producto (case insensitive)
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+
+        // Criterio de ordenamiento
+        let sortOption = { createdAt: -1 };
+        if (sort === 'price_asc') sortOption = { price: 1 };
+        if (sort === 'price_desc') sortOption = { price: -1 };
+        if (sort === 'name_asc') sortOption = { name: 1 };
+
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [products, total] = await Promise.all([
+            Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean(),
+            Product.countDocuments(query)
+        ]);
+
         res.status(200).json({
             success: true,
             count: products.length,
+            total,
+            page: pageNum,
+            pages: Math.ceil(total / limitNum) || 1,
             data: products
         });
     } catch (error) {
-        console.error('Error al obtener productos:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error del servidor al obtener el catálogo'
+        next(error);
+    }
+};
+
+// @desc    Obtener un producto por ID
+// @route   GET /api/products/:id
+// @access  Public
+const getProductById = async (req, res, next) => {
+    try {
+        const product = await Product.findById(req.params.id).lean();
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: 'Producto no encontrado.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: product
         });
+    } catch (error) {
+        next(error);
     }
 };
 
 // @desc    Crear un nuevo producto
 // @route   POST /admin/products
 // @access  Private/Admin
-const createProduct = async (req, res) => {
+const createProduct = async (req, res, next) => {
     try {
         const { name, description, price, image, category, stock } = req.body;
         const newProduct = await Product.create({
@@ -40,18 +90,14 @@ const createProduct = async (req, res) => {
             data: newProduct
         });
     } catch (error) {
-        console.error('Error al crear producto:', error);
-        res.status(400).json({
-            success: false,
-            error: 'Error al crear producto. Verifica los campos requeridos.'
-        });
+        next(error);
     }
 };
 
 // @desc    Actualizar un producto existente
 // @route   PUT /admin/products/:id
 // @access  Private/Admin
-const updateProduct = async (req, res) => {
+const updateProduct = async (req, res, next) => {
     try {
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
@@ -71,18 +117,14 @@ const updateProduct = async (req, res) => {
             data: updatedProduct
         });
     } catch (error) {
-        console.error('Error al actualizar producto:', error);
-        res.status(400).json({
-            success: false,
-            error: 'Error al actualizar el producto'
-        });
+        next(error);
     }
 };
 
 // @desc    Eliminar un producto
 // @route   DELETE /admin/products/:id
 // @access  Private/Admin
-const deleteProduct = async (req, res) => {
+const deleteProduct = async (req, res, next) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
 
@@ -98,16 +140,13 @@ const deleteProduct = async (req, res) => {
             message: 'Producto eliminado correctamente'
         });
     } catch (error) {
-        console.error('Error al eliminar producto:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error al eliminar el producto'
-        });
+        next(error);
     }
 };
 
 module.exports = {
     getAllProducts,
+    getProductById,
     createProduct,
     updateProduct,
     deleteProduct

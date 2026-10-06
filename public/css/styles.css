@@ -691,48 +691,6 @@ h1, h2, h3, h4 {
   margin: 0 var(--space-2);
 }
 
-/* ========================================
-   CARRITO NAVBAR & BADGE (ESTILOS GENERALES)
-   ======================================== */
-.cart-btn-nav {
-  position: relative;
-  background: transparent;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--color-text);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 0.5rem;
-  transition: color var(--transition-fast);
-}
-
-.cart-btn-nav:hover {
-  color: var(--color-primary);
-}
-
-.cart-badge {
-  position: absolute;
-  top: -2px;
-  right: -4px;
-  background-color: var(--color-primary);
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  min-width: 20px;
-  height: 20px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: transform 0.2s ease;
-}
-
-.cart-badge.bump {
-  transform: scale(1.3);
-}
 
 /* ========================================
    CARRITO NAVBAR, BADGE Y DRAWER SEMÁNTICO

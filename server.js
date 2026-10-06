@@ -7,6 +7,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
+const errorHandler = require('./middleware/errorMiddleware'); // Importar el middleware de errores
 
 const app = express();
 
@@ -72,7 +73,10 @@ app.use('/api', require('./routes/apiRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes')); 
 app.use('/admin', require('./routes/adminRoutes'));
 
-const PORT = process.env.PORT || 3000;
+// 9. Middleware global para manejo de errores
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
 });

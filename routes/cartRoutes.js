@@ -11,71 +11,78 @@ const requireAuth = (req, res, next) => {
 };
 
 // GET /api/cart - Obtener el carrito del usuario autenticado
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, async (req, res, next) => {
     try {
         let cart = await Cart.findOne({ user: req.session.user.id }).populate('items.product');
         if (!cart) {
-            cart = new Cart({ user: req.session.user.id, items: [] });
-            await cart.save();
+            cart = await Cart.create({ user: req.session.user.id, items: [] });
         }
         res.status(200).json({ success: true, items: cart.items });
     } catch (error) {
-        console.error('Error al obtener carrito:', error);
-        res.status(500).json({ success: false, error: 'Error del servidor al obtener el carrito.' });
+        next(error);
     }
 });
 
-// POST /api/cart/add - Añadir o incrementar un producto
-router.post('/add', requireAuth, async (req, res) => {
+// POST /api/cart/add - Añadir o incrementar un producto de forma atómica (soluciona race condition)
+router.post('/add', requireAuth, async (req, res, next) => {
     try {
         const { productId, quantity = 1 } = req.body;
+        const qtyNum = Number(quantity);
+
         if (!productId) {
             return res.status(400).json({ success: false, error: 'ID de producto requerido.' });
         }
 
-        let cart = await Cart.findOne({ user: req.session.user.id });
+        const userId = req.session.user.id;
+
+        // 1. Intentar incrementar la cantidad si el producto ya existe en el carrito
+        let cart = await Cart.findOneAndUpdate(
+            { user: userId, 'items.product': productId },
+            { $inc: { 'items.$.quantity': qtyNum } },
+            { new: true }
+        );
+
+        // 2. Si el producto no estaba en el carrito, agregar el objeto al array items
         if (!cart) {
-            cart = new Cart({ user: req.session.user.id, items: [] });
+            cart = await Cart.findOneAndUpdate(
+                { user: userId },
+                { $push: { items: { product: productId, quantity: qtyNum } } },
+                { new: true, upsert: true }
+            );
         }
 
-        const itemIndex = cart.items.findIndex(item => item.product.toString() === productId);
-
-        if (itemIndex > -1) {
-            cart.items[itemIndex].quantity += Number(quantity);
-        } else {
-            cart.items.push({ product: productId, quantity: Number(quantity) });
-        }
-
-        await cart.save();
+        // Poblar las referencias de productos para la respuesta del cliente
         const updatedCart = await Cart.findById(cart._id).populate('items.product');
 
         res.status(200).json({
             success: true,
             message: 'Producto agregado al carrito.',
-            items: updatedCart.items
+            items: updatedCart ? updatedCart.items : []
         });
     } catch (error) {
-        console.error('Error al agregar al carrito:', error);
-        res.status(500).json({ success: false, error: 'Error del servidor al actualizar el carrito.' });
+        next(error);
     }
 });
 
-// DELETE /api/cart/remove/:productId - Eliminar un producto del carrito
-router.delete('/remove/:productId', requireAuth, async (req, res) => {
+// DELETE /api/cart/remove/:productId - Eliminar un producto del carrito de forma atómica
+router.delete('/remove/:productId', requireAuth, async (req, res, next) => {
     try {
         const { productId } = req.params;
-        let cart = await Cart.findOne({ user: req.session.user.id });
+        const userId = req.session.user.id;
 
-        if (cart) {
-            cart.items = cart.items.filter(item => item.product.toString() !== productId);
-            await cart.save();
-        }
+        const updatedCart = await Cart.findOneAndUpdate(
+            { user: userId },
+            { $pull: { items: { product: productId } } },
+            { new: true }
+        ).populate('items.product');
 
-        const updatedCart = await Cart.findOne({ user: req.session.user.id }).populate('items.product');
-        res.status(200).json({ success: true, items: updatedCart ? updatedCart.items : [] });
+        res.status(200).json({
+            success: true,
+            message: 'Producto eliminado del carrito.',
+            items: updatedCart ? updatedCart.items : []
+        });
     } catch (error) {
-        console.error('Error al eliminar del carrito:', error);
-        res.status(500).json({ success: false, error: 'Error al eliminar el producto.' });
+        next(error);
     }
 });
 
