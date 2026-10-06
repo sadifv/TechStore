@@ -66,7 +66,7 @@ const loginUser = async (req, res) => {
         if (!user) {
             return res.status(401).json({
                 success: false,
-                error: 'Credenciales inválidas.'
+                error: 'El correo no está registrado. Debes crear una cuenta primero.'
             });
         }
 
@@ -74,7 +74,7 @@ const loginUser = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
-                error: 'Credenciales inválidas.'
+                error: 'Contraseña incorrecta. Inténtalo de nuevo.'
             });
         }
 
@@ -117,7 +117,7 @@ const logoutUser = (req, res) => {
         
         // Si la petición viene de la web navegable, redirigir al login
         if (req.accepts('html')) {
-            return res.redirect('/admin/login');
+            return res.redirect('/login');
         }
 
         return res.status(200).json({

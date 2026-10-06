@@ -22,20 +22,40 @@
             </button>
         </li>
 
-        <!-- Solo se renderiza si hay usuario autenticado y su rol es 'admin' -->
-  <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
-    <li>
-      <a href="/admin/dashboard" class="btn btn-primary">
-        <i class="ri-user-settings-line"></i> Panel Admin
-      </a>
-    </li>
-  <% } else if (typeof user === 'undefined' || !user) { %>
-    <!-- Si nadie ha iniciado sesión, opcionalmente puedes mostrar un login general o dejarlo oculto -->
-    <li>
-      <a href="/login" class="btn btn-secondary">
-        <i class="ri-user-line"></i> Iniciar Sesión
-      </a>
-    </li>
-  <% } %>
+        <% if (typeof user !== 'undefined' && user) { %>
+            <% if (user.role === 'admin') { %>
+                <!-- Panel del Administrador -->
+                <li role="none">
+                    <a href="/admin/dashboard" role="menuitem" class="btn btn-primary">
+                        <i class="ri-user-settings-line"></i> Panel Admin
+                    </a>
+                </li>
+            <% } else { %>
+                <!-- Nombre del Cliente Autenticado -->
+                <li role="none">
+                    <span class="user-greeting" role="menuitem">
+                        <i class="ri-user-smile-line"></i> <%= user.name %>
+                    </span>
+                </li>
+            <% } %>
+            <!-- Botón de Salir/Logout -->
+            <li role="none">
+                <a href="/admin/logout" role="menuitem" class="btn btn-secondary">
+                    <i class="ri-logout-box-r-line"></i> Salir
+                </a>
+            </li>
+        <% } else { %>
+            <!-- Usuario Invitado (Sin Sesión Active) -->
+            <li role="none">
+                <a href="/login" role="menuitem" class="btn btn-secondary">
+                    <i class="ri-user-line"></i> Iniciar Sesión
+                </a>
+            </li>
+            <li role="none">
+                <a href="/register" role="menuitem" class="btn btn-primary">
+                    <i class="ri-user-add-line"></i> Registrarse
+                </a>
+            </li>
+        <% } %>
     </ul>
 </nav>

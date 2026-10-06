@@ -19,6 +19,11 @@
             <h3>Suscriptores Boletín</h3>
             <p class="stat-number"><%= typeof stats.subscribersCount !== 'undefined' ? stats.subscribersCount : (typeof subscribers !== 'undefined' ? subscribers.length : 0) %></p>
         </article>
+        <!-- Métrica de Usuarios Registrados -->
+        <article class="stat-card">
+            <h3>Usuarios Registrados</h3>
+            <p class="stat-number"><%= typeof stats.usersCount !== 'undefined' ? stats.usersCount : (typeof users !== 'undefined' ? users.length : 0) %></p>
+        </article>
     </section>
 
     <!-- Gestión del Catálogo (CRUD) -->
@@ -31,16 +36,53 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Imagen</th>
-                    <th>Nombre</th>
-                    <th>Categoría</th>
-                    <th>Precio</th>
-                    <th>Stock</th>
-                    <th>Acciones</th>
+                    <th scope="col">Imagen</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col">Precio</th>
+                    <th scope="col">Stock</th>
+                    <th scope="col">Acciones</th>
                 </tr>
             </thead>
             <tbody id="admin-products-list">
                 <!-- Se poblará vía JS -->
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Lista de Usuarios Registrados -->
+    <section class="dashboard-users">
+        <header class="section-header">
+            <h2>Usuarios Registrados</h2>
+        </header>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Rol</th>
+                    <th scope="col">Fecha Registro</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
+                    <% users.forEach(u => { %>
+                        <tr>
+                            <td><%= u.name %></td>
+                            <td><%= u.email %></td>
+                            <td>
+                                <span class="badge badge-<%= u.role === 'admin' ? 'primary' : 'secondary' %>">
+                                    <%= u.role %>
+                                </span>
+                            </td>
+                            <td><%= new Date(u.createdAt).toLocaleDateString() %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="4">No hay usuarios registrados.</td>
+                    </tr>
+                <% } %>
             </tbody>
         </table>
     </section>
@@ -51,10 +93,10 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Mensaje</th>
-                    <th>Fecha</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Mensaje</th>
+                    <th scope="col">Fecha</th>
                 </tr>
             </thead>
             <tbody>
@@ -82,8 +124,8 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Email</th>
-                    <th>Fecha de Suscripción</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Fecha de Suscripción</th>
                 </tr>
             </thead>
             <tbody>

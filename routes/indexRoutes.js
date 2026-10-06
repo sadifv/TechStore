@@ -27,4 +27,11 @@ router.get('/login', (req, res) => {
     });
 });
 
+// Vista de Registro
+router.get('/register', (req, res) => {
+    res.render('register', {
+        title: 'TechStore - Crear Cuenta'
+    });
+});
+
 module.exports = router;

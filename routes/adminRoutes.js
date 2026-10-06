@@ -6,6 +6,7 @@ const { createProduct, updateProduct, deleteProduct } = require('../controllers/
 const Product = require('../models/Product');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
+const User = require('../models/User'); // 1. Requerir el modelo de Usuario
 
 // Autenticación de Administrador
 router.post('/login', loginUser);
@@ -18,22 +19,26 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
         const productsCount = await Product.countDocuments();
         const messagesCount = await Contact.countDocuments();
         const subscribersCount = await Newsletter.countDocuments();
+        const usersCount = await User.countDocuments(); // Conteo total de usuarios
 
         // 2. Obtener datos para las tablas
         const products = await Product.find().sort({ createdAt: -1 }).lean();
         const recentMessages = await Contact.find().sort({ createdAt: -1 }).limit(5).lean();
         const subscribers = await Newsletter.find().sort({ createdAt: -1 }).lean();
+        const users = await User.find({}, '-password').sort({ createdAt: -1 }).lean(); // Listado excluyendo contraseñas
 
         res.render('admin/dashboard', {
             title: 'TechStore - Panel de Administración',
             stats: {
                 productsCount,
                 messagesCount,
-                subscribersCount
+                subscribersCount,
+                usersCount // Métrica enviada a la vista
             },
             products,
             messages: recentMessages,
-            subscribers
+            subscribers,
+            users // Arreglo de usuarios enviado a la vista
         });
     } catch (error) {
         console.error('Error al cargar dashboard:', error);
