@@ -1,14 +1,14 @@
 <section id="catalogo" class="products-section">
     <h2>Nuestro Catálogo</h2>
-    
+
     <% if (typeof products !== 'undefined' && products.length > 0) { %>
         <div class="products-grid">
             <% products.forEach(product => { %>
                 <article class="product-card">
                     <img src="<%= product.image %>" alt="<%= product.name %>" />
                     <h3><%= product.name %></h3>
-                    <p class="price">$<%= product.price %></p>
-                    <button type="button" class="btn btn-secondary" data-id="<%= product.id %>">
+                    <p class="product-price">$<%= product.price %></p>
+                    <button type="button" class="btn btn-secondary" data-id="<%= product._id %>">
                         Añadir al carrito
                     </button>
                 </article>
