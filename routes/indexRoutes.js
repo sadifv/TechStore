@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const { requireAuth } = require('../middleware/authMiddleware'); // Importación corregida
 
 // Ruta principal para renderizar la Landing Page
 router.get('/', async (req, res) => {
@@ -31,6 +32,14 @@ router.get('/login', (req, res) => {
 router.get('/register', (req, res) => {
     res.render('register', {
         title: 'TechStore - Crear Cuenta'
+    });
+});
+
+// Vista del Perfil de Usuario (PROTEGIDA)
+router.get('/profile', requireAuth, (req, res) => {
+    res.render('profile', {
+        title: 'Mi Perfil | TechStore',
+        user: req.session.user || req.user
     });
 });
 

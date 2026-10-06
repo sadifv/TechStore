@@ -1,0 +1,29 @@
+<%- include('partials/header') %>
+
+<main class="container profile-container">
+    <!-- Información de la Cuenta -->
+    <section class="profile-card">
+        <figure class="profile-avatar">
+            <i class="ri-user-3-line"></i>
+        </figure>
+        <article class="profile-details">
+            <h2>Mi Cuenta</h2>
+            <p><strong>Nombre:</strong> <%= user ? user.name : 'Usuario' %></p>
+            <p><strong>Correo:</strong> <%= user ? user.email : 'correo@ejemplo.com' %></p>
+        </article>
+    </section>
+
+    <!-- Historial de Compras -->
+    <section class="orders-section">
+        <h2>Historial de Compras</h2>
+        
+        <p id="orders-loading" class="orders-status">Cargando tus pedidos...</p>
+
+        <section id="orders-list" class="orders-list">
+            <!-- Las órdenes se insertan como <article> desde profile.js -->
+        </section>
+    </section>
+</main>
+
+<script src="/js/profile.js"></script>
+<%- include('partials/footer') %>

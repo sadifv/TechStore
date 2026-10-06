@@ -23,11 +23,11 @@
         </li>
 
         <% if (typeof user !== 'undefined' && user) { %>
-            <!-- Saludo con el nombre del Usuario (Cliente o Admin) -->
+            <!-- Enlace al Perfil del Usuario -->
             <li role="none">
-                <span class="user-greeting" role="menuitem">
+                <a href="/profile" role="menuitem" class="user-greeting" title="Ver mi perfil">
                     <i class="ri-user-smile-line"></i> <%= user.name %>
-                </span>
+                </a>
             </li>
 
             <% if (user.role === 'admin') { %>
