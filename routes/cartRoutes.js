@@ -4,18 +4,23 @@ const Cart = require('../models/Cart');
 
 // Middleware para validar que haya sesión activa
 const requireAuth = (req, res, next) => {
-    if (!req.session || !req.session.user) {
+    const currentUser = req.session?.user || req.user;
+    if (!currentUser) {
         return res.status(401).json({ success: false, error: 'Debes iniciar sesión para gestionar tu carrito.' });
     }
     next();
 };
 
+// Obtener el ID del usuario de forma robusta
+const getUserId = (req) => req.session?.user?._id || req.session?.user?.id || req.user?._id;
+
 // GET /api/cart - Obtener el carrito del usuario autenticado
 router.get('/', requireAuth, async (req, res, next) => {
     try {
-        let cart = await Cart.findOne({ user: req.session.user.id }).populate('items.product');
+        const userId = getUserId(req);
+        let cart = await Cart.findOne({ user: userId }).populate('items.product');
         if (!cart) {
-            cart = await Cart.create({ user: req.session.user.id, items: [] });
+            cart = await Cart.create({ user: userId, items: [] });
         }
         res.status(200).json({ success: true, items: cart.items });
     } catch (error) {
@@ -33,16 +38,16 @@ router.post('/add', requireAuth, async (req, res, next) => {
             return res.status(400).json({ success: false, error: 'ID de producto requerido.' });
         }
 
-        const userId = req.session.user.id;
+        const userId = getUserId(req);
 
-        // 1. Intentar incrementar la cantidad si el producto ya existe en el carrito
+        // 1. Incrementar la cantidad de forma atómica si el producto ya existe en el carrito
         let cart = await Cart.findOneAndUpdate(
             { user: userId, 'items.product': productId },
             { $inc: { 'items.$.quantity': qtyNum } },
             { new: true }
         );
 
-        // 2. Si el producto no estaba en el carrito, agregar el objeto al array items
+        // 2. Si el producto no existía en el carrito, añadirlo
         if (!cart) {
             cart = await Cart.findOneAndUpdate(
                 { user: userId },
@@ -68,7 +73,7 @@ router.post('/add', requireAuth, async (req, res, next) => {
 router.delete('/remove/:productId', requireAuth, async (req, res, next) => {
     try {
         const { productId } = req.params;
-        const userId = req.session.user.id;
+        const userId = getUserId(req);
 
         const updatedCart = await Cart.findOneAndUpdate(
             { user: userId },

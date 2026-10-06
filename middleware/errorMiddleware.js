@@ -2,13 +2,13 @@ const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    console.error(`[Error Log]: ${err.stack}`);
+    console.error(`[Error Log]: ${err.stack || err}`);
 
-    // Error de clave duplicada en MongoDB (ej. email registrado)
+    // Error de clave duplicada en MongoDB (ej. email registrado) -> 409 Conflict
     if (err.code === 11000) {
-        const field = Object.keys(err.keyValue)[0];
+        const field = Object.keys(err.keyValue || {})[0] || 'campo';
         const message = `El valor ingresado para el campo '${field}' ya está registrado.`;
-        return res.status(400).json({ success: false, error: message });
+        return res.status(409).json({ success: false, error: message });
     }
 
     // Error de validación de esquema en Mongoose (ej. price < 0)

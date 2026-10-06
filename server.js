@@ -7,7 +7,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
-const errorHandler = require('./middleware/errorMiddleware'); // Importar el middleware de errores
+const errorHandler = require('./middleware/errorMiddleware');
 
 const app = express();
 
@@ -16,7 +16,7 @@ connectDB();
 
 // 2. Middlewares de Seguridad y Logging
 if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev')); // Registrar peticiones en consola
+  app.use(morgan('dev'));
 }
 
 // Configuración de Helmet (desactivamos CSP para permitir iconos de RemixIcon y CDNs)
@@ -29,10 +29,10 @@ app.use(
 // Habilitar CORS
 app.use(cors());
 
-// Limitador de tasa de peticiones para la API (Protección contra DDoS / Fuerza Bruta)
+// Limitador de tasa de peticiones para la API
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Máximo 100 peticiones por IP
+  max: 100,
   message: {
     success: false,
     error: 'Demasiadas solicitudes desde esta IP, inténtalo de nuevo en 15 minutos.'
@@ -44,14 +44,15 @@ app.use('/api', apiLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4. Configuración de Sesiones
+// 4. Configuración de Sesiones con Cookies Seguras y CSRF nativo
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secreto_techstore',
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false, // Usar true si utilizas HTTPS
+    secure: process.env.NODE_ENV === 'production', // true solo en producción (HTTPS)
+    sameSite: 'strict', // Protección CSRF nativa
     maxAge: 1000 * 60 * 60 * 24 // 24 horas
   }
 }));
@@ -63,7 +64,7 @@ app.set('views', path.join(__dirname, 'views'));
 // 6. Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 7. Middleware global para res.locals.user (preparado para navbar.ejs)
+// 7. Middleware global para res.locals.user
 const { setUserLocals } = require('./middleware/authMiddleware');
 app.use(setUserLocals);
 
@@ -71,7 +72,7 @@ app.use(setUserLocals);
 app.use('/', require('./routes/indexRoutes'));
 app.use('/api', require('./routes/apiRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes')); 
-app.use('/api/orders', require('./routes/orderRoutes')); // Enrutador de Checkout / Ordenes
+app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/admin', require('./routes/adminRoutes'));
 
 // 9. Middleware global para manejo de errores
