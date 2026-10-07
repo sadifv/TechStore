@@ -6,9 +6,10 @@ const session = require('express-session');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorMiddleware');
+const logger = require('./config/logger'); 
+const httpLogger = require('./middleware/loggerMiddleware'); 
 
 const app = express();
 
@@ -16,9 +17,7 @@ const app = express();
 connectDB();
 
 // 2. Middlewares de Seguridad y Logging
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev'));
-}
+app.use(httpLogger); // <-- NUEVO: Reemplaza a morgan
 
 // Configuración de Helmet (desactivamos CSP para permitir iconos de RemixIcon y CDNs)
 app.use(
@@ -95,7 +94,17 @@ app.use('/admin', require('./routes/adminRoutes'));
 // 9. Middleware global para manejo de errores
 app.use(errorHandler);
 
+// 10. Manejo de errores no capturados (NUEVO)
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+    logger.info(`Servidor ejecutándose en http://localhost:${PORT}`); // <-- Cambiado a logger.info
 });

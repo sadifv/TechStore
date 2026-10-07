@@ -1,8 +1,14 @@
+const logger = require('../config/logger'); 
+
 const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    console.error(`[Error Log]: ${err.stack || err}`);
+    // Loguear el error con contexto (URL, método y stack trace)
+    logger.error(`${err.message} - URL: ${req.originalUrl} - Method: ${req.method}`, {
+        stack: err.stack,
+        code: err.code
+    });
 
     // Error de clave duplicada en MongoDB (ej. email registrado) -> 409 Conflict
     if (err.code === 11000) {
