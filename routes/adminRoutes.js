@@ -7,9 +7,11 @@ const Product = require('../models/Product');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
+const { loginLimiter } = require('../middleware/rateLimiter');
+const logger = require('../config/logger'); 
 
 // Autenticación de Administrador
-router.post('/login', loginUser);
+router.post('/login', loginLimiter, loginUser); 
 router.get('/logout', logoutUser);
 
 // Vista del Dashboard (Protegida)
@@ -41,7 +43,7 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
             users
         });
     } catch (error) {
-        console.error('Error al cargar dashboard:', error);
+        logger.error(`Error al cargar dashboard: ${error.message}`, { stack: error.stack }); 
         res.status(500).send('Error del servidor al cargar el panel.');
     }
 });
@@ -57,7 +59,7 @@ router.delete('/messages/:id', requireAdmin, async (req, res) => {
         await Contact.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: 'Mensaje eliminado con éxito.' });
     } catch (error) {
-        console.error('Error al eliminar mensaje:', error);
+        logger.error(`Error al eliminar mensaje: ${error.message}`, { stack: error.stack }); 
         res.status(500).json({ success: false, error: 'Error al eliminar el mensaje.' });
     }
 });
@@ -67,7 +69,7 @@ router.delete('/subscribers/:id', requireAdmin, async (req, res) => {
         await Newsletter.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: 'Suscriptor eliminado con éxito.' });
     } catch (error) {
-        console.error('Error al eliminar suscriptor:', error);
+        logger.error(`Error al eliminar suscriptor: ${error.message}`, { stack: error.stack }); 
         res.status(500).json({ success: false, error: 'Error al eliminar el suscriptor.' });
     }
 });
@@ -90,7 +92,7 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
         await User.findByIdAndDelete(id);
         res.json({ success: true, message: 'Usuario eliminado correctamente.' });
     } catch (error) {
-        console.error('Error al eliminar usuario:', error);
+        logger.error(`Error al eliminar usuario: ${error.message}`, { stack: error.stack }); 
         res.status(500).json({ success: false, error: 'Error al eliminar el usuario.' });
     }
 });

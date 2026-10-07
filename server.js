@@ -8,16 +8,20 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorMiddleware');
-const logger = require('./config/logger'); 
-const httpLogger = require('./middleware/loggerMiddleware'); 
+const logger = require('./config/logger');
+const httpLogger = require('./middleware/loggerMiddleware');
+const { adminLimiter } = require('./middleware/rateLimiter'); 
 
 const app = express();
 
 // 1. Conectar a MongoDB
 connectDB();
 
-// 2. Middlewares de Seguridad y Logging
-app.use(httpLogger); // <-- NUEVO: Reemplaza a morgan
+// 2. Confiar en el proxy (IMPORTANTE para producción)
+app.set('trust proxy', 1); 
+
+// 3. Middlewares de Seguridad y Logging
+app.use(httpLogger);
 
 // Configuración de Helmet (desactivamos CSP para permitir iconos de RemixIcon y CDNs)
 app.use(
@@ -36,11 +40,13 @@ const apiLimiter = rateLimit({
   message: {
     success: false,
     error: 'Demasiadas solicitudes desde esta IP, inténtalo de nuevo en 15 minutos.'
-  }
+  },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 app.use('/api', apiLimiter);
 
-// 3. Middlewares para parsear datos
+// 4. Middlewares para parsear datos
 // IMPORTANTE: El webhook de Stripe necesita el cuerpo en formato raw (Buffer) ANTES que express.json()
 app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
 
@@ -48,7 +54,7 @@ app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 4. Configuración de Sesiones Persistentes en MongoDB (connect-mongo)
+// 5. Configuración de Sesiones Persistentes en MongoDB (connect-mongo)
 const storeOptions = {
   mongoUrl: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/techstore',
   collectionName: 'sessions'
@@ -73,28 +79,31 @@ app.use(session({
   }
 }));
 
-// 5. Configuración del motor de plantillas EJS
+// 6. Configuración del motor de plantillas EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// 6. Archivos estáticos
+// 7. Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 7. Middleware global para res.locals.user
+// 8. Middleware global para res.locals.user
 const { setUserLocals } = require('./middleware/authMiddleware');
 app.use(setUserLocals);
 
-// 8. Definición de Rutas
+// 9. Definición de Rutas
 app.use('/', require('./routes/indexRoutes'));
 app.use('/api', require('./routes/apiRoutes'));
-app.use('/api/cart', require('./routes/cartRoutes')); 
+app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
+
+// Aplicar adminLimiter global a todo /admin (capa extra)
+app.use('/admin', adminLimiter); // <-- NUEVO
 app.use('/admin', require('./routes/adminRoutes'));
 
-// 9. Middleware global para manejo de errores
+// 10. Middleware global para manejo de errores
 app.use(errorHandler);
 
-// 10. Manejo de errores no capturados (NUEVO)
+// 11. Manejo de errores no capturados
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
@@ -106,5 +115,5 @@ process.on('unhandledRejection', (reason, promise) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    logger.info(`Servidor ejecutándose en http://localhost:${PORT}`); // <-- Cambiado a logger.info
+    logger.info(`Servidor ejecutándose en http://localhost:${PORT}`);
 });
