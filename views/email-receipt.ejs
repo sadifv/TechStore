@@ -1,0 +1,17 @@
+<!-- views/email-receipt.ejs -->
+<article style="font-family: system-ui, -apple-system, sans-serif; text-align: center; padding: 2rem; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+    <header>
+        <h1 style="color: #10B981; margin-bottom: 0.5rem;">¡Gracias por tu compra!</h1>
+        <h2 style="color: #374151; font-size: 1.25rem; margin-top: 0;">en TechStore</h2>
+    </header>
+
+    <section style="margin: 2rem 0; background-color: #f3f4f6; padding: 1.5rem; border-radius: 8px; text-align: left;">
+        <p style="color: #4b5563; font-size: 1rem;">Tu pedido con ID <strong><%= orderId %></strong> ha sido procesado correctamente.</p>
+        <p style="color: #4b5563; font-size: 1rem;">Total pagado: <strong>$<%= Number(totalAmount).toFixed(2) %></strong></p>
+        <p style="color: #4b5563; font-size: 1rem;">Hemos actualizado nuestro inventario y pronto prepararemos tu paquete.</p>
+    </section>
+
+    <footer style="margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;">
+        <p style="font-size: 0.875rem; color: #6b7280;">Si tienes alguna pregunta sobre tu pedido, simplemente responde a este correo.</p>
+    </footer>
+</article>

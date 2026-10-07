@@ -42,14 +42,11 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // 3. Middlewares para parsear datos
-// IMPORTANTE: Excluimos /api/orders/webhook de express.json() para que Stripe valide la firma raw
-app.use((req, res, next) => {
-  if (req.originalUrl === '/api/orders/webhook') {
-    next();
-  } else {
-    express.json()(req, res, next);
-  }
-});
+// IMPORTANTE: El webhook de Stripe necesita el cuerpo en formato raw (Buffer) ANTES que express.json()
+app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
+
+// Resto de parsers globales
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 4. Configuración de Sesiones Persistentes en MongoDB (connect-mongo)
