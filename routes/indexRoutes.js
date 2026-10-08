@@ -12,30 +12,7 @@ router.get('/', async (req, res) => {
     try {
         const now = new Date();
 
-        // 1. AUTO-RESTORE: restaurar productos cuya oferta ya expiró
-        try {
-            const expiredSales = await Product.find({
-                flashSale: true,
-                flashSaleEndsAt: { $lt: now }
-            });
-
-            for (const product of expiredSales) {
-                if (product.originalPrice !== null) {
-                    product.price = product.originalPrice;
-                }
-                product.flashSale = false;
-                product.flashSaleDiscount = 0;
-                product.flashSaleEndsAt = null;
-                product.originalPrice = null;
-                await product.save();
-
-                logger.info(`Flash sale expirada y restaurada: ${product.name} (ID: ${product._id})`);
-            }
-        } catch (restoreError) {
-            logger.error(`Error al restaurar flash sales expiradas: ${restoreError.message}`);
-        }
-
-        // 2. Consultas en paralelo
+        // Consultas en paralelo
         const [featuredProducts, flashSaleProduct] = await Promise.all([
             Product.find()
                 .sort({ createdAt: -1 })

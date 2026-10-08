@@ -182,7 +182,8 @@ const activateFlashSale = async (req, res, next) => {
         }
 
         const originalPrice = product.originalPrice || product.price;
-        const discountedPrice = Math.round((originalPrice * (1 - discount / 100)) * 100) / 100;
+        // Redondeo correcto: evita errores de punto flotante (ej. 19.995 -> 20.00 no 19.99)
+        const discountedPrice = Math.round(originalPrice * (100 - discount)) / 100;
 
         const endsAt = new Date(Date.now() + durationHours * 60 * 60 * 1000);
 
@@ -234,6 +235,9 @@ const deactivateFlashSale = async (req, res, next) => {
 
         if (product.originalPrice !== null && product.originalPrice !== undefined) {
             product.price = product.originalPrice;
+        } else {
+            // Fallback: mantener precio actual y log warning
+            logger.warn(`deactivateFlashSale: ${product.name} (ID: ${product._id}) no tiene originalPrice válido, se mantiene precio actual $${product.price}`);
         }
 
         product.flashSale = false;

@@ -6,16 +6,44 @@ const session = require('express-session');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const cron = require('node-cron');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorMiddleware');
 const logger = require('./config/logger');
 const httpLogger = require('./middleware/loggerMiddleware');
-const { adminLimiter } = require('./middleware/rateLimiter'); 
+const { adminLimiter } = require('./middleware/rateLimiter');
+const Product = require('./models/Product');
 
 const app = express();
 
 // 1. Conectar a MongoDB
 connectDB();
+
+// CRON JOB: Restaurar flash sales expiradas cada 5 minutos
+cron.schedule('*/5 * * * *', async () => {
+    const now = new Date();
+    try {
+        const expiredSales = await Product.find({
+            flashSale: true,
+            flashSaleEndsAt: { $lt: now }
+        });
+
+        for (const product of expiredSales) {
+            if (product.originalPrice !== null && product.originalPrice !== undefined) {
+                product.price = product.originalPrice;
+            }
+            product.flashSale = false;
+            product.flashSaleDiscount = 0;
+            product.flashSaleEndsAt = null;
+            product.originalPrice = null;
+            await product.save();
+
+            logger.info(`Flash sale expirada restaurada (cron): ${product.name} (ID: ${product._id})`);
+        }
+    } catch (cronError) {
+        logger.error(`Error en cron job flash sale restore: ${cronError.message}`, { stack: cronError.stack });
+    }
+});
 
 // 2. Confiar en el proxy (IMPORTANTE para producción)
 app.set('trust proxy', 1); 
