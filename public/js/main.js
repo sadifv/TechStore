@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const name = document.querySelector('#name').value.trim();
-      const email = document.querySelector('#email').value.trim();
-      const message = document.querySelector('#message').value.trim();
+      const name = document.querySelector('#contact-name').value.trim();
+      const email = document.querySelector('#contact-email').value.trim();
+      const message = document.querySelector('#contact-message').value.trim();
 
       if (!name || !email || !message) return;
 

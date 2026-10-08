@@ -107,6 +107,19 @@ h1, h2, h3, h4 {
   line-height: 1.2;
 }
 
+/* Utilidad: ocultar visualmente pero mantener para lectores de pantalla */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 /* ========================================
    3. COMPONENTES GLOBALES (BOTONES Y CARDS)
    ======================================== */
@@ -1042,9 +1055,9 @@ label.ai-sr-only {
   font-style: normal;
 }
 
-/* ========================================
-   10. NEWSLETTER Y CONTACTO
-   ======================================== */
+/*========================================
+   10. NEWSLETTER
+======================================== */
 .newsletter-container {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -1076,10 +1089,160 @@ label.ai-sr-only {
   outline: none;
 }
 
-.contact-section {
-  max-width: 650px;
+.newsletter-form input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+/* ========================================
+   10.1. SECCIÓN DE CONTACTO
+   ======================================== */
+.contact-section {
+  max-width: 1280px;
+  width: 90%;
+  margin: 0 auto;
+  padding: var(--space-16) 0;
+}
+
+.contact-header {
+  text-align: center;
+  margin-bottom: var(--space-12);
+}
+
+.contact-header h2 {
+  font-size: var(--font-size-3xl);
+  color: var(--color-secondary);
+  margin: 0 0 var(--space-3) 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.contact-header p {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-muted);
+  margin: 0 auto;
+  max-width: 500px;
+}
+
+/* Grid de 2 columnas */
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+/* ============= INFO DE CONTACTO (IZQUIERDA) ============= */
+.contact-info {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  color: #ffffff;
+  box-shadow: var(--shadow-hover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-info::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.contact-info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  position: relative;
+  z-index: 1;
+}
+
+.contact-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.contact-info-item i {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(8px);
+}
+
+.contact-info-item h3 {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 0.25rem 0;
+}
+
+.contact-info-item p,
+.contact-info-item address,
+.contact-info-item a {
+  margin: 0;
+  color: #ffffff;
+  font-size: var(--font-size-base);
+  font-style: normal;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.contact-info-item a:hover {
+  opacity: 0.8;
+}
+
+/* Redes sociales */
+.contact-socials {
+  display: flex;
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  z-index: 1;
+}
+
+.contact-socials a {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-size: 1.25rem;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(8px);
+}
+
+.contact-socials a:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ============= FORMULARIO (DERECHA) ============= */
 .contact-form {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -1088,33 +1251,103 @@ label.ai-sr-only {
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
 }
 
-.form-group {
+.form-field {
+  border: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.form-group label {
+.form-field label {
   font-weight: 600;
   font-size: var(--font-size-sm);
+  color: var(--color-secondary);
 }
 
 .contact-form input,
 .contact-form textarea {
+  width: 100%;
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  background-color: var(--color-background);
   outline: none;
+  transition: all var(--transition-fast);
+  resize: vertical;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: var(--color-text-muted);
 }
 
 .contact-form input:focus,
-.contact-form textarea:focus,
-.newsletter-form input:focus {
+.contact-form textarea:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background-color: var(--color-surface);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.contact-form textarea {
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.contact-form .btn {
+  align-self: stretch;
+}
+
+.contact-form .btn i {
+  margin-right: var(--space-2);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-info {
+    padding: var(--space-6);
+  }
+
+  .contact-info-list {
+    gap: var(--space-4);
+  }
+
+  .contact-info-item i {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .contact-form {
+    padding: var(--space-6);
+  }
+
+  .contact-section {
+    padding: var(--space-12) 0;
+  }
+
+  .contact-header {
+    margin-bottom: var(--space-8);
+  }
+
+  .contact-header h2 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .contact-header p {
+    font-size: var(--font-size-base);
+  }
 }
 
 /* ========================================
