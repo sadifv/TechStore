@@ -24,14 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchProducts();
 
     // ==========================================
-    // HELPER: Normalizar precio (acepta , y .)
-    // ==========================================
-    function parsePrice(value) {
-        if (value === null || value === undefined) return NaN;
-        return parseFloat(String(value).trim().replace(',', '.'));
-    }
-
-    // ==========================================
     // MODAL DE PRODUCTO (Crear/Editar)
     // ==========================================
 
@@ -56,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = {
                 name: document.getElementById('prod-name').value.trim(),
                 description: document.getElementById('prod-description').value.trim(),
-                price: parsePrice(document.getElementById('prod-price').value),
+                price: window.parsePrice(document.getElementById('prod-price').value),
                 stock: parseInt(document.getElementById('prod-stock').value, 10),
                 category: document.getElementById('prod-category').value,
                 image: document.getElementById('prod-image').value.trim()
@@ -106,17 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnCloseFlashModal) btnCloseFlashModal.addEventListener('click', closeFlashModal);
     if (btnCancelFlashModal) btnCancelFlashModal.addEventListener('click', closeFlashModal);
 
-    // Cálculo en tiempo real del precio final
+    // Cálculo en tiempo real del precio final (usa helper centralizado)
     const updateFinalPrice = () => {
-        const currentPrice = parseFloat(flashCurrentPrice.dataset.price || 0);
-        const discount = parseFloat(flashDiscount.value || 0);
-
-        if (currentPrice > 0 && discount >= 0 && discount <= 90) {
-            const finalPrice = Math.round((currentPrice * (1 - discount / 100)) * 100) / 100;
-            flashFinalPrice.textContent = `$${finalPrice.toFixed(2)}`;
-        } else {
-            flashFinalPrice.textContent = '$0.00';
-        }
+        window.updateFinalPrice(flashCurrentPrice, flashDiscount, flashFinalPrice);
     };
 
     if (flashDiscount) flashDiscount.addEventListener('input', updateFinalPrice);

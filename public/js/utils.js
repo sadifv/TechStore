@@ -154,3 +154,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+/**
+ * Normaliza un valor de precio (acepta comas, puntos, espacios, símbolos)
+ * @param {string|number} value - Valor a normalizar
+ * @returns {number} - Valor numérico o NaN si inválido
+ */
+function parsePrice(value) {
+    if (value === null || value === undefined || value === '') return NaN;
+    // Elimina todo excepto dígitos, punto, coma y signo menos
+    const cleaned = String(value).replace(/[^\d.,-]/g, '').replace(',', '.');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? NaN : parsed;
+}
+
+/**
+ * Calcula el precio final aplicando un descuento porcentual
+ * @param {number} currentPrice - Precio actual
+ * @param {number} discount - Descuento en porcentaje (0-100)
+ * @returns {number} - Precio final redondeado a 2 decimales
+ */
+function calculateFinalPrice(currentPrice, discount) {
+    if (currentPrice <= 0 || discount < 0 || discount > 100) return 0;
+    // Redondeo correcto: evita errores de punto flotante
+    return Math.round(currentPrice * (100 - discount)) / 100;
+}
+
+/**
+ * Actualiza el elemento de precio final en el modal de Flash Sale
+ * @param {HTMLElement} currentPriceEl - Elemento con data-price
+ * @param {HTMLInputElement} discountInput - Input del descuento
+ * @param {HTMLElement} finalPriceEl - Elemento donde mostrar resultado
+ */
+function updateFinalPrice(currentPriceEl, discountInput, finalPriceEl) {
+    if (!currentPriceEl || !discountInput || !finalPriceEl) return;
+    
+    const currentPrice = parseFloat(currentPriceEl.dataset.price || 0);
+    const discount = parseFloat(discountInput.value || 0);
+    
+    if (currentPrice > 0 && discount >= 0 && discount <= 90) {
+        const finalPrice = calculateFinalPrice(currentPrice, discount);
+        finalPriceEl.textContent = `$${finalPrice.toFixed(2)}`;
+    } else {
+        finalPriceEl.textContent = '$0.00';
+    }
+}
+
+window.parsePrice = parsePrice;
+window.calculateFinalPrice = calculateFinalPrice;
+window.updateFinalPrice = updateFinalPrice;

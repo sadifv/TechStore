@@ -165,6 +165,14 @@ const activateFlashSale = async (req, res, next) => {
             });
         }
 
+        // Validar durationHours: entero entre 1 y 168 horas (1 semana máx)
+        if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 168) {
+            return res.status(400).json({
+                success: false,
+                error: 'La duración debe ser un número entero entre 1 y 168 horas (1 semana máximo).'
+            });
+        }
+
         const product = await Product.findById(req.params.id);
 
         if (!product) {
