@@ -27,6 +27,26 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 10,
         min: 0
+    },
+    // FLASH SALE (Oferta Relámpago)
+    flashSale: {
+        type: Boolean,
+        default: false
+    },
+    flashSaleDiscount: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 90
+    },
+    flashSaleEndsAt: {
+        type: Date,
+        default: null
+    },
+    originalPrice: {
+        type: Number,
+        default: null,
+        min: 0
     }
 }, {
     timestamps: true

@@ -1,0 +1,87 @@
+<%- include('partials/header') %>
+
+<article class="product-detail-page">
+
+  <!-- Columna izquierda: Imagen -->
+  <figure class="product-detail-media">
+    <img src="<%= product.image %>" alt="<%= product.name %>" />
+    <% if (product.flashSale && product.flashSaleEndsAt && new Date(product.flashSaleEndsAt) > new Date()) { %>
+      <span class="product-detail-discount">-<%= product.flashSaleDiscount %>%</span>
+    <% } %>
+  </figure>
+
+  <!-- Columna derecha: Info -->
+  <section class="product-detail-info">
+    
+    <nav aria-label="Navegación">
+      <a href="/catalogo" class="product-detail-back">
+        ← Volver al catálogo
+      </a>
+    </nav>
+
+    <p class="product-detail-category">
+      <i class="ri-price-tag-3-line" aria-hidden="true"></i>
+      <%= product.category %>
+    </p>
+
+    <h1><%= product.name %></h1>
+
+    <% if (product.description) { %>
+      <p class="product-detail-description"><%= product.description %></p>
+    <% } %>
+
+    <section class="product-detail-price-section" aria-label="Precio">
+      <% if (product.flashSale && product.originalPrice && product.flashSaleEndsAt && new Date(product.flashSaleEndsAt) > new Date()) { %>
+        <p class="product-detail-price-original">
+          <del>$<%= product.originalPrice.toFixed(2) %></del>
+        </p>
+      <% } %>
+      <p class="product-detail-price">
+        $<%= product.price.toFixed(2) %>
+      </p>
+    </section>
+
+    <section class="product-detail-stock" aria-label="Disponibilidad">
+      <% if (product.stock > 0) { %>
+        <p class="stock-in">
+          <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+          En stock · <%= product.stock %> unidades disponibles
+        </p>
+      <% } else { %>
+        <p class="stock-out">
+          <i class="ri-close-circle-line" aria-hidden="true"></i>
+          Agotado temporalmente
+        </p>
+      <% } %>
+    </section>
+
+    <form class="product-detail-actions" id="add-to-cart-form">
+      <input type="hidden" name="productId" value="<%= product._id %>" />
+      
+      <label for="quantity" class="sr-only">Cantidad</label>
+      <input 
+        type="number" 
+        id="quantity" 
+        name="quantity" 
+        value="1" 
+        min="1" 
+        max="<%= product.stock %>" 
+        <%= product.stock === 0 ? 'disabled' : '' %>
+      />
+
+      <button 
+        type="submit" 
+        class="btn btn-primary btn-block" 
+        <%= product.stock === 0 ? 'disabled' : '' %>
+      >
+        <i class="ri-shopping-cart-line" aria-hidden="true"></i>
+        <%= product.stock === 0 ? 'Producto agotado' : 'Añadir al carrito' %>
+      </button>
+    </form>
+
+  </section>
+</article>
+
+<script src="/js/product-detail.js?v=<%= Date.now() %>" defer></script>
+
+<%- include('partials/footer') %>

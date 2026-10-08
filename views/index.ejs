@@ -1,6 +1,8 @@
 <%- include('partials/header') %>
 
-<!-- Hero / Inicio -->
+<!-- ==========================================
+     HERO / INICIO
+     ========================================== -->
 <section id="inicio" class="hero">
     <article class="hero-content">
         <header>
@@ -14,20 +16,66 @@
     </figure>
 </section>
 
-<!-- Oferta Relámpago (Flash Sale) -->
-<section class="flash-sale-section">
+<!-- ==========================================
+     OFERTA RELÁMPAGO (FLASH SALE)
+     ========================================== -->
+<% if (flashSale) { %>
+<section class="flash-sale-section" aria-labelledby="flash-sale-title">
     <article class="flash-sale-card">
-        <img src="/images/flash-sale.jpg" alt="Oferta Relámpago Tech" />
+
+        <figure class="flash-sale-media">
+            <img src="<%= flashSale.image %>" alt="<%= flashSale.name %>" />
+            <span class="flash-sale-discount-badge">-<%= flashSale.flashSaleDiscount %>%</span>
+        </figure>
+
         <header class="flash-sale-info">
-            <span class="badge">¡Oferta por Tiempo Limitado!</span>
-            <h2>Descuentos de hasta el 50% en Tech Seleccionado</h2>
-            <p>Aprovecha nuestras promociones exclusivas del mes. Unidades limitadas.</p>
-            <a href="/catalogo" class="btn btn-secondary">Comprar Ahora</a>
+            <span class="badge flash-sale-badge">🔥 ¡Oferta por Tiempo Limitado!</span>
+            <h2 id="flash-sale-title"><%= flashSale.name %></h2>
+
+            <p class="flash-sale-description">
+                <%= flashSale.description || 'Aprovecha esta oferta exclusiva por tiempo limitado.' %>
+            </p>
+
+            <p class="flash-sale-prices">
+                <del>$<%= flashSale.originalPrice.toFixed(2) %></del>
+                <strong>$<%= flashSale.price.toFixed(2) %></strong>
+            </p>
+
+            <section class="flash-sale-timer" data-ends-at="<%= flashSale.flashSaleEndsAt.toISOString() %>" aria-label="Tiempo restante">
+                <p class="flash-sale-timer-label">⏰ Termina en:</p>
+                <output class="flash-sale-countdown" aria-live="off">
+                    <span class="countdown-block">
+                        <strong data-days>--</strong>
+                        <small>Días</small>
+                    </span>
+                    <span class="countdown-block">
+                        <strong data-hours>--</strong>
+                        <small>Horas</small>
+                    </span>
+                    <span class="countdown-block">
+                        <strong data-minutes>--</strong>
+                        <small>Min</small>
+                    </span>
+                    <span class="countdown-block">
+                        <strong data-seconds>--</strong>
+                        <small>Seg</small>
+                    </span>
+                </output>
+            </section>
+
+            <a href="/producto/<%= flashSale._id %>" class="btn btn-primary btn-lg flash-sale-cta">
+                <i class="ri-shopping-cart-2-line" aria-hidden="true"></i>
+                Comprar Ahora
+            </a>
         </header>
+
     </article>
 </section>
+<% } %>
 
-<!-- Sección de Productos Destacados (Máximo 6 productos) -->
+<!-- ==========================================
+     PRODUCTOS DESTACADOS
+     ========================================== -->
 <section id="destacados" class="products-section" aria-labelledby="featured-heading">
     <header class="section-header">
         <h2 id="featured-heading">Productos Destacados</h2>
@@ -38,16 +86,24 @@
             <% products.forEach(product => { %>
                 <li>
                     <article class="product-card">
-                        <img src="<%= product.image || '/images/placeholder.jpg' %>" alt="<%= product.name %>" loading="lazy" />
-                        <header>
-                            <h3><%= product.name %></h3>
-                        </header>
-                        <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
+
+                        <a href="/producto/<%= product._id %>" class="product-card-link" aria-label="Ver detalles de <%= product.name %>">
+                            <figure class="product-card-media">
+                                <img src="<%= product.image || '/images/placeholder.jpg' %>" alt="<%= product.name %>" loading="lazy" />
+                            </figure>
+                            <header>
+                                <h3><%= product.name %></h3>
+                            </header>
+                            <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
+                        </a>
+
                         <footer>
                             <button type="button" class="btn btn-primary add-to-cart-btn" data-id="<%= product._id %>">
+                                <i class="ri-shopping-cart-line" aria-hidden="true"></i>
                                 Agregar al Carrito
                             </button>
                         </footer>
+
                     </article>
                 </li>
             <% }) %>
@@ -68,7 +124,9 @@
     </footer>
 </section>
 
-<!-- Asistente IA -->
+<!-- ==========================================
+     ASISTENTE IA
+     ========================================== -->
 <section 
   id="ai-assistant" 
   class="ai-section" 
@@ -182,7 +240,9 @@
   </article>
 </section>
 
-<!-- Blog / Artículos -->
+<!-- ==========================================
+     BLOG
+     ========================================== -->
 <section id="blog" class="blog-section">
     <header class="section-header">
         <h2>Últimas Novedades en Tecnología</h2>
@@ -218,7 +278,9 @@
     </ul>
 </section>
 
-<!-- Testimonios de Clientes -->
+<!-- ==========================================
+     TESTIMONIOS
+     ========================================== -->
 <section class="testimonials-section">
     <header class="section-header">
         <h2>Lo que dicen nuestros clientes</h2>
@@ -248,7 +310,9 @@
     </ul>
 </section>
 
-<!-- Newsletter / Suscripción -->
+<!-- ==========================================
+     NEWSLETTER
+     ========================================== -->
 <section class="newsletter-section">
     <article class="newsletter-container">
         <figure class="newsletter-media">
@@ -269,6 +333,11 @@
         </header>
     </article>
 </section>
+
+<!-- ==========================================
+     SCRIPTS DE LA HOME
+     ========================================== -->
+<script src="/js/flash-sale.js?v=<%= Date.now() %>" defer></script>
 
 <!-- Partial: Contacto -->
 <%- include('partials/contact') %>

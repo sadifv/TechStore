@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { requireAdmin } = require('../middleware/authMiddleware');
 const { logoutUser } = require('../controllers/authController');
-const { createProduct, updateProduct, deleteProduct } = require('../controllers/productController');
+const {
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    activateFlashSale,
+    deactivateFlashSale
+} = require('../controllers/productController');
 const Product = require('../models/Product');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
@@ -48,6 +54,10 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
 router.post('/products', requireAdmin, createProduct);
 router.put('/products/:id', requireAdmin, updateProduct);
 router.delete('/products/:id', requireAdmin, deleteProduct);
+
+// Rutas API para Flash Sale
+router.post('/products/:id/flash-sale', requireAdmin, activateFlashSale);
+router.delete('/products/:id/flash-sale', requireAdmin, deactivateFlashSale);
 
 // Rutas API CRUD para Eliminación de Mensajes y Suscriptores
 router.delete('/messages/:id', requireAdmin, async (req, res) => {

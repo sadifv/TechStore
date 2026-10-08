@@ -8,10 +8,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnCancelModal = document.getElementById('btn-cancel-modal');
 
+    // Flash Sale modal
+    const flashModal = document.getElementById('flash-sale-modal');
+    const flashForm = document.getElementById('flash-sale-form');
+    const btnCloseFlashModal = document.getElementById('btn-close-flash-modal');
+    const btnCancelFlashModal = document.getElementById('btn-cancel-flash-modal');
+    const flashProductId = document.getElementById('flash-product-id');
+    const flashProductName = document.getElementById('flash-product-name');
+    const flashCurrentPrice = document.getElementById('flash-current-price');
+    const flashDiscount = document.getElementById('flash-discount');
+    const flashDuration = document.getElementById('flash-duration');
+    const flashFinalPrice = document.getElementById('flash-final-price');
+
     // Cargar catálogo al iniciar
     fetchProducts();
 
-    // Abrir diálogo para crear
+    // ==========================================
+    // HELPER: Normalizar precio (acepta , y .)
+    // ==========================================
+    function parsePrice(value) {
+        if (value === null || value === undefined) return NaN;
+        return parseFloat(String(value).trim().replace(',', '.'));
+    }
+
+    // ==========================================
+    // MODAL DE PRODUCTO (Crear/Editar)
+    // ==========================================
+
     if (btnOpenCreate) {
         btnOpenCreate.addEventListener('click', () => {
             productForm.reset();
@@ -21,25 +44,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cerrar diálogo
     const closeModal = () => productModal.close();
     if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
     if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
 
-    // Enviar formulario (Crear o Editar)
     if (productForm) {
         productForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const id = document.getElementById('product-id').value;
             const payload = {
-                name: document.getElementById('prod-name').value,
-                description: document.getElementById('prod-description').value,
-                price: parseFloat(document.getElementById('prod-price').value),
+                name: document.getElementById('prod-name').value.trim(),
+                description: document.getElementById('prod-description').value.trim(),
+                price: parsePrice(document.getElementById('prod-price').value),
                 stock: parseInt(document.getElementById('prod-stock').value, 10),
                 category: document.getElementById('prod-category').value,
-                image: document.getElementById('prod-image').value
+                image: document.getElementById('prod-image').value.trim()
             };
+
+            // Validación rápida
+            if (isNaN(payload.price) || payload.price < 0) {
+                window.showToast('El precio debe ser un número válido mayor o igual a 0.', 'error');
+                return;
+            }
 
             const isEditing = Boolean(id);
             const url = isEditing ? `/admin/products/${id}` : '/admin/products';
@@ -55,44 +82,106 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (data.success) {
-                    alert(isEditing ? 'Producto actualizado correctamente' : 'Producto creado con éxito');
+                    window.showToast(
+                        isEditing ? 'Producto actualizado correctamente' : 'Producto creado con éxito',
+                        'success'
+                    );
                     closeModal();
                     fetchProducts();
                 } else {
-                    alert(data.error || 'Ocurrió un error al procesar la solicitud');
+                    window.showToast(data.error || 'Ocurrió un error al procesar la solicitud', 'error');
                 }
             } catch (err) {
                 console.error('Error al guardar producto:', err);
-                alert('Error de conexión con el servidor.');
+                window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
     }
 
-    // Obtener catálogo desde la API
+    // ==========================================
+    // MODAL DE FLASH SALE
+    // ==========================================
+
+    const closeFlashModal = () => flashModal.close();
+    if (btnCloseFlashModal) btnCloseFlashModal.addEventListener('click', closeFlashModal);
+    if (btnCancelFlashModal) btnCancelFlashModal.addEventListener('click', closeFlashModal);
+
+    // Cálculo en tiempo real del precio final
+    const updateFinalPrice = () => {
+        const currentPrice = parseFloat(flashCurrentPrice.dataset.price || 0);
+        const discount = parseFloat(flashDiscount.value || 0);
+
+        if (currentPrice > 0 && discount >= 0 && discount <= 90) {
+            const finalPrice = Math.round((currentPrice * (1 - discount / 100)) * 100) / 100;
+            flashFinalPrice.textContent = `$${finalPrice.toFixed(2)}`;
+        } else {
+            flashFinalPrice.textContent = '$0.00';
+        }
+    };
+
+    if (flashDiscount) flashDiscount.addEventListener('input', updateFinalPrice);
+    if (flashDuration) flashDuration.addEventListener('input', updateFinalPrice);
+
+    // Submit del formulario de flash sale
+    if (flashForm) {
+        flashForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = flashProductId.value;
+            const payload = {
+                discount: parseInt(flashDiscount.value, 10),
+                durationHours: parseInt(flashDuration.value, 10)
+            };
+
+            try {
+                const res = await fetch(`/admin/products/${id}/flash-sale`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    window.showToast(data.message, 'success');
+                    closeFlashModal();
+                    fetchProducts();
+                } else {
+                    window.showToast(data.error || 'Error al activar la oferta', 'error');
+                }
+            } catch (err) {
+                console.error('Error al activar flash sale:', err);
+                window.showToast('Error de conexión con el servidor.', 'error');
+            }
+        });
+    }
+
+    // ==========================================
+    // OBTENER Y RENDERIZAR PRODUCTOS
+    // ==========================================
+
     async function fetchProducts() {
         try {
-            const res = await fetch('/api/products');
+            const res = await fetch('/api/products?limit=50');
             const data = await res.json();
 
             if (data.success) {
-                renderProducts(data.data);
+                renderProducts(data.products);
             }
         } catch (err) {
             console.error('Error al cargar productos:', err);
         }
     }
 
-    // Renderizar la lista construyendo nodos DOM semánticos
     function renderProducts(products) {
         if (!productsList) return;
 
-        // Limpiar contenido previo del tbody
         productsList.replaceChildren();
 
         if (products.length === 0) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 6;
+            td.colSpan = 7;
             td.textContent = 'No hay productos registrados.';
             tr.appendChild(td);
             productsList.appendChild(tr);
@@ -103,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         products.forEach(prod => {
             const tr = document.createElement('tr');
+            tr.dataset.id = prod._id;
 
             // 1. Imagen
             const tdImage = document.createElement('td');
@@ -128,15 +218,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 4. Precio
             const tdPrice = document.createElement('td');
-            tdPrice.textContent = `$${Number(prod.price).toFixed(2)}`;
+            if (prod.flashSale && prod.originalPrice) {
+                const priceContainer = document.createElement('span');
+                priceContainer.classList.add('price-container');
+
+                const original = document.createElement('del');
+                original.classList.add('price-original');
+                original.textContent = `$${Number(prod.originalPrice).toFixed(2)}`;
+
+                const final = document.createElement('strong');
+                final.classList.add('price-flash');
+                final.textContent = ` $${Number(prod.price).toFixed(2)}`;
+
+                priceContainer.append(original, final);
+                tdPrice.appendChild(priceContainer);
+            } else {
+                tdPrice.textContent = `$${Number(prod.price).toFixed(2)}`;
+            }
 
             // 5. Stock
             const tdStock = document.createElement('td');
             tdStock.textContent = prod.stock;
 
-            // 6. Acciones
+            // 6. Estado de Oferta
+            const tdFlashStatus = document.createElement('td');
+            if (prod.flashSale && prod.flashSaleEndsAt) {
+                const endsAt = new Date(prod.flashSaleEndsAt);
+                if (endsAt > new Date()) {
+                    const badge = document.createElement('span');
+                    badge.classList.add('badge-flash-active');
+                    badge.textContent = `🔥 ${prod.flashSaleDiscount}% activo`;
+                    badge.title = `Termina: ${endsAt.toLocaleString()}`;
+                    tdFlashStatus.appendChild(badge);
+                } else {
+                    const badge = document.createElement('span');
+                    badge.classList.add('badge-flash-expired');
+                    badge.textContent = 'Expirada';
+                    tdFlashStatus.appendChild(badge);
+                }
+            } else {
+                const span = document.createElement('span');
+                span.classList.add('badge-flash-inactive');
+                span.textContent = '—';
+                tdFlashStatus.appendChild(span);
+            }
+
+            // 7. Acciones
             const tdActions = document.createElement('td');
-            
+
             const btnEdit = document.createElement('button');
             btnEdit.type = 'button';
             btnEdit.className = 'btn btn-sm btn-edit';
@@ -149,58 +278,139 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDelete.textContent = 'Eliminar';
             btnDelete.addEventListener('click', () => deleteProduct(prod._id));
 
-            tdActions.append(btnEdit, ' ', btnDelete);
+            // Botón de Flash Sale
+            const btnFlash = document.createElement('button');
+            btnFlash.type = 'button';
+            btnFlash.className = 'btn btn-sm btn-flash';
+            if (prod.flashSale && prod.flashSaleEndsAt && new Date(prod.flashSaleEndsAt) > new Date()) {
+                btnFlash.textContent = '⏹️ Detener';
+                btnFlash.title = 'Detener la oferta y restaurar precio';
+                btnFlash.addEventListener('click', () => deactivateFlashSale(prod._id));
+            } else {
+                btnFlash.textContent = '🔥 Oferta';
+                btnFlash.title = 'Poner en oferta relámpago';
+                btnFlash.addEventListener('click', () => openFlashModal(prod));
+            }
 
-            // Ensamblar la fila
-            tr.append(tdImage, tdName, tdCategory, tdPrice, tdStock, tdActions);
+            tdActions.append(btnEdit, ' ', btnDelete, ' ', btnFlash);
+
+            // Ensamblar fila
+            tr.append(tdImage, tdName, tdCategory, tdPrice, tdStock, tdFlashStatus, tdActions);
             productsList.appendChild(tr);
         });
     }
 
-    // Editar Producto
+    // ==========================================
+    // ACCIONES: EDITAR, ELIMINAR
+    // ==========================================
+
     function editProduct(id) {
         const prod = (window.adminProductsCache || []).find(p => p._id === id);
         if (!prod) return;
 
         document.getElementById('product-id').value = prod._id;
         document.getElementById('prod-name').value = prod.name;
-        document.getElementById('prod-description').value = prod.description;
+        document.getElementById('prod-description').value = prod.description || '';
         document.getElementById('prod-price').value = prod.price;
         document.getElementById('prod-stock').value = prod.stock;
-        document.getElementById('prod-category').value = prod.category;
         document.getElementById('prod-image').value = prod.image;
+
+        // Asegurar que la categoría exista en el <select>
+        const categorySelect = document.getElementById('prod-category');
+        const categoryExists = Array.from(categorySelect.options)
+            .some(opt => opt.value === prod.category);
+
+        if (!categoryExists && prod.category) {
+            const newOption = document.createElement('option');
+            newOption.value = prod.category;
+            newOption.textContent = prod.category;
+            categorySelect.appendChild(newOption);
+        }
+        categorySelect.value = prod.category || '';
 
         modalTitle.textContent = 'Editar Producto';
         productModal.showModal();
     }
 
-    // Eliminar Producto
     async function deleteProduct(id) {
-        if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+        const confirmed = await window.showConfirm(
+            '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.',
+            'Eliminar'
+        );
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/admin/products/${id}`, { method: 'DELETE' });
             const data = await res.json();
 
             if (data.success) {
-                alert('Producto eliminado correctamente');
+                window.showToast('Producto eliminado correctamente', 'success');
                 fetchProducts();
             } else {
-                alert(data.error || 'Error al eliminar');
+                window.showToast(data.error || 'Error al eliminar', 'error');
             }
         } catch (err) {
             console.error('Error al eliminar producto:', err);
-            alert('Error de conexión con el servidor.');
+            window.showToast('Error de conexión con el servidor.', 'error');
         }
     }
 
-    // --- ELIMINAR MENSAJES DE CONTACTO, SUSCRIPTORES Y USUARIOS ---
+    // ==========================================
+    // FLASH SALE: ABRIR MODAL Y DESACTIVAR
+    // ==========================================
+
+    function openFlashModal(prod) {
+        flashProductId.value = prod._id;
+        flashProductName.textContent = prod.name;
+        flashCurrentPrice.textContent = `$${Number(prod.price).toFixed(2)}`;
+        flashCurrentPrice.dataset.price = prod.price;
+        flashDiscount.value = 20;
+        flashDuration.value = 24;
+        updateFinalPrice();
+        flashModal.showModal();
+    }
+
+    async function deactivateFlashSale(id) {
+        const confirmed = await window.showConfirm(
+            '¿Detener la oferta y restaurar el precio original?',
+            'Detener'
+        );
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch(`/admin/products/${id}/flash-sale`, {
+                method: 'DELETE'
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                window.showToast(data.message, 'success');
+                fetchProducts();
+            } else {
+                window.showToast(data.error || 'Error al detener la oferta', 'error');
+            }
+        } catch (err) {
+            console.error('Error al detener flash sale:', err);
+            window.showToast('Error de conexión con el servidor.', 'error');
+        }
+    }
+
+    // ==========================================
+    // ELIMINAR MENSAJES, SUSCRIPTORES, USUARIOS
+    // ==========================================
+
     document.addEventListener('click', async (e) => {
-        // Eliminar Mensaje de Contacto
         const deleteMsgBtn = e.target.closest('.btn-delete-message');
         if (deleteMsgBtn) {
             const id = deleteMsgBtn.getAttribute('data-id');
-            if (!id || !confirm('¿Estás seguro de que deseas eliminar este mensaje?')) return;
+            if (!id) return;
+
+            const confirmed = await window.showConfirm(
+                '¿Estás seguro de que deseas eliminar este mensaje?',
+                'Eliminar'
+            );
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/admin/messages/${id}`, { method: 'DELETE' });
@@ -209,21 +419,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     const tr = deleteMsgBtn.closest('tr');
                     if (tr) tr.remove();
+                    window.showToast('Mensaje eliminado correctamente', 'success');
                 } else {
-                    alert(data.error || 'Error al eliminar el mensaje');
+                    window.showToast(data.error || 'Error al eliminar el mensaje', 'error');
                 }
             } catch (err) {
                 console.error('Error al eliminar mensaje:', err);
-                alert('Error de conexión con el servidor.');
+                window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;
         }
 
-        // Eliminar Suscriptor al Boletín
         const deleteSubBtn = e.target.closest('.btn-delete-subscriber');
         if (deleteSubBtn) {
             const id = deleteSubBtn.getAttribute('data-id');
-            if (!id || !confirm('¿Estás seguro de que deseas eliminar este suscriptor?')) return;
+            if (!id) return;
+
+            const confirmed = await window.showConfirm(
+                '¿Estás seguro de que deseas eliminar este suscriptor?',
+                'Eliminar'
+            );
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/admin/subscribers/${id}`, { method: 'DELETE' });
@@ -232,21 +448,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     const tr = deleteSubBtn.closest('tr');
                     if (tr) tr.remove();
+                    window.showToast('Suscriptor eliminado correctamente', 'success');
                 } else {
-                    alert(data.error || 'Error al eliminar el suscriptor');
+                    window.showToast(data.error || 'Error al eliminar el suscriptor', 'error');
                 }
             } catch (err) {
                 console.error('Error al eliminar suscriptor:', err);
-                alert('Error de conexión con el servidor.');
+                window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;
         }
 
-        // Eliminar Usuario Registrado
         const deleteUserBtn = e.target.closest('.btn-delete-user');
         if (deleteUserBtn) {
             const id = deleteUserBtn.getAttribute('data-id');
-            if (!id || !confirm('¿Estás seguro de que deseas eliminar este usuario?')) return;
+            if (!id) return;
+
+            const confirmed = await window.showConfirm(
+                '¿Estás seguro de que deseas eliminar este usuario?',
+                'Eliminar'
+            );
+            if (!confirmed) return;
 
             try {
                 const res = await fetch(`/admin/users/${id}`, { method: 'DELETE' });
@@ -255,12 +477,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     const tr = deleteUserBtn.closest('tr');
                     if (tr) tr.remove();
+                    window.showToast('Usuario eliminado correctamente', 'success');
                 } else {
-                    alert(data.error || 'Error al eliminar el usuario');
+                    window.showToast(data.error || 'Error al eliminar el usuario', 'error');
                 }
             } catch (err) {
                 console.error('Error al eliminar usuario:', err);
-                alert('Error de conexión con el servidor.');
+                window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;
         }

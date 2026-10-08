@@ -1,18 +1,18 @@
-</main>
-
-<!-- Panel Lateral Semántico del Carrito -->
+<!-- ==========================================
+     CARRITO (DRAWER LATERAL)
+     ========================================== -->
 <aside id="cart-drawer" class="cart-drawer" aria-hidden="true" aria-label="Carrito de compras">
     <section class="cart-drawer-overlay" id="cart-overlay"></section>
     <section class="cart-drawer-content">
         <header class="cart-drawer-header">
-            <h3><i class="ri-shopping-cart-2-line"></i> Tu Carrito</h3>
+            <h3><i class="ri-shopping-cart-2-line" aria-hidden="true"></i> Tu Carrito</h3>
             <button id="cart-close-btn" class="cart-close-btn" type="button" aria-label="Cerrar carrito">
-                <i class="ri-close-line"></i>
+                <i class="ri-close-line" aria-hidden="true"></i>
             </button>
         </header>
 
-        <section id="cart-drawer-body" class="cart-drawer-body">
-            <!-- Los elementos se insertan dinámicamente mediante createElement -->
+        <section id="cart-drawer-body" class="cart-drawer-body" aria-label="Productos en el carrito">
+            <!-- Los elementos se insertan dinámicamente -->
         </section>
 
         <footer class="cart-drawer-footer">
@@ -21,97 +21,162 @@
                 <strong id="cart-total">$0.00</strong>
             </p>
             <button id="cart-checkout-btn" type="button" class="btn btn-primary btn-block">
+                <i class="ri-secure-payment-line" aria-hidden="true"></i>
                 Proceder al Pago
             </button>
         </footer>
     </section>
 </aside>
 
-<!-- Modal Semántico de Checkout / Confirmación de Pago -->
-<dialog id="checkout-modal" class="checkout-modal">
-    <div class="modal-container">
+<!-- ==========================================
+     MODAL DE CHECKOUT
+     ========================================== -->
+<dialog id="checkout-modal" class="checkout-modal" aria-labelledby="checkout-modal-title">
+    <form id="checkout-form" class="modal-container" method="dialog">
+
         <header class="modal-header">
-            <h3><i class="ri-secure-payment-line"></i> Finalizar Compra</h3>
+            <h3 id="checkout-modal-title">
+                <i class="ri-secure-payment-line" aria-hidden="true"></i>
+                Finalizar Compra
+            </h3>
             <button id="close-checkout-modal" type="button" class="modal-close-btn" aria-label="Cerrar modal">
-                <i class="ri-close-line"></i>
+                <i class="ri-close-line" aria-hidden="true"></i>
             </button>
         </header>
-        
-        <form id="checkout-form" class="modal-body">
-            <div class="form-group">
-                <label for="payment-method">Método de Pago</label>
-                <select id="payment-method" name="paymentMethod" class="form-control" required>
-                    <option value="card">Tarjeta de Crédito / Débito</option>
-                    <option value="transfer">Transferencia Bancaria Directa</option>
-                    <option value="cash">Pago contra entrega (Efectivo)</option>
-                </select>
-            </div>
 
-            <div class="checkout-summary-box">
-                <span>Monto Total a Pagar:</span>
-                <strong id="checkout-modal-total">$0.00</strong>
-            </div>
+        <fieldset class="form-group">
+            <legend>Método de Pago</legend>
+            <label for="payment-method" class="sr-only">Selecciona tu método de pago</label>
+            <select id="payment-method" name="paymentMethod" class="form-control" required>
+                <option value="card">Tarjeta de Crédito / Débito</option>
+                <option value="transfer">Transferencia Bancaria Directa</option>
+                <option value="cash">Pago contra entrega (Efectivo)</option>
+            </select>
+        </fieldset>
 
-            <div id="checkout-status" class="form-status" aria-live="polite"></div>
+        <section class="checkout-summary-box" aria-label="Resumen del pago">
+            <span>Monto Total a Pagar:</span>
+            <strong id="checkout-modal-total">$0.00</strong>
+        </section>
 
-            <footer class="modal-footer">
-                <button type="submit" id="btn-confirm-order" class="btn btn-primary btn-block">
-                    Confirmar Pedido
-                </button>
-            </footer>
-        </form>
-    </div>
+        <output id="checkout-status" class="form-status" aria-live="polite"></output>
+
+        <footer class="modal-footer">
+            <button type="submit" id="btn-confirm-order" class="btn btn-primary btn-block">
+                <i class="ri-check-line" aria-hidden="true"></i>
+                Confirmar Pedido
+            </button>
+        </footer>
+
+    </form>
 </dialog>
 
-<footer class="footer" role="contentinfo">
+<!-- ==========================================
+     FOOTER PRINCIPAL
+     ========================================== -->
+<footer class="footer">
+
+    <!-- Columna 1: Info de la tienda -->
     <section class="footer-info">
-        <h3><i class="ri-store-line"></i> TechStore</h3>
+        <h3><i class="ri-store-line" aria-hidden="true"></i> TechStore</h3>
         <p>Tu tienda de tecnología de confianza. Ofrecemos los mejores productos con la mejor garantía y servicio.</p>
+        <nav class="footer-socials" aria-label="Redes sociales">
+            <a href="https://instagram.com/tu_usuario" target="_blank" rel="noopener" aria-label="Instagram">
+                <i class="ri-instagram-line" aria-hidden="true"></i>
+            </a>
+            <a href="https://twitter.com/tu_usuario" target="_blank" rel="noopener" aria-label="Twitter">
+                <i class="ri-twitter-x-line" aria-hidden="true"></i>
+            </a>
+            <a href="https://facebook.com/tu_usuario" target="_blank" rel="noopener" aria-label="Facebook">
+                <i class="ri-facebook-circle-line" aria-hidden="true"></i>
+            </a>
+            <a href="https://wa.me/593963976623" target="_blank" rel="noopener" aria-label="WhatsApp">
+                <i class="ri-whatsapp-line" aria-hidden="true"></i>
+            </a>
+        </nav>
     </section>
-    
-    <section class="footer-links">
+
+    <!-- Columna 2: Enlaces rápidos -->
+    <nav class="footer-links" aria-label="Enlaces rápidos">
         <h4>Enlaces rápidos</h4>
         <ul>
-            <li><a href="/#inicio">Inicio</a></li>
-            <li><a href="/#catalogo">Catálogo</a></li>
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/catalogo">Catálogo</a></li>
             <li><a href="/#contacto">Contacto</a></li>
             <li><a href="/#ia-assistant">IA Assistant</a></li>
+            <li><a href="/#blog">Blog</a></li>
         </ul>
-    </section>
-    
+    </nav>
+
+    <!-- Columna 3: Categorías -->
+    <nav class="footer-links" aria-label="Categorías">
+        <h4>Categorías</h4>
+        <ul>
+            <li><a href="/catalogo?category=Laptops">Laptops</a></li>
+            <li><a href="/catalogo?category=Smartphones">Smartphones</a></li>
+            <li><a href="/catalogo?category=Audio">Audio</a></li>
+            <li><a href="/catalogo?category=Periféricos">Periféricos</a></li>
+            <li><a href="/catalogo?category=Monitores">Monitores</a></li>
+        </ul>
+    </nav>
+
+    <!-- Columna 4: Contacto -->
     <section class="footer-contact">
         <h4>Contacto</h4>
         <address>
-            <p><i class="ri-map-pin-line"></i>Villa España, Guayaquil, Ecuador</p>
-            <p><i class="ri-phone-line"></i> +593 0963976623</p>
-            <p><i class="ri-mail-line"></i> <a href="mailto:sadiflores20201@gmail.com">sadiflores20201@gmail.com</a></p>
+            <p>
+                <i class="ri-map-pin-line" aria-hidden="true"></i>
+                Villa España, Guayaquil, Ecuador
+            </p>
+            <p>
+                <i class="ri-phone-line" aria-hidden="true"></i>
+                <a href="tel:+593963976623">+593 0963976623</a>
+            </p>
+            <p>
+                <i class="ri-mail-line" aria-hidden="true"></i>
+                <a href="mailto:sadiflores20201@gmail.com">sadiflores20201@gmail.com</a>
+            </p>
+            <p>
+                <i class="ri-time-line" aria-hidden="true"></i>
+                Lun-Vie: 9:00 - 18:00
+            </p>
         </address>
     </section>
-    
+
+    <!-- Barra inferior -->
     <section class="footer-bottom">
-        <p>&copy; <%= new Date().getFullYear() %> TechStore. Todos los derechos reservados.</p>
-        <p class="footer-legal">
+        <p>
+            &copy; <time datetime="<%= new Date().getFullYear() %>"><%= new Date().getFullYear() %></time>
+            TechStore. Todos los derechos reservados.
+        </p>
+        <nav class="footer-legal" aria-label="Enlaces legales">
             <a href="/privacidad">Política de privacidad</a>
             <span aria-hidden="true">·</span>
             <a href="/terminos">Términos y condiciones</a>
             <span aria-hidden="true">·</span>
             <a href="/cookies">Cookies</a>
-        </p>
+        </nav>
     </section>
+
 </footer>
 
-<!-- Variable global de sesión para controlar peticiones del cliente -->
+<!-- ==========================================
+     SCRIPTS GLOBALES
+     ========================================== -->
+
+<!-- Variable global de sesión -->
 <script>
     window.IS_AUTHENTICATED = "<%= typeof user !== 'undefined' && user ? 'true' : 'false' %>" === 'true';
 </script>
 
-<!-- Archivo de utilidades globales (Toast, helpers, etc.) -->
-<script src="/js/utils.js"></script>
+<!-- Utilidades (showToast, showConfirm, delegación carrito) -->
+<script src="/js/utils.js?v=<%= Date.now() %>"></script>
 
 <!-- Scripts de la aplicación -->
-<script src="/js/cart.js"></script>
-<script src="/js/navbar.js"></script>
-<script src="/js/ai-assistant.js"></script>
-<script src="/js/main.js"></script>
+<script src="/js/cart.js?v=<%= Date.now() %>"></script>
+<script src="/js/navbar.js?v=<%= Date.now() %>"></script>
+<script src="/js/ai-assistant.js?v=<%= Date.now() %>"></script>
+<script src="/js/main.js?v=<%= Date.now() %>"></script>
+
 </body>
 </html>

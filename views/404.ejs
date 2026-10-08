@@ -1,0 +1,12 @@
+<%- include('partials/header') %>
+
+<article class="error-page">
+  <section class="error-card">
+    <p class="error-code" aria-hidden="true">404</p>
+    <h1>Página no encontrada</h1>
+    <p><%= typeof message !== 'undefined' ? message : 'La página que buscas no existe.' %></p>
+    <a href="/" class="btn btn-primary">Volver al inicio</a>
+  </section>
+</article>
+
+<%- include('partials/footer') %>

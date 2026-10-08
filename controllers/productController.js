@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const logger = require('../config/logger');
 
 // @desc    Obtener todos los productos con filtros, búsqueda, ordenamiento y paginación
 // @route   GET /api/products
@@ -7,19 +8,16 @@ const getAllProducts = async (req, res, next) => {
     try {
         const { page = 1, limit = 8, category, search, sort } = req.query;
 
-        // Sanitización defensiva de parámetros numéricos
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
-        const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 8)); // Límite máximo de 50 por seguridad
+        const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 8));
         const skip = (pageNum - 1) * limitNum;
 
         const query = {};
 
-        // Filtro por categoría exacta (omitir si es 'all')
         if (category && category !== 'all') {
             query.category = category;
         }
 
-        // Búsqueda por nombre o descripción (case insensitive)
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
@@ -27,13 +25,11 @@ const getAllProducts = async (req, res, next) => {
             ];
         }
 
-        // Criterio de ordenamiento
         let sortOption = { createdAt: -1 };
         if (sort === 'price_asc' || sort === 'price-asc') sortOption = { price: 1 };
         if (sort === 'price_desc' || sort === 'price-desc') sortOption = { price: -1 };
         if (sort === 'name_asc' || sort === 'name-asc') sortOption = { name: 1 };
 
-        // Consultas en paralelo para optimizar tiempo de respuesta
         const [products, total] = await Promise.all([
             Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean(),
             Product.countDocuments(query)
@@ -155,10 +151,147 @@ const deleteProduct = async (req, res, next) => {
     }
 };
 
+// @desc    Activar flash sale en un producto
+// @route   POST /admin/products/:id/flash-sale
+// @access  Private/Admin
+const activateFlashSale = async (req, res, next) => {
+    try {
+        const { discount, durationHours = 24 } = req.body;
+
+        if (!discount || discount < 1 || discount > 90) {
+            return res.status(400).json({
+                success: false,
+                error: 'El descuento debe estar entre 1 y 90%.'
+            });
+        }
+
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: 'Producto no encontrado.'
+            });
+        }
+
+        if (product.flashSale && product.flashSaleEndsAt > new Date()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Este producto ya tiene una oferta activa. Detén la actual primero.'
+            });
+        }
+
+        const originalPrice = product.originalPrice || product.price;
+        const discountedPrice = Math.round((originalPrice * (1 - discount / 100)) * 100) / 100;
+
+        const endsAt = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+
+        product.flashSale = true;
+        product.flashSaleDiscount = discount;
+        product.flashSaleEndsAt = endsAt;
+        product.originalPrice = originalPrice;
+        product.price = discountedPrice;
+
+        await product.save();
+
+        logger.info(`Flash sale activada: ${product.name} - ${discount}% - Termina: ${endsAt.toISOString()}`);
+
+        res.status(200).json({
+            success: true,
+            message: `Oferta activada en "${product.name}" con ${discount}% de descuento.`,
+            data: {
+                originalPrice,
+                discountedPrice,
+                endsAt,
+                discount
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Desactivar flash sale en un producto (restaura el precio)
+// @route   DELETE /admin/products/:id/flash-sale
+// @access  Private/Admin
+const deactivateFlashSale = async (req, res, next) => {
+    try {
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: 'Producto no encontrado.'
+            });
+        }
+
+        if (!product.flashSale && !product.originalPrice) {
+            return res.status(400).json({
+                success: false,
+                error: 'Este producto no tiene una oferta activa.'
+            });
+        }
+
+        if (product.originalPrice !== null && product.originalPrice !== undefined) {
+            product.price = product.originalPrice;
+        }
+
+        product.flashSale = false;
+        product.flashSaleDiscount = 0;
+        product.flashSaleEndsAt = null;
+        product.originalPrice = null;
+
+        await product.save();
+
+        logger.info(`Flash sale desactivada: ${product.name} - Precio restaurado a $${product.price}`);
+
+        res.status(200).json({
+            success: true,
+            message: `Oferta detenida en "${product.name}". Precio restaurado.`,
+            data: { price: product.price }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Mostrar la página de detalle de un producto
+// @route   GET /producto/:id
+// @access  Public
+const getProductDetailPage = async (req, res, next) => {
+    try {
+        const product = await Product.findById(req.params.id).lean();
+
+        if (!product) {
+            return res.status(404).render('404', {
+                title: 'Producto no encontrado | TechStore',
+                message: 'El producto que buscas no existe o fue eliminado.'
+            });
+        }
+
+        res.render('product-detail', {
+            title: `${product.name} | TechStore`,
+            product
+        });
+    } catch (error) {
+        // Si el ID no es válido (CastError), muestra 404
+        if (error.name === 'CastError') {
+            return res.status(404).render('404', {
+                title: 'Producto no encontrado | TechStore',
+                message: 'El producto que buscas no existe o fue eliminado.'
+            });
+        }
+        next(error);
+    }
+};
+
 module.exports = {
     getAllProducts,
     getProductById,
     createProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    activateFlashSale,
+    deactivateFlashSale,
+    getProductDetailPage
 };
