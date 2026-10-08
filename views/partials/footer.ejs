@@ -173,10 +173,10 @@
 <script src="/js/utils.js?v=<%= Date.now() %>"></script>
 
 <!-- Scripts de la aplicación -->
-<script src="/js/cart.js?v=<%= Date.now() %>"></script>
-<script src="/js/navbar.js?v=<%= Date.now() %>"></script>
-<script src="/js/ai-assistant.js?v=<%= Date.now() %>"></script>
-<script src="/js/main.js?v=<%= Date.now() %>"></script>
+<script src="/js/cart.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+<script src="/js/navbar.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+<script src="/js/ai-assistant.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+<script src="/js/main.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
 
 </body>
 </html>

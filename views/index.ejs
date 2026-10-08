@@ -337,7 +337,7 @@
 <!-- ==========================================
      SCRIPTS DE LA HOME
      ========================================== -->
-<script src="/js/flash-sale.js?v=<%= Date.now() %>" defer></script>
+<script src="/js/flash-sale.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
 
 <!-- Partial: Contacto -->
 <%- include('partials/contact') %>
