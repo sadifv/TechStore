@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'Ingresando...';
 
             try {
-                const response = await fetch('/admin/login', {
+                const response = await fetch('/login', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',

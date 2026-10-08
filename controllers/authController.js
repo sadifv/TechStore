@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const logger = require('../config/logger');
 
 // @desc    Registrar un nuevo usuario
 // @route   POST /api/auth/register
@@ -34,13 +35,24 @@ const registerUser = async (req, res) => {
             role: newUser.role
         };
 
+        logger.info(`Nuevo usuario registrado: ${newUser.email}`);
+
         res.status(201).json({
             success: true,
             message: 'Usuario registrado con éxito.',
             user: req.session.user
         });
     } catch (error) {
-        console.error('Error en registerUser:', error);
+        // Error de validación de Mongoose (ej. email inválido, contraseña corta)
+        if (error.name === 'ValidationError') {
+            const message = Object.values(error.errors).map(val => val.message).join(' ');
+            return res.status(400).json({
+                success: false,
+                error: message
+            });
+        }
+
+        logger.error(`Error en registerUser: ${error.message}`, { stack: error.stack });
         res.status(500).json({
             success: false,
             error: 'Error en el servidor al registrar usuario.'
@@ -49,7 +61,7 @@ const registerUser = async (req, res) => {
 };
 
 // @desc    Procesar inicio de sesión
-// @route   POST /admin/login o /api/auth/login
+// @route   POST /login o /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
     try {
@@ -86,6 +98,8 @@ const loginUser = async (req, res) => {
             role: user.role
         };
 
+        logger.info(`Login exitoso: ${user.email}`);
+
         res.status(200).json({
             success: true,
             message: 'Inicio de sesión exitoso.',
@@ -93,7 +107,7 @@ const loginUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en loginUser:', error);
+        logger.error(`Error en loginUser: ${error.message}`, { stack: error.stack });
         res.status(500).json({
             success: false,
             error: 'Error en el servidor al iniciar sesión.'
@@ -112,17 +126,21 @@ const logoutUser = (req, res) => {
         });
     }
 
+    const userEmail = req.session.user?.email || 'desconocido';
+
     req.session.destroy((err) => {
         if (err) {
-            console.error('Error al destruir sesión:', err);
+            logger.error(`Error al destruir sesión: ${err.message}`, { stack: err.stack });
             return res.status(500).json({
                 success: false,
                 error: 'No se pudo cerrar la sesión.'
             });
         }
-        
+
         // Limpiar cookie de sesión en el navegador
         res.clearCookie('connect.sid', { path: '/' });
+
+        logger.info(`Logout exitoso: ${userEmail}`);
 
         // Si la solicitud es explícitamente navegación HTML directa (e.g., clic en enlace GET)
         if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {

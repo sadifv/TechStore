@@ -1,9 +1,9 @@
-<%- include('../partials/header') %>
+<%- include('partials/header') %>
 
 <main class="login-container container">
   <section class="login-card">
     <h2>Iniciar Sesión</h2>
-    <form id="login-form" action="/admin/login" method="POST" class="auth-form">
+    <form id="login-form" action="/login" method="POST" class="auth-form">
       
       <fieldset class="form-group">
         <label for="login-email">Correo Electrónico</label>
@@ -27,4 +27,4 @@
 </main>
 
 <script src="/js/login.js"></script>
-<%- include('../partials/footer') %>
+<%- include('partials/footer') %>

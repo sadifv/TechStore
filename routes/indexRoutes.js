@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const { requireAuth } = require('../middleware/authMiddleware');
+const { loginUser } = require('../controllers/authController');
+const { loginLimiter } = require('../middleware/rateLimiter');
+const logger = require('../config/logger');
 
 // Ruta principal (Home) - Carga solo 6 productos destacados
 router.get('/', async (req, res) => {
@@ -10,13 +13,13 @@ router.get('/', async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(6)
             .lean();
-        
+
         res.render('index', {
             title: 'TechStore - Inicio',
             products: featuredProducts
         });
     } catch (error) {
-        console.error('Error al cargar la página principal:', error);
+        logger.error(`Error al cargar la página principal: ${error.message}`, { stack: error.stack });
         res.render('index', {
             title: 'TechStore - Inicio',
             products: []
@@ -31,12 +34,19 @@ router.get('/catalogo', (req, res) => {
     });
 });
 
+// ==========================================
+// AUTENTICACIÓN (LOGIN Y REGISTRO)
+// ==========================================
+
 // Vista de Login
 router.get('/login', (req, res) => {
-    res.render('admin/login', {
+    res.render('login', {
         title: 'TechStore - Iniciar Sesión'
     });
 });
+
+// POST Login (protegido con rate limit)
+router.post('/login', loginLimiter, loginUser);
 
 // Vista de Registro
 router.get('/register', (req, res) => {
@@ -44,6 +54,10 @@ router.get('/register', (req, res) => {
         title: 'TechStore - Crear Cuenta'
     });
 });
+
+// ==========================================
+// PERFIL
+// ==========================================
 
 // Vista del Perfil de Usuario (PROTEGIDA)
 router.get('/profile', requireAuth, (req, res) => {
