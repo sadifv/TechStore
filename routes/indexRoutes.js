@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
 
 // Vista dedicada para el Catálogo Completo (con filtros y paginación)
 router.get('/catalogo', (req, res) => {
-    res.render('partials/catalog', {
+    res.render('components/catalog', {
         title: 'Catálogo de Productos - TechStore'
     });
 });
