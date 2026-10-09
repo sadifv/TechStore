@@ -105,7 +105,7 @@ async function loadProducts(page = 1) {
         renderPagination(data.pagination, paginationContainer);
 
     } catch (error) {
-        console.error('Error al cargar productos:', error);
+        logger.error('Error al cargar productos:', error);
     }
 }
 

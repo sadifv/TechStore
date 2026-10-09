@@ -5,16 +5,9 @@ const logger = require('../config/logger');
 // @desc    Registrar un nuevo usuario
 // @route   POST /api/auth/register
 // @access  Public
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
-
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Por favor, ingresa todos los campos requeridos.'
-            });
-        }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -27,7 +20,6 @@ const registerUser = async (req, res) => {
         const newUser = new User({ name, email, password, role: 'user' });
         await newUser.save();
 
-        // Autenticar al usuario automáticamente en la sesión
         req.session.user = {
             id: newUser._id,
             name: newUser.name,
@@ -43,36 +35,16 @@ const registerUser = async (req, res) => {
             user: req.session.user
         });
     } catch (error) {
-        // Error de validación de Mongoose (ej. email inválido, contraseña corta)
-        if (error.name === 'ValidationError') {
-            const message = Object.values(error.errors).map(val => val.message).join(' ');
-            return res.status(400).json({
-                success: false,
-                error: message
-            });
-        }
-
-        logger.error(`Error en registerUser: ${error.message}`, { stack: error.stack });
-        res.status(500).json({
-            success: false,
-            error: 'Error en el servidor al registrar usuario.'
-        });
+        next(error);
     }
 };
 
 // @desc    Procesar inicio de sesión
 // @route   POST /login o /api/auth/login
 // @access  Public
-const loginUser = async (req, res) => {
+const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Por favor, ingresa correo y contraseña.'
-            });
-        }
 
         const user = await User.findOne({ email });
         if (!user) {
@@ -90,7 +62,6 @@ const loginUser = async (req, res) => {
             });
         }
 
-        // Guardar usuario en la sesión de Express
         req.session.user = {
             id: user._id,
             name: user.name,
@@ -105,20 +76,15 @@ const loginUser = async (req, res) => {
             message: 'Inicio de sesión exitoso.',
             user: req.session.user
         });
-
     } catch (error) {
-        logger.error(`Error en loginUser: ${error.message}`, { stack: error.stack });
-        res.status(500).json({
-            success: false,
-            error: 'Error en el servidor al iniciar sesión.'
-        });
+        next(error);
     }
 };
 
 // @desc    Cerrar sesión de usuario
 // @route   POST /api/auth/logout o GET /admin/logout
 // @access  Private
-const logoutUser = (req, res) => {
+const logoutUser = (req, res, next) => {
     if (!req.session) {
         return res.status(200).json({
             success: true,
@@ -131,18 +97,12 @@ const logoutUser = (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             logger.error(`Error al destruir sesión: ${err.message}`, { stack: err.stack });
-            return res.status(500).json({
-                success: false,
-                error: 'No se pudo cerrar la sesión.'
-            });
+            return next(err);
         }
 
-        // Limpiar cookie de sesión en el navegador
         res.clearCookie('connect.sid', { path: '/' });
-
         logger.info(`Logout exitoso: ${userEmail}`);
 
-        // Si la solicitud es explícitamente navegación HTML directa (e.g., clic en enlace GET)
         if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
             return res.redirect('/login');
         }

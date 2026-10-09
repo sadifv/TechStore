@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
           statusOutput.className = 'form-status error';
         }
       } catch (error) {
-        console.error('Error al enviar contacto:', error);
+        logger.error('Error al enviar contacto:', error);
         statusOutput.textContent = 'Error de conexión con el servidor.';
         statusOutput.className = 'form-status error';
       } finally {
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
           newsletterStatus.className = 'form-status error';
         }
       } catch (error) {
-        console.error('Error en newsletter:', error);
+        logger.error('Error en newsletter:', error);
         newsletterStatus.textContent = 'Error de conexión con el servidor.';
         newsletterStatus.className = 'form-status error';
       } finally {

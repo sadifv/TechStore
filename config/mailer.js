@@ -1,7 +1,7 @@
-// config/mailer.js
 const nodemailer = require('nodemailer');
 const ejs = require('ejs');
 const path = require('path');
+const logger = require('./logger');
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -13,13 +13,9 @@ const transporter = nodemailer.createTransport({
 
 const sendOrderConfirmation = async (userEmail, orderId, totalAmount) => {
     try {
-        // 1. Apuntamos a la vista que acabamos de crear
         const templatePath = path.join(__dirname, '../views/email-receipt.ejs');
-        
-        // 2. Renderizamos el archivo EJS y le pasamos las variables
         const htmlContent = await ejs.renderFile(templatePath, { orderId, totalAmount });
 
-        // 3. Enviamos el correo con el HTML ya renderizado
         const mailOptions = {
             from: `"TechStore" <${process.env.SMTP_USER}>`,
             to: userEmail,
@@ -27,10 +23,12 @@ const sendOrderConfirmation = async (userEmail, orderId, totalAmount) => {
             html: htmlContent
         };
 
-        await transporter.sendMail(mailOptions);
-        console.log(`✅ Correo de confirmación enviado a ${userEmail}`);
+        const info = await transporter.sendMail(mailOptions);
+        logger.info(`✅ Correo de confirmación enviado a ${userEmail} (ID: ${info.messageId})`);
+        return true;
     } catch (error) {
-        console.error('❌ Error al enviar el correo:', error);
+        logger.error(`❌ Error al enviar correo de confirmación a ${userEmail}: ${error.message}`, { stack: error.stack });
+        throw error;
     }
 };
 

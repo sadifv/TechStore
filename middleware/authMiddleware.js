@@ -8,6 +8,15 @@ const requireAdmin = (req, res, next) => {
     if (currentUser && currentUser.role === 'admin') {
         return next();
     }
+
+    // Si es petición API o AJAX
+    if (req.xhr || req.headers.accept?.includes('json') || req.path.startsWith('/api')) {
+        return res.status(403).json({
+            success: false,
+            error: 'Acceso denegado. Se requieren permisos de administrador.'
+        });
+    }
+
     return res.status(403).redirect('/login');
 };
 
@@ -18,7 +27,7 @@ const requireAuth = (req, res, next) => {
     }
     
     // Si la solicitud requiere HTML (navegador), redirigir al login
-    if (req.accepts('html')) {
+    if (req.accepts('html') && !req.xhr && !req.path.startsWith('/api')) {
         return res.redirect('/login');
     }
     

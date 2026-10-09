@@ -1,20 +1,13 @@
-const Newsletter = require('../models/Newsletter'); // Asegúrate de crear el modelo
+const Newsletter = require('../models/Newsletter');
+const logger = require('../config/logger');
 
 // @desc    Suscribir correo al newsletter
 // @route   POST /api/newsletter
 // @access  Public
-const subscribeNewsletter = async (req, res) => {
+const subscribeNewsletter = async (req, res, next) => {
     try {
         const { email } = req.body;
 
-        if (!email) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Por favor, proporciona un correo electrónico válido.' 
-            });
-        }
-
-        // Verificar si ya está suscrito
         const existingSubscriber = await Newsletter.findOne({ email });
         if (existingSubscriber) {
             return res.status(400).json({ 
@@ -24,21 +17,17 @@ const subscribeNewsletter = async (req, res) => {
         }
 
         await Newsletter.create({ email });
+        logger.info(`Nuevo suscriptor al boletín: ${email}`);
 
         res.status(201).json({
             success: true,
             message: '¡Suscripción exitosa al boletín!'
         });
     } catch (error) {
-        console.error('Error en subscribeNewsletter:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Error interno en el servidor al procesar la suscripción.' 
-        });
+        next(error);
     }
 };
 
 module.exports = {
-    // ... tus otras funciones de contacto
     subscribeNewsletter
 };

@@ -9,13 +9,16 @@ const {
     activateFlashSale,
     deactivateFlashSale
 } = require('../controllers/productController');
+const { updateOrderStatus } = require('../controllers/orderController'); // 👈 Controlador de estados de orden
+const { validate, productValidation } = require('../middleware/validationMiddleware');
 const Product = require('../models/Product');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
+const Order = require('../models/Order'); // 👈 Modelo de Órdenes
 const logger = require('../config/logger');
 
-// Cerrar sesión (sigue aquí porque es la acción del botón del navbar/panel)
+// Cerrar sesión
 router.get('/logout', logoutUser);
 
 // Vista del Dashboard (Protegida)
@@ -25,11 +28,13 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
         const messagesCount = await Contact.countDocuments();
         const subscribersCount = await Newsletter.countDocuments();
         const usersCount = await User.countDocuments();
+        const ordersCount = await Order.countDocuments();
 
         const products = await Product.find().sort({ createdAt: -1 }).lean();
         const recentMessages = await Contact.find().sort({ createdAt: -1 }).limit(5).lean();
         const subscribers = await Newsletter.find().sort({ createdAt: -1 }).lean();
         const users = await User.find({}, '-password').sort({ createdAt: -1 }).lean();
+        const orders = await Order.find().populate('user', 'name email').sort({ createdAt: -1 }).lean();
 
         res.render('admin/dashboard', {
             title: 'TechStore - Panel de Administración',
@@ -37,12 +42,14 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
                 productsCount,
                 messagesCount,
                 subscribersCount,
-                usersCount
+                usersCount,
+                ordersCount
             },
             products,
             messages: recentMessages,
             subscribers,
-            users
+            users,
+            orders
         });
     } catch (error) {
         logger.error(`Error al cargar dashboard: ${error.message}`, { stack: error.stack });
@@ -50,9 +57,12 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
     }
 });
 
+// Actualización del Estado de Órdenes (Admin)
+router.put('/orders/:id/status', requireAdmin, updateOrderStatus);
+
 // Rutas API CRUD para Administración de Productos
-router.post('/products', requireAdmin, createProduct);
-router.put('/products/:id', requireAdmin, updateProduct);
+router.post('/products', requireAdmin, validate(productValidation), createProduct);
+router.put('/products/:id', requireAdmin, validate(productValidation), updateProduct);
 router.delete('/products/:id', requireAdmin, deleteProduct);
 
 // Rutas API para Flash Sale

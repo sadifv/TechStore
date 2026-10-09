@@ -1,0 +1,8 @@
+<article class="error-page">
+  <section class="error-card">
+    <p class="error-code" aria-hidden="true">500</p>
+    <h1>Error interno del servidor</h1>
+    <p><%= typeof error !== 'undefined' && error.message ? error.message : 'Ocurrió un problema inesperado. Nuestro equipo ha sido notificado.' %></p>
+    <a href="/" class="btn btn-primary">Volver al inicio</a>
+  </section>
+</article>

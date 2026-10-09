@@ -508,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } catch (error) {
-                console.error('Error durante la orden:', error);
+                logger.error('Error durante la orden:', error);
                 notify('Error de conexión con el servidor.', 'error');
                 if (checkoutStatus) {
                     checkoutStatus.textContent = 'Error de conexión con el servidor.';

@@ -35,7 +35,9 @@
             </p>
 
             <p class="flash-sale-prices">
-                <del>$<%= flashSale.originalPrice.toFixed(2) %></del>
+                <% if (flashSale.originalPrice != null) { %>
+                    <del>$<%= flashSale.originalPrice.toFixed(2) %></del>
+                <% } %>
                 <strong>$<%= flashSale.price.toFixed(2) %></strong>
             </p>
 
@@ -114,7 +116,6 @@
         </ul>
     <% } %>
 
-    <!-- CTA para dirigir al catálogo completo -->
     <footer class="catalog-cta">
         <a href="/catalogo" class="btn btn-secondary btn-large">
             Ver catálogo completo con filtros y búsqueda →
@@ -148,7 +149,7 @@
         <span id="ai-status-text">En línea · Pregúntame sobre cualquier producto</span>
       </p>
     </hgroup>
-    <% if (user) { %>
+    <% if (typeof user !== 'undefined' && user) { %>
       <button 
         type="button" 
         id="ai-clear-chat" 
@@ -167,7 +168,7 @@
 
   <article class="ai-widget" aria-label="Conversación con el asistente virtual">
     
-    <% if (!user) { %>
+    <% if (typeof user === 'undefined' || !user) { %>
       <!-- ============ ESTADO: Usuario NO logueado ============ -->
       <section 
         class="ai-login-required" 

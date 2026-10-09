@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Ocurrió un error al procesar la solicitud', 'error');
                 }
             } catch (err) {
-                console.error('Error al guardar producto:', err);
+                logger.error('Error al guardar producto:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
@@ -98,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnCloseFlashModal) btnCloseFlashModal.addEventListener('click', closeFlashModal);
     if (btnCancelFlashModal) btnCancelFlashModal.addEventListener('click', closeFlashModal);
 
-    // Cálculo en tiempo real del precio final (usa helper centralizado)
     const updateFinalPrice = () => {
         window.updateFinalPrice(flashCurrentPrice, flashDiscount, flashFinalPrice);
     };
@@ -106,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (flashDiscount) flashDiscount.addEventListener('input', updateFinalPrice);
     if (flashDuration) flashDuration.addEventListener('input', updateFinalPrice);
 
-    // Submit del formulario de flash sale
     if (flashForm) {
         flashForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -134,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al activar la oferta', 'error');
                 }
             } catch (err) {
-                console.error('Error al activar flash sale:', err);
+                logger.error('Error al activar flash sale:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
@@ -153,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderProducts(data.products);
             }
         } catch (err) {
-            console.error('Error al cargar productos:', err);
+            logger.error('Error al cargar productos:', err);
         }
     }
 
@@ -262,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDelete.textContent = 'Eliminar';
             btnDelete.addEventListener('click', () => deleteProduct(prod._id));
 
-            // Botón de Flash Sale
             const btnFlash = document.createElement('button');
             btnFlash.type = 'button';
             btnFlash.className = 'btn btn-sm btn-flash';
@@ -278,14 +275,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tdActions.append(btnEdit, ' ', btnDelete, ' ', btnFlash);
 
-            // Ensamblar fila
             tr.append(tdImage, tdName, tdCategory, tdPrice, tdStock, tdFlashStatus, tdActions);
             productsList.appendChild(tr);
         });
     }
 
     // ==========================================
-    // ACCIONES: EDITAR, ELIMINAR
+    // ACCIONES DE PRODUCTOS: EDITAR, ELIMINAR Y FLASH SALE
     // ==========================================
 
     function editProduct(id) {
@@ -299,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prod-stock').value = prod.stock;
         document.getElementById('prod-image').value = prod.image;
 
-        // Asegurar que la categoría exista en el <select>
         const categorySelect = document.getElementById('prod-category');
         const categoryExists = Array.from(categorySelect.options)
             .some(opt => opt.value === prod.category);
@@ -334,14 +329,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.showToast(data.error || 'Error al eliminar', 'error');
             }
         } catch (err) {
-            console.error('Error al eliminar producto:', err);
+            logger.error('Error al eliminar producto:', err);
             window.showToast('Error de conexión con el servidor.', 'error');
         }
     }
-
-    // ==========================================
-    // FLASH SALE: ABRIR MODAL Y DESACTIVAR
-    // ==========================================
 
     function openFlashModal(prod) {
         flashProductId.value = prod._id;
@@ -375,10 +366,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.showToast(data.error || 'Error al detener la oferta', 'error');
             }
         } catch (err) {
-            console.error('Error al detener flash sale:', err);
+            logger.error('Error al detener flash sale:', err);
             window.showToast('Error de conexión con el servidor.', 'error');
         }
     }
+
+    // ==========================================
+    // ACTUALIZACIÓN DEL ESTADO DE ÓRDENES (NEW)
+    // ==========================================
+
+    document.addEventListener('change', async (e) => {
+        const statusSelect = e.target.closest('.select-order-status');
+        if (!statusSelect) return;
+
+        const orderId = statusSelect.getAttribute('data-order-id');
+        const newStatus = statusSelect.value;
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                window.showToast('Estado de la orden actualizado', 'success');
+            } else {
+                window.showToast(data.error || 'Error al actualizar estado', 'error');
+            }
+        } catch (err) {
+            logger.error('Error al actualizar estado de orden:', err);
+            window.showToast('Error de conexión con el servidor.', 'error');
+        }
+    });
 
     // ==========================================
     // ELIMINAR MENSAJES, SUSCRIPTORES, USUARIOS
@@ -408,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al eliminar el mensaje', 'error');
                 }
             } catch (err) {
-                console.error('Error al eliminar mensaje:', err);
+                logger.error('Error al eliminar mensaje:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;
@@ -437,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al eliminar el suscriptor', 'error');
                 }
             } catch (err) {
-                console.error('Error al eliminar suscriptor:', err);
+                logger.error('Error al eliminar suscriptor:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;
@@ -466,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al eliminar el usuario', 'error');
                 }
             } catch (err) {
-                console.error('Error al eliminar usuario:', err);
+                logger.error('Error al eliminar usuario:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;

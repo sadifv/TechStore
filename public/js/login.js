@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusOutput.className = 'form-status error';
                 }
             } catch (error) {
-                console.error('Error en login:', error);
+                logger.error('Error en login:', error);
                 statusOutput.textContent = 'Error de conexión con el servidor.';
                 statusOutput.className = 'form-status error';
             } finally {

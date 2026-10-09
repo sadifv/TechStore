@@ -28,7 +28,17 @@ const errorHandler = (err, req, res, next) => {
         return res.status(400).json({ success: false, error: 'Recurso no encontrado. ID inválido.' });
     }
 
-    res.status(err.statusCode || 500).json({
+    const statusCode = err.statusCode || 500;
+
+    // Si la petición es desde la navegación web y es un error 500, intentamos renderizar la vista
+    if (req.accepts('html') && !req.xhr && !req.path.startsWith('/api') && statusCode === 500) {
+        return res.status(500).render('500', {
+            title: 'Error Servidor | TechStore',
+            error: process.env.NODE_ENV === 'development' ? err : {}
+        });
+    }
+
+    res.status(statusCode).json({
         success: false,
         error: error.message || 'Error interno del servidor.'
     });

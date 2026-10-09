@@ -3,8 +3,9 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { getProductDetailPage } = require('../controllers/productController');
 const { requireAuth } = require('../middleware/authMiddleware');
-const { loginUser } = require('../controllers/authController');
+const { loginUser, registerUser } = require('../controllers/authController');
 const { loginLimiter } = require('../middleware/rateLimiter');
+const { validate, authValidation } = require('../middleware/validationMiddleware'); // 👈 Importamos validación
 const logger = require('../config/logger');
 
 // Ruta principal (Home) - Carga productos destacados + flash sale activa
@@ -49,7 +50,7 @@ router.get('/catalogo', (req, res) => {
     });
 });
 
-// ✅ NUEVO: Vista de detalle de un producto
+// Vista de detalle de un producto
 router.get('/producto/:id', getProductDetailPage);
 
 // ==========================================
@@ -63,8 +64,8 @@ router.get('/login', (req, res) => {
     });
 });
 
-// POST Login (protegido con rate limit)
-router.post('/login', loginLimiter, loginUser);
+// POST Login (protegido con rate limit + validación de entrada)
+router.post('/login', loginLimiter, validate(authValidation.login), loginUser); // 👈 Validación inyectada
 
 // Vista de Registro
 router.get('/register', (req, res) => {
@@ -72,6 +73,11 @@ router.get('/register', (req, res) => {
         title: 'TechStore - Crear Cuenta'
     });
 });
+
+// POST Registro (si cuentas con endpoint POST para registro)
+if (typeof registerUser === 'function') {
+    router.post('/register', validate(authValidation.register), registerUser);
+}
 
 // ==========================================
 // PERFIL

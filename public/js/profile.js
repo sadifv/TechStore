@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ordersList.appendChild(emptyMsg);
         }
     } catch (error) {
-        console.error('Error al cargar órdenes:', error);
+        logger.error('Error al cargar órdenes:', error);
         if (ordersLoading) {
             ordersLoading.textContent = 'Ocurrió un error al cargar el historial de compras.';
             ordersLoading.style.display = 'block';

@@ -13,6 +13,8 @@
   --color-text-muted: #64748b;
   --color-border: #e2e8f0;
   --color-error: #ef4444;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
 
   --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-size-xs: 0.75rem;
@@ -166,6 +168,28 @@ h1, h2, h3, h4 {
   width: fit-content;
 }
 
+.badge-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.badge-secondary {
+  background-color: #64748b;
+  color: #ffffff;
+}
+
+.badge-success {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
 .products-section,
 .flash-sale-section,
 .ai-section,
@@ -272,7 +296,6 @@ h1, h2, h3, h4 {
     radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
     linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   position: relative;
-  overflow: hidden;
 }
 
 .hero-content {
@@ -387,7 +410,6 @@ h1, h2, h3, h4 {
   flex-direction: column;
   transition: transform var(--transition-normal), box-shadow var(--transition-normal);
   position: relative;
-  overflow: hidden;
 }
 
 .product-card:hover {
@@ -1076,7 +1098,6 @@ label.ai-sr-only {
   flex-direction: column;
   gap: var(--space-8);
   position: relative;
-  overflow: hidden;
 }
 
 .contact-info::before {
@@ -1692,7 +1713,7 @@ label.ai-sr-only {
 }
 
 /* ========================================
-   14. PANEL DE ADMINISTRACIÓN
+   14. PANEL DE ADMINISTRACIÓN Y GESTIÓN DE ÓRDENES
    ======================================== */
 .admin-dashboard {
   max-width: 1200px;
@@ -1717,7 +1738,7 @@ label.ai-sr-only {
 .dashboard-stats,
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2.5rem;
 }
@@ -1745,6 +1766,7 @@ label.ai-sr-only {
   margin: 0;
 }
 
+.dashboard-orders,
 .dashboard-products,
 .dashboard-messages,
 .dashboard-users,
@@ -1788,6 +1810,25 @@ label.ai-sr-only {
 
 .data-table tr:hover {
   background-color: var(--color-background);
+}
+
+/* Selector dinámico de estado de orden */
+.select-order-status {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.select-order-status:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 .btn-sm {
@@ -2164,9 +2205,26 @@ dialog#checkout-modal {
   font-weight: 600;
 }
 
-.status-completed {
+.status-completed,
+.status-delivered {
   background-color: #dcfce7;
   color: #166534;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-processing,
+.status-shipped {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .order-body {
@@ -2505,7 +2563,7 @@ dialog#checkout-modal {
   cursor: not-allowed;
 }
 
-/* Página 404 */
+/* Página 404 / 500 */
 .error-page {
   min-height: 70vh;
   display: flex;
@@ -2554,7 +2612,6 @@ dialog#checkout-modal {
   padding: var(--space-8);
   box-shadow: 0 20px 40px -10px rgba(220, 38, 38, 0.15);
   position: relative;
-  overflow: hidden;
 }
 
 .flash-sale-card::before {
@@ -2936,7 +2993,6 @@ dialog#checkout-modal {
     max-width: 280px;
   }
 
-  /* Flash sale responsive */
   .flash-sale-card {
     grid-template-columns: 1fr;
     padding: var(--space-6);
@@ -2963,7 +3019,6 @@ dialog#checkout-modal {
     font-size: 1.35rem;
   }
 
-  /* Product detail responsive */
   .product-detail-page {
     grid-template-columns: 1fr;
   }
@@ -2983,5 +3038,11 @@ dialog#checkout-modal {
 
   .product-detail-actions input[type="number"] {
     width: 100%;
+  }
+
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 }

@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendMessage('bot', data.error || 'Lo siento, no pude procesar tu mensaje. Intenta de nuevo.');
       }
     } catch (error) {
-      console.error('Error al comunicarse con la IA:', error);
+      logger.error('Error al comunicarse con la IA:', error);
       hideTyping();
       appendMessage('bot', 'Ocurrió un error de conexión con el servidor.');
     } finally {
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     } catch (error) {
-      console.error('Error al cargar historial:', error);
+      logger.error('Error al cargar historial:', error);
     }
   }
 
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
           chatInput.focus();
         }
       } catch (error) {
-        console.error('Error al limpiar historial:', error);
+        logger.error('Error al limpiar historial:', error);
       }
     });
   }

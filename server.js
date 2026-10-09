@@ -45,13 +45,13 @@ cron.schedule('*/5 * * * *', async () => {
     }
 });
 
-// 2. Confiar en el proxy (IMPORTANTE para producción)
+// 2. Confiar en el proxy (IMPORTANTE para producción / Nginx / Render)
 app.set('trust proxy', 1); 
 
 // 3. Middlewares de Seguridad y Logging
 app.use(httpLogger);
 
-// Configuración de Helmet (desactivamos CSP para permitir iconos de RemixIcon y CDNs)
+// Configuración de Helmet (desactivamos CSP para permitir CDN de RemixIcon)
 app.use(
   helmet({
     contentSecurityPolicy: false
@@ -75,14 +75,14 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // 4. Middlewares para parsear datos
-// IMPORTANTE: El webhook de Stripe necesita el cuerpo en formato raw (Buffer) ANTES que express.json()
+// IMPORTANTE: El webhook de Stripe necesita el cuerpo en formato raw (Buffer)
 app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
 
-// Resto de parsers globales
+// Parsers globales para el resto de rutas
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 5. Configuración de Sesiones Persistentes en MongoDB (connect-mongo)
+// 5. Configuración de Sesiones Persistentes en MongoDB
 const storeOptions = {
   mongoUrl: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/techstore',
   collectionName: 'sessions'
@@ -102,7 +102,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax', // Conserva la sesión al ser redirigido desde Stripe
+    sameSite: 'lax', // Conserva la sesión tras la redirección de Stripe
     maxAge: 1000 * 60 * 60 * 24 // 24 horas
   }
 }));
@@ -131,14 +131,28 @@ app.use('/api', require('./routes/apiRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 
-// Aplicar adminLimiter global a todo /admin (capa extra)
-app.use('/admin', adminLimiter); // <-- NUEVO
+// Aplicar adminLimiter global a todo /admin
+app.use('/admin', adminLimiter);
 app.use('/admin', require('./routes/adminRoutes'));
 
-// 10. Middleware global para manejo de errores
+// 10. Manejo de Rutas No Encontradas (404)
+app.use((req, res) => {
+  if (req.accepts('html') && !req.xhr && !req.path.startsWith('/api')) {
+    return res.status(404).render('404', {
+      title: 'Página no encontrada | TechStore',
+      message: 'La página que estás buscando no existe o ha sido movida.'
+    });
+  }
+  res.status(404).json({
+    success: false,
+    error: 'Recurso no encontrado.'
+  });
+});
+
+// 11. Middleware global para manejo de errores (500)
 app.use(errorHandler);
 
-// 11. Manejo de errores no capturados
+// 12. Manejo de excepciones no capturadas
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);

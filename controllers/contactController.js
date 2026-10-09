@@ -1,18 +1,12 @@
 const Contact = require('../models/Contact');
+const logger = require('../config/logger');
 
 // @desc    Guardar mensaje de contacto
 // @route   POST /api/contact
 // @access  Public
-const sendContactMessage = async (req, res) => {
+const sendContactMessage = async (req, res, next) => {
     try {
         const { name, email, message } = req.body;
-
-        if (!name || !email || !message) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Por favor, completa todos los campos requeridos.' 
-            });
-        }
 
         const newContact = await Contact.create({
             name,
@@ -20,17 +14,15 @@ const sendContactMessage = async (req, res) => {
             message
         });
 
+        logger.info(`Nuevo mensaje de contacto de: ${email}`);
+
         res.status(201).json({
             success: true,
             message: 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.',
             data: newContact
         });
     } catch (error) {
-        console.error('Error al guardar mensaje de contacto:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ocurrió un error en el servidor al enviar el mensaje.' 
-        });
+        next(error);
     }
 };
 

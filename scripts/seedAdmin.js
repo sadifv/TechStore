@@ -1,48 +1,42 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const logger = require('../config/logger');
 
 const seedAdmin = async () => {
   try {
-    // Conectar a MongoDB
     const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/techstore';
     await mongoose.connect(mongoURI);
-    console.log('Conectado a MongoDB...');
+    logger.info('Conectado a MongoDB para ejecutar seedAdmin...');
 
     const adminEmail = 'admin@techstore.com';
-    const rawPassword = 'admin123password'; // Contraseña que usarás para entrar
+    const rawPassword = 'admin123password';
 
     // Verificar si el usuario admin ya existe
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (existingAdmin) {
-      console.log('El usuario administrador ya existe en la base de datos.');
+      logger.info('El usuario administrador ya existe en la base de datos.');
+      await mongoose.connection.close();
       process.exit(0);
     }
 
-    // Encriptar la contraseña con bcryptjs
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(rawPassword, salt);
-
-    // Crear el usuario administrador
+    // Pasamos la contraseña en texto plano: el hook pre('save') de User.js la encriptará
     const adminUser = new User({
       name: 'Admin Sadi',
       email: adminEmail,
-      password: hashedPassword,
+      password: rawPassword,
       role: 'admin'
     });
 
     await adminUser.save();
 
-    
-    console.log('¡Usuario Administrador creado con éxito!');
-    console.log(`Email:      ${adminEmail}`);
-    console.log(`Contraseña: ${rawPassword}`);
-    
+    logger.info('¡Usuario Administrador creado con éxito!');
+    logger.info(`Email: ${adminEmail}`);
 
+    await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
-    console.error('Error al crear el usuario administrador:', error);
+    logger.error(`Error al crear el usuario administrador: ${error.message}`, { stack: error.stack });
     process.exit(1);
   }
 };

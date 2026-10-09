@@ -103,8 +103,7 @@
             <li><a href="/">Inicio</a></li>
             <li><a href="/catalogo">Catálogo</a></li>
             <li><a href="/#contacto">Contacto</a></li>
-            <li><a href="/#ia-assistant">IA Assistant</a></li>
-            <li><a href="/#blog">Blog</a></li>
+            <li><a href="/#ai-assistant">IA Assistant</a></li>
         </ul>
     </nav>
 
@@ -170,10 +169,12 @@
 </script>
 
 <!-- Utilidades (showToast, showConfirm, delegación carrito) -->
-<script src="/js/utils.js?v=<%= Date.now() %>"></script>
+<script src="/js/utils.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+
+<!-- Manejo del Carrito -->
+<script src="/js/cart.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
 
 <!-- Scripts de la aplicación -->
-<script src="/js/cart.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
 <script src="/js/navbar.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
 <script src="/js/ai-assistant.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
 <script src="/js/main.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>

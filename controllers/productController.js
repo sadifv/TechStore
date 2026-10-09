@@ -20,8 +20,8 @@ const getAllProducts = async (req, res, next) => {
 
         if (search) {
             query.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { description: { $regex: search, $options: 'i' } }
+                { name: { $regex: search,$options: 'i' } },
+                { description: { $regex: search,$options: 'i' } }
             ];
         }
 
@@ -48,6 +48,21 @@ const getAllProducts = async (req, res, next) => {
                 hasNextPage: pageNum < totalPages,
                 hasPrevPage: pageNum > 1
             }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Obtener lista de categorías únicas disponibles
+// @route   GET /api/products/categories
+// @access  Public
+const getCategories = async (req, res, next) => {
+    try {
+        const categories = await Product.distinct('category');
+        res.status(200).json({
+            success: true,
+            categories
         });
     } catch (error) {
         next(error);
@@ -165,7 +180,6 @@ const activateFlashSale = async (req, res, next) => {
             });
         }
 
-        // Validar durationHours: entero entre 1 y 168 horas (1 semana máx)
         if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 168) {
             return res.status(400).json({
                 success: false,
@@ -190,9 +204,7 @@ const activateFlashSale = async (req, res, next) => {
         }
 
         const originalPrice = product.originalPrice || product.price;
-        // Redondeo correcto: evita errores de punto flotante (ej. 19.995 -> 20.00 no 19.99)
         const discountedPrice = Math.round(originalPrice * (100 - discount)) / 100;
-
         const endsAt = new Date(Date.now() + durationHours * 60 * 60 * 1000);
 
         product.flashSale = true;
@@ -220,7 +232,7 @@ const activateFlashSale = async (req, res, next) => {
     }
 };
 
-// @desc    Desactivar flash sale en un producto (restaura el precio)
+// @desc    Desactivar flash sale en un producto
 // @route   DELETE /admin/products/:id/flash-sale
 // @access  Private/Admin
 const deactivateFlashSale = async (req, res, next) => {
@@ -244,7 +256,6 @@ const deactivateFlashSale = async (req, res, next) => {
         if (product.originalPrice !== null && product.originalPrice !== undefined) {
             product.price = product.originalPrice;
         } else {
-            // Fallback: mantener precio actual y log warning
             logger.warn(`deactivateFlashSale: ${product.name} (ID: ${product._id}) no tiene originalPrice válido, se mantiene precio actual $${product.price}`);
         }
 
@@ -286,7 +297,6 @@ const getProductDetailPage = async (req, res, next) => {
             product
         });
     } catch (error) {
-        // Si el ID no es válido (CastError), muestra 404
         if (error.name === 'CastError') {
             return res.status(404).render('404', {
                 title: 'Producto no encontrado | TechStore',
@@ -299,6 +309,7 @@ const getProductDetailPage = async (req, res, next) => {
 
 module.exports = {
     getAllProducts,
+    getCategories,
     getProductById,
     createProduct,
     updateProduct,
