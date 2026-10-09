@@ -107,9 +107,16 @@ app.use(session({
   }
 }));
 
-// 6. Configuración del motor de plantillas EJS
+// 6. Configuración del motor de plantillas EJS + Layouts
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+const expressLayouts = require('express-ejs-layouts');
+app.use(expressLayouts);
+app.set('layout', 'layout');
+app.set('layout extractScripts', true);
+app.set('layout extractStyles', true);
+app.set('layout extractMetas', true);
 
 // 7. Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));

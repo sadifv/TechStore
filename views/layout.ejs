@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'TechStore' %></title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('components/navbar') %>
+
+    <main>
+        {{{body}}}
+    </main>
+
+    <%- include('components/footer') %>
+
+    <!-- Variable global de sesión -->
+    <script>
+        window.IS_AUTHENTICATED = "<%= typeof user !== 'undefined' && user ? 'true' : 'false' %>" === 'true';
+    </script>
+
+    <!-- Utilidades (showToast, showConfirm, delegación carrito) -->
+    <script src="/js/utils.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+
+    <!-- Scripts de la aplicación -->
+    <script src="/js/cart.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+    <script src="/js/navbar.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+    <script src="/js/ai-assistant.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+    <script src="/js/main.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+</body>
+</html>

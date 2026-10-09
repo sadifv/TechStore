@@ -1,5 +1,3 @@
-<%- include('partials/header') %>
-
 <main class="login-container container">
   <section class="login-card">
     <h2>Iniciar Sesión</h2>
@@ -26,5 +24,4 @@
   </section>
 </main>
 
-<script src="/js/login.js"></script>
-<%- include('partials/footer') %>
+<script src="/js/login.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>

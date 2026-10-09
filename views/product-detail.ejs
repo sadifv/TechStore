@@ -1,5 +1,3 @@
-<%- include('partials/header') %>
-
 <article class="product-detail-page">
 
   <!-- Columna izquierda: Imagen -->
@@ -82,6 +80,4 @@
   </section>
 </article>
 
-<script src="/js/product-detail.js?v=<%= Date.now() %>" defer></script>
-
-<%- include('partials/footer') %>
+<script src="/js/product-detail.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>

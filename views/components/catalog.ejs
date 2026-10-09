@@ -1,5 +1,3 @@
-<%- include('header') %>
-
 <!-- Sección Principal del Catálogo -->
 <section id="catalogo" class="products-section" aria-labelledby="catalog-heading">
     <header class="section-header">
@@ -75,6 +73,4 @@
 </section>
 
 <!-- Script de manipulación dinámica del DOM y paginación -->
-<script src="/js/catalog.js" defer></script>
-
-<%- include('footer') %>
+<script src="/js/catalog.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
