@@ -1,5 +1,7 @@
-const User = require('../models/User');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const User = require('../models/User');
+const { sendPasswordResetEmail } = require('../config/mailer');
 const logger = require('../config/logger');
 
 // @desc    Registrar un nuevo usuario
@@ -28,6 +30,11 @@ const registerUser = async (req, res, next) => {
         };
 
         logger.info(`Nuevo usuario registrado: ${newUser.email}`);
+
+        // Si es petición de formulario HTML, redirigir a la página principal
+        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+            return res.redirect('/');
+        }
 
         res.status(201).json({
             success: true,
@@ -70,6 +77,11 @@ const loginUser = async (req, res, next) => {
         };
 
         logger.info(`Login exitoso: ${user.email}`);
+
+        // Si es petición de formulario HTML, redirigir a la página principal
+        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+            return res.redirect('/');
+        }
 
         res.status(200).json({
             success: true,
@@ -130,9 +142,93 @@ const getMe = (req, res) => {
     });
 };
 
+// @desc    Solicitar token de recuperación de contraseña
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'No existe una cuenta asociada a este correo electrónico.'
+            });
+        }
+
+        // Generar token criptográfico y expira en 1 hora
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hora en ms
+
+        await user.save();
+
+        const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+
+        await sendPasswordResetEmail(user.email, resetUrl);
+
+        // Si es petición de formulario HTML, redirigir al login
+        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+            return res.redirect('/login');
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Se ha enviado un correo con las instrucciones de restablecimiento.'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Restablecer contraseña usando el token recibido
+// @route   POST /api/auth/reset-password/:token
+// @access  Public
+const resetPassword = async (req, res, next) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                error: 'El token de recuperación es inválido o ha expirado.'
+            });
+        }
+
+        user.password = password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+
+        // Si es petición de formulario HTML, redirigir al login
+        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+            return res.redirect('/login');
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Contraseña restablecida con éxito. Puedes iniciar sesión con tus nuevas credenciales.'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     logoutUser,
-    getMe
+    getMe,
+    forgotPassword,
+    resetPassword
 };

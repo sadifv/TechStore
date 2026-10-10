@@ -13,13 +13,17 @@
         <input type="password" id="login-password" name="password" required placeholder="••••••••" />
       </fieldset>
 
+      <p class="auth-forgot-link" style="text-align: right; margin-top: -0.25rem;">
+        <a href="/forgot-password" class="link-secondary">¿Olvidaste tu contraseña?</a>
+      </p>
+
       <button type="submit" class="btn btn-primary">Ingresar</button>
       
       <p class="auth-redirect">
         ¿No tienes una cuenta? <a href="/register">Regístrate aquí</a>
       </p>
 
-      <output id="login-status" class="form-status" for="login-form"></output>
+      <output id="login-status" class="form-status" for="login-form" aria-live="polite"></output>
     </form>
   </section>
 </main>

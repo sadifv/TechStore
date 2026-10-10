@@ -24,7 +24,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
-    }
+    },
+    // Campos para Verificación de Email y Reset de Contraseña
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    resetPasswordToken: String,
+    resetPasswordExpires: Date
 }, {
     timestamps: true
 });

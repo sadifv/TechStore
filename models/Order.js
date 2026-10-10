@@ -21,7 +21,12 @@ const orderSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false,
+        index: true
+    },
+    guestInfo: {
+        name: { type: String, trim: true },
+        email: { type: String, lowercase: true, trim: true }
     },
     items: [orderItemSchema],
     totalAmount: {
@@ -36,12 +41,14 @@ const orderSchema = new mongoose.Schema({
     paymentStatus: {
         type: String,
         enum: ['pending', 'paid', 'failed'],
-        default: 'pending'
+        default: 'pending',
+        index: true
     },
     status: {
         type: String,
         enum: ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'],
-        default: 'pending'
+        default: 'pending',
+        index: true
     },
     stripeSessionId: {
         type: String

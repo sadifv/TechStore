@@ -148,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addBtn) {
             const productId = addBtn.dataset.id;
             
-            if (productId && typeof addToCart === 'function') {
-                addToCart(productId);
+            if (productId && typeof window.addToCart === 'function') {
+                window.addToCart(productId);
             }
         }
     });
@@ -162,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function parsePrice(value) {
     if (value === null || value === undefined || value === '') return NaN;
-    // Elimina todo excepto dígitos, punto, coma y signo menos
     const cleaned = String(value).replace(/[^\d.,-]/g, '').replace(',', '.');
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? NaN : parsed;
@@ -176,7 +175,6 @@ function parsePrice(value) {
  */
 function calculateFinalPrice(currentPrice, discount) {
     if (currentPrice <= 0 || discount < 0 || discount > 100) return 0;
-    // Redondeo correcto: evita errores de punto flotante
     return Math.round(currentPrice * (100 - discount)) / 100;
 }
 

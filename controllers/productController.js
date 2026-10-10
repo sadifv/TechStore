@@ -1,17 +1,12 @@
 const Product = require('../models/Product');
 const logger = require('../config/logger');
 
-// @desc    Obtener todos los productos con filtros, búsqueda, ordenamiento y paginación
+// @desc    Obtener productos con filtros y paginación
 // @route   GET /api/products
 // @access  Public
-const getAllProducts = async (req, res, next) => {
+const getProducts = async (req, res, next) => {
     try {
-        const { page = 1, limit = 8, category, search, sort } = req.query;
-
-        const pageNum = Math.max(1, parseInt(page, 10) || 1);
-        const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 8));
-        const skip = (pageNum - 1) * limitNum;
-
+        const { category, search, limit = 8, page = 1, sort = 'recent' } = req.query;
         const query = {};
 
         if (category && category !== 'all') {
@@ -19,75 +14,81 @@ const getAllProducts = async (req, res, next) => {
         }
 
         if (search) {
-            query.$or = [
-                { name: { $regex: search,$options: 'i' } },
-                { description: { $regex: search,$options: 'i' } }
-            ];
+            query.name = { $regex: search, $options: 'i' };
         }
 
-        let sortOption = { createdAt: -1 };
-        if (sort === 'price_asc' || sort === 'price-asc') sortOption = { price: 1 };
-        if (sort === 'price_desc' || sort === 'price-desc') sortOption = { price: -1 };
-        if (sort === 'name_asc' || sort === 'name-asc') sortOption = { name: 1 };
+        // Configurar ordenamiento
+        let sortOption = {};
+        switch (sort) {
+            case 'price_asc':
+                sortOption = { price: 1 };
+                break;
+            case 'price_desc':
+                sortOption = { price: -1 };
+                break;
+            case 'name_asc':
+                sortOption = { name: 1 };
+                break;
+            case 'recent':
+            default:
+                sortOption = { createdAt: -1 };
+                break;
+        }
 
-        const [products, total] = await Promise.all([
-            Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean(),
+        // Paginación
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.max(1, parseInt(limit, 10) || 8);
+        const skip = (pageNum - 1) * limitNum;
+
+        const [products, totalCount] = await Promise.all([
+            Product.find(query)
+                .sort(sortOption)
+                .skip(skip)
+                .limit(limitNum)
+                .lean(),
             Product.countDocuments(query)
         ]);
 
-        const totalPages = Math.ceil(total / limitNum) || 1;
+        const totalPages = Math.ceil(totalCount / limitNum) || 1;
 
         res.status(200).json({
             success: true,
+            count: products.length,
             products,
             pagination: {
-                totalProducts: total,
-                totalPages,
                 currentPage: pageNum,
-                limit: limitNum,
-                hasNextPage: pageNum < totalPages,
-                hasPrevPage: pageNum > 1
+                totalPages,
+                totalCount,
+                hasPrevPage: pageNum > 1,
+                hasNextPage: pageNum < totalPages
             }
         });
     } catch (error) {
+        logger.error(`Error al obtener productos: ${error.message}`);
         next(error);
     }
 };
 
-// @desc    Obtener lista de categorías únicas disponibles
-// @route   GET /api/products/categories
+// @desc    Vista de detalle de un producto individual
+// @route   GET /producto/:id
 // @access  Public
-const getCategories = async (req, res, next) => {
-    try {
-        const categories = await Product.distinct('category');
-        res.status(200).json({
-            success: true,
-            categories
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-// @desc    Obtener un producto por ID
-// @route   GET /api/products/:id
-// @access  Public
-const getProductById = async (req, res, next) => {
+const getProductDetailPage = async (req, res, next) => {
     try {
         const product = await Product.findById(req.params.id).lean();
 
         if (!product) {
-            return res.status(404).json({
-                success: false,
-                error: 'Producto no encontrado.'
+            return res.status(404).render('404', { 
+                title: 'Producto No Encontrado | TechStore',
+                message: 'El producto que buscas no existe o ha sido eliminado.'
             });
         }
 
-        res.status(200).json({
-            success: true,
-            data: product
+        res.render('product-detail', {
+            title: `${product.name} | TechStore`,
+            product
         });
     } catch (error) {
+        logger.error(`Error al cargar detalle del producto: ${error.message}`);
         next(error);
     }
 };
@@ -97,21 +98,32 @@ const getProductById = async (req, res, next) => {
 // @access  Private/Admin
 const createProduct = async (req, res, next) => {
     try {
-        const { name, description, price, image, category, stock } = req.body;
+        const { name, description, price, category, stock, image } = req.body;
+
+        let imagePath = '/images/default-product.png';
+        if (req.file) {
+            imagePath = `/uploads/products/${req.file.filename}`;
+        } else if (image && image.trim() !== '') {
+            imagePath = image.trim();
+        }
+
         const newProduct = await Product.create({
             name,
             description,
-            price,
-            image,
+            price: Number(price),
             category,
-            stock
+            stock: Number(stock),
+            image: imagePath
         });
+
+        logger.info(`Nuevo producto creado: ${newProduct.name} (ID: ${newProduct._id})`);
 
         res.status(201).json({
             success: true,
             data: newProduct
         });
     } catch (error) {
+        logger.error(`Error al crear producto: ${error.message}`);
         next(error);
     }
 };
@@ -121,24 +133,40 @@ const createProduct = async (req, res, next) => {
 // @access  Private/Admin
 const updateProduct = async (req, res, next) => {
     try {
-        const updatedProduct = await Product.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        const { name, description, price, category, stock, image } = req.body;
 
-        if (!updatedProduct) {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
             return res.status(404).json({
                 success: false,
                 error: 'Producto no encontrado'
             });
         }
 
+        let imagePath = product.image;
+        if (req.file) {
+            imagePath = `/uploads/products/${req.file.filename}`;
+        } else if (image && image.trim() !== '') {
+            imagePath = image.trim();
+        }
+
+        product.name = name || product.name;
+        product.description = description !== undefined ? description : product.description;
+        product.price = price !== undefined ? Number(price) : product.price;
+        product.category = category || product.category;
+        product.stock = stock !== undefined ? Number(stock) : product.stock;
+        product.image = imagePath;
+
+        await product.save();
+
+        logger.info(`Producto actualizado: ${product.name} (ID: ${product._id})`);
+
         res.status(200).json({
             success: true,
-            data: updatedProduct
+            data: product
         });
     } catch (error) {
+        logger.error(`Error al actualizar producto: ${error.message}`);
         next(error);
     }
 };
@@ -157,82 +185,63 @@ const deleteProduct = async (req, res, next) => {
             });
         }
 
+        logger.info(`Producto eliminado: ${product.name} (ID: ${product._id})`);
+
         res.status(200).json({
             success: true,
-            message: 'Producto eliminado correctamente'
+            message: 'Producto eliminado correctamente.'
         });
     } catch (error) {
+        logger.error(`Error al eliminar producto: ${error.message}`);
         next(error);
     }
 };
 
-// @desc    Activar flash sale en un producto
+// @desc    Activar Oferta Relámpago (Flash Sale)
 // @route   POST /admin/products/:id/flash-sale
 // @access  Private/Admin
 const activateFlashSale = async (req, res, next) => {
     try {
-        const { discount, durationHours = 24 } = req.body;
-
-        if (!discount || discount < 1 || discount > 90) {
-            return res.status(400).json({
-                success: false,
-                error: 'El descuento debe estar entre 1 y 90%.'
-            });
-        }
-
-        if (!Number.isInteger(durationHours) || durationHours < 1 || durationHours > 168) {
-            return res.status(400).json({
-                success: false,
-                error: 'La duración debe ser un número entero entre 1 y 168 horas (1 semana máximo).'
-            });
-        }
-
+        const { discount, durationHours } = req.body;
         const product = await Product.findById(req.params.id);
 
         if (!product) {
-            return res.status(404).json({
-                success: false,
-                error: 'Producto no encontrado.'
-            });
+            return res.status(404).json({ success: false, error: 'Producto no encontrado' });
         }
 
-        if (product.flashSale && product.flashSaleEndsAt > new Date()) {
-            return res.status(400).json({
-                success: false,
-                error: 'Este producto ya tiene una oferta activa. Detén la actual primero.'
-            });
+        const discountNum = Number(discount);
+        const durationNum = Number(durationHours);
+
+        if (isNaN(discountNum) || discountNum <= 0 || discountNum > 90) {
+            return res.status(400).json({ success: false, error: 'El descuento debe ser entre 1% y 90%' });
         }
 
         const originalPrice = product.originalPrice || product.price;
-        const discountedPrice = Math.round(originalPrice * (100 - discount)) / 100;
-        const endsAt = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+        const discountedPrice = originalPrice * (1 - discountNum / 100);
+        const endsAt = new Date(Date.now() + durationNum * 60 * 60 * 1000);
 
-        product.flashSale = true;
-        product.flashSaleDiscount = discount;
-        product.flashSaleEndsAt = endsAt;
         product.originalPrice = originalPrice;
-        product.price = discountedPrice;
+        product.price = Number(discountedPrice.toFixed(2));
+        product.flashSale = true;
+        product.flashSaleDiscount = discountNum;
+        product.flashSaleEndsAt = endsAt;
 
         await product.save();
 
-        logger.info(`Flash sale activada: ${product.name} - ${discount}% - Termina: ${endsAt.toISOString()}`);
+        logger.info(`Oferta relámpago activada para ${product.name}: ${discountNum}% off`);
 
         res.status(200).json({
             success: true,
-            message: `Oferta activada en "${product.name}" con ${discount}% de descuento.`,
-            data: {
-                originalPrice,
-                discountedPrice,
-                endsAt,
-                discount
-            }
+            message: 'Oferta relámpago activada con éxito.',
+            product
         });
     } catch (error) {
+        logger.error(`Error al activar flash sale: ${error.message}`);
         next(error);
     }
 };
 
-// @desc    Desactivar flash sale en un producto
+// @desc    Desactivar Oferta Relámpago
 // @route   DELETE /admin/products/:id/flash-sale
 // @access  Private/Admin
 const deactivateFlashSale = async (req, res, next) => {
@@ -240,81 +249,39 @@ const deactivateFlashSale = async (req, res, next) => {
         const product = await Product.findById(req.params.id);
 
         if (!product) {
-            return res.status(404).json({
-                success: false,
-                error: 'Producto no encontrado.'
-            });
+            return res.status(404).json({ success: false, error: 'Producto no encontrado' });
         }
 
-        if (!product.flashSale && !product.originalPrice) {
-            return res.status(400).json({
-                success: false,
-                error: 'Este producto no tiene una oferta activa.'
-            });
-        }
-
-        if (product.originalPrice !== null && product.originalPrice !== undefined) {
+        if (product.originalPrice) {
             product.price = product.originalPrice;
-        } else {
-            logger.warn(`deactivateFlashSale: ${product.name} (ID: ${product._id}) no tiene originalPrice válido, se mantiene precio actual $${product.price}`);
         }
 
         product.flashSale = false;
-        product.flashSaleDiscount = 0;
-        product.flashSaleEndsAt = null;
-        product.originalPrice = null;
+        product.flashSaleDiscount = undefined;
+        product.flashSaleEndsAt = undefined;
+        product.originalPrice = undefined;
 
         await product.save();
 
-        logger.info(`Flash sale desactivada: ${product.name} - Precio restaurado a $${product.price}`);
+        logger.info(`Oferta relámpago desactivada para ${product.name}`);
 
         res.status(200).json({
             success: true,
-            message: `Oferta detenida en "${product.name}". Precio restaurado.`,
-            data: { price: product.price }
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-// @desc    Mostrar la página de detalle de un producto
-// @route   GET /producto/:id
-// @access  Public
-const getProductDetailPage = async (req, res, next) => {
-    try {
-        const product = await Product.findById(req.params.id).lean();
-
-        if (!product) {
-            return res.status(404).render('404', {
-                title: 'Producto no encontrado | TechStore',
-                message: 'El producto que buscas no existe o fue eliminado.'
-            });
-        }
-
-        res.render('product-detail', {
-            title: `${product.name} | TechStore`,
+            message: 'Oferta relámpago detenida y precio restaurado.',
             product
         });
     } catch (error) {
-        if (error.name === 'CastError') {
-            return res.status(404).render('404', {
-                title: 'Producto no encontrado | TechStore',
-                message: 'El producto que buscas no existe o fue eliminado.'
-            });
-        }
+        logger.error(`Error al desactivar flash sale: ${error.message}`);
         next(error);
     }
 };
 
 module.exports = {
-    getAllProducts,
-    getCategories,
-    getProductById,
+    getProducts,
+    getProductDetailPage,
     createProduct,
     updateProduct,
     deleteProduct,
     activateFlashSale,
-    deactivateFlashSale,
-    getProductDetailPage
+    deactivateFlashSale
 };

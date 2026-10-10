@@ -5,7 +5,7 @@ const { getProductDetailPage } = require('../controllers/productController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { loginUser, registerUser } = require('../controllers/authController');
 const { loginLimiter } = require('../middleware/rateLimiter');
-const { validate, authValidation } = require('../middleware/validationMiddleware'); // 👈 Importamos validación
+const { validate, authValidation } = require('../middleware/validationMiddleware');
 const logger = require('../config/logger');
 
 // Ruta principal (Home) - Carga productos destacados + flash sale activa
@@ -13,7 +13,6 @@ router.get('/', async (req, res) => {
     try {
         const now = new Date();
 
-        // Consultas en paralelo
         const [featuredProducts, flashSaleProduct] = await Promise.all([
             Product.find()
                 .sort({ createdAt: -1 })
@@ -54,7 +53,7 @@ router.get('/catalogo', (req, res) => {
 router.get('/producto/:id', getProductDetailPage);
 
 // ==========================================
-// AUTENTICACIÓN (LOGIN Y REGISTRO)
+// AUTENTICACIÓN Y RECUPERACIÓN DE CONTRASEÑA
 // ==========================================
 
 // Vista de Login
@@ -65,7 +64,7 @@ router.get('/login', (req, res) => {
 });
 
 // POST Login (protegido con rate limit + validación de entrada)
-router.post('/login', loginLimiter, validate(authValidation.login), loginUser); // 👈 Validación inyectada
+router.post('/login', loginLimiter, validate(authValidation.login), loginUser);
 
 // Vista de Registro
 router.get('/register', (req, res) => {
@@ -74,10 +73,23 @@ router.get('/register', (req, res) => {
     });
 });
 
-// POST Registro (si cuentas con endpoint POST para registro)
-if (typeof registerUser === 'function') {
-    router.post('/register', validate(authValidation.register), registerUser);
-}
+// POST Registro
+router.post('/register', validate(authValidation.register), registerUser);
+
+// Vista de Solicitud de Recuperación de Contraseña
+router.get('/forgot-password', (req, res) => {
+    res.render('forgot-password', {
+        title: 'TechStore - Recuperar Contraseña'
+    });
+});
+
+// Vista de Formulario de Restablecimiento con Token
+router.get('/reset-password/:token', (req, res) => {
+    res.render('reset-password', {
+        title: 'TechStore - Nueva Contraseña',
+        token: req.params.token
+    });
+});
 
 // ==========================================
 // PERFIL

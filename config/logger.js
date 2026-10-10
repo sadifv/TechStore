@@ -1,6 +1,6 @@
-// config/logger.js
 const winston = require('winston');
 const path = require('path');
+const fs = require('fs');
 
 const levels = {
   error: 0,
@@ -19,6 +19,12 @@ const colors = {
 };
 winston.addColors(colors);
 
+// Asegurar que el directorio de logs existe
+const logDir = path.join(__dirname, '../logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.colorize({ all: true }),
@@ -36,21 +42,19 @@ const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   levels,
   transports: [
-    // Archivo exclusivo para errores
     new winston.transports.File({
-      filename: path.join(__dirname, '../logs/error.log'),
+      filename: path.join(logDir, 'error.log'),
       level: 'error',
       format: fileFormat,
     }),
-    // Archivo general de logs
     new winston.transports.File({
-      filename: path.join(__dirname, '../logs/all.log'),
+      filename: path.join(logDir, 'all.log'),
       format: fileFormat,
     }),
   ],
 });
 
-// Si no estamos en producción, mostramos logs en consola con colores
+// En desarrollo o testing, incluir consola con colores
 if (process.env.NODE_ENV !== 'production') {
   logger.add(new winston.transports.Console({ format: consoleFormat }));
 }

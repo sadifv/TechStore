@@ -1,23 +1,23 @@
 <nav class="navbar" role="navigation" aria-label="Navegación principal">
     <a href="/#inicio" class="navbar-logo" aria-label="TechStore - Inicio">
-        <i class="ri-store-line"></i>
+        <i class="ri-store-line" aria-hidden="true"></i>
         <span>TechStore</span>
     </a>
     
     <button class="navbar-toggle" aria-expanded="false" aria-controls="navbar-menu" aria-label="Abrir menú">
-        <i class="ri-menu-line"></i>
+        <i class="ri-menu-line" aria-hidden="true"></i>
     </button>
     
     <ul id="navbar-menu" class="navbar-menu" role="menubar">
-        <li role="none"><a href="/#inicio" role="menuitem"><i class="ri-home-line"></i> Inicio</a></li>
-        <li role="none"><a href="/catalogo" role="menuitem"><i class="ri-shopping-bag-line"></i> Catálogo</a></li>
-        <li role="none"><a href="/#contacto" role="menuitem"><i class="ri-mail-line"></i> Contacto</a></li>
-        <li role="none"><a href="/#ai-assistant" role="menuitem"><i class="ri-robot-line"></i> IA Assistant</a></li>
+        <li role="none"><a href="/#inicio" role="menuitem"><i class="ri-home-line" aria-hidden="true"></i> Inicio</a></li>
+        <li role="none"><a href="/catalogo" role="menuitem"><i class="ri-shopping-bag-line" aria-hidden="true"></i> Catálogo</a></li>
+        <li role="none"><a href="/#contacto" role="menuitem"><i class="ri-mail-line" aria-hidden="true"></i> Contacto</a></li>
+        <li role="none"><a href="/#ai-assistant" role="menuitem"><i class="ri-robot-line" aria-hidden="true"></i> IA Assistant</a></li>
 
         <!-- Ícono del Carrito con Contador -->
         <li role="none">
             <button id="cart-btn" class="cart-btn-nav" aria-label="Ver carrito">
-                <i class="ri-shopping-cart-2-line"></i>
+                <i class="ri-shopping-cart-2-line" aria-hidden="true"></i>
                 <span id="cart-count" class="cart-badge">0</span>
             </button>
         </li>
@@ -26,7 +26,7 @@
             <!-- Enlace al Perfil del Usuario -->
             <li role="none">
                 <a href="/profile" role="menuitem" class="user-greeting" title="Ver mi perfil">
-                    <i class="ri-user-smile-line"></i> <%= user.name %>
+                    <i class="ri-user-smile-line" aria-hidden="true"></i> <%= user.name %>
                 </a>
             </li>
 
@@ -34,7 +34,7 @@
                 <!-- Acceso al Panel para Administradores -->
                 <li role="none">
                     <a href="/admin/dashboard" role="menuitem" class="btn btn-primary">
-                        <i class="ri-user-settings-line"></i> Panel Admin
+                        <i class="ri-user-settings-line" aria-hidden="true"></i> Panel Admin
                     </a>
                 </li>
             <% } %>
@@ -42,19 +42,19 @@
             <!-- Botón de Salir/Logout -->
             <li role="none">
                 <a href="/admin/logout" role="menuitem" class="btn btn-secondary">
-                    <i class="ri-logout-box-r-line"></i> Salir
+                    <i class="ri-logout-box-r-line" aria-hidden="true"></i> Salir
                 </a>
             </li>
         <% } else { %>
             <!-- Usuario Invitado (Sin Sesión Activa) -->
             <li role="none">
                 <a href="/login" role="menuitem" class="btn btn-secondary">
-                    <i class="ri-user-line"></i> Iniciar Sesión
+                    <i class="ri-user-line" aria-hidden="true"></i> Iniciar Sesión
                 </a>
             </li>
             <li role="none">
                 <a href="/register" role="menuitem" class="btn btn-primary">
-                    <i class="ri-user-add-line"></i> Registrarse
+                    <i class="ri-user-add-line" aria-hidden="true"></i> Registrarse
                 </a>
             </li>
         <% } %>

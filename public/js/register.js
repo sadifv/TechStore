@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } catch (error) {
-                logger.error('Error en el registro:', error);
+                console.error('Error en el registro:', error);
                 if (statusOutput) {
                     statusOutput.textContent = 'Ocurrió un error de conexión con el servidor.';
                     statusOutput.className = 'status-message error';

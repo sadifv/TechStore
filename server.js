@@ -76,7 +76,7 @@ app.use('/api', apiLimiter);
 
 // 4. Middlewares para parsear datos
 // IMPORTANTE: El webhook de Stripe necesita el cuerpo en formato raw (Buffer)
-app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/orders/webhook', express.raw({ type: 'application/json' }), (req, res, next) => next());
 
 // Parsers globales para el resto de rutas
 app.use(express.json());
@@ -162,7 +162,12 @@ process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+// 13. Inicialización del servidor HTTP solo si no se requiere como módulo de prueba
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
     logger.info(`Servidor ejecutándose en http://localhost:${PORT}`);
-});
+  });
+}
+
+module.exports = app;

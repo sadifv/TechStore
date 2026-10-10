@@ -13,7 +13,6 @@ async function loadProducts(page = 1) {
 
     if (!catalogContainer) return;
 
-    // Obtención de parámetros de búsqueda y filtros
     const search = searchInput ? searchInput.value.trim() : '';
     const category = categorySelect ? categorySelect.value : 'all';
     const sort = sortSelect ? sortSelect.value : 'recent';
@@ -32,12 +31,10 @@ async function loadProducts(page = 1) {
 
         if (!data.success) return;
 
-        // Limpieza segura del contenedor
         while (catalogContainer.firstChild) {
             catalogContainer.removeChild(catalogContainer.firstChild);
         }
 
-        // Caso sin productos encontrados
         if (data.products.length === 0) {
             const emptyLi = document.createElement('li');
             emptyLi.classList.add('empty-state-item');
@@ -57,7 +54,6 @@ async function loadProducts(page = 1) {
             return;
         }
 
-        // Renderizado semántico de tarjetas de producto
         data.products.forEach(product => {
             const li = document.createElement('li');
 
@@ -65,7 +61,7 @@ async function loadProducts(page = 1) {
             article.classList.add('product-card');
 
             const img = document.createElement('img');
-            img.src = product.image || '/images/placeholder.jpg';
+            img.src = product.image || '/images/default-product.png';
             img.alt = product.name;
             img.loading = 'lazy';
 
@@ -84,10 +80,9 @@ async function loadProducts(page = 1) {
             addBtn.textContent = 'Agregar al Carrito';
             addBtn.dataset.id = product._id;
             
-            // Reutiliza la función global de agregar al carrito si existe
             addBtn.addEventListener('click', () => {
-                if (typeof addToCart === 'function') {
-                    addToCart(product._id);
+                if (typeof window.addToCart === 'function') {
+                    window.addToCart(product._id);
                 }
             });
             footer.appendChild(addBtn);
@@ -101,11 +96,22 @@ async function loadProducts(page = 1) {
             catalogContainer.appendChild(li);
         });
 
-        // Renderizado del bloque de controles de paginación
-        renderPagination(data.pagination, paginationContainer);
+        renderPagination(data.pagination || { totalPages: 1, currentPage: 1 }, paginationContainer);
 
     } catch (error) {
-        logger.error('Error al cargar productos:', error);
+        console.error('Error al cargar productos:', error);
+        if (catalogContainer) {
+            while (catalogContainer.firstChild) {
+                catalogContainer.removeChild(catalogContainer.firstChild);
+            }
+            const errorLi = document.createElement('li');
+            errorLi.classList.add('empty-state-item');
+            const errorMsg = document.createElement('p');
+            errorMsg.classList.add('empty-msg');
+            errorMsg.textContent = 'Error al cargar productos. Intenta recargar la página.';
+            errorLi.appendChild(errorMsg);
+            catalogContainer.appendChild(errorLi);
+        }
     }
 }
 
@@ -122,7 +128,6 @@ function renderPagination(pagination, container) {
     nav.setAttribute('aria-label', 'Navegación de productos');
     nav.classList.add('pagination-nav');
 
-    // Botón Anterior
     const prevBtn = document.createElement('button');
     prevBtn.classList.add('btn', 'btn-secondary', 'pagination-btn');
     prevBtn.textContent = '« Anterior';
@@ -134,13 +139,11 @@ function renderPagination(pagination, container) {
     });
     nav.appendChild(prevBtn);
 
-    // Indicador de Página
     const pageInfo = document.createElement('span');
     pageInfo.classList.add('pagination-info');
     pageInfo.textContent = `Página ${pagination.currentPage} de ${pagination.totalPages}`;
     nav.appendChild(pageInfo);
 
-    // Botón Siguiente
     const nextBtn = document.createElement('button');
     nextBtn.classList.add('btn', 'btn-secondary', 'pagination-btn');
     nextBtn.textContent = 'Siguiente »';
@@ -156,11 +159,11 @@ function renderPagination(pagination, container) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('[Catalog] DOMContentLoaded disparado');
     const searchInput = document.getElementById('search-input');
     const categorySelect = document.getElementById('category-select');
     const sortSelect = document.getElementById('sort-select');
 
-    // Listeners de eventos de filtros
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             clearTimeout(debounceTimer);

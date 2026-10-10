@@ -1,9 +1,10 @@
 const { validationResult, body } = require('express-validator');
+const logger = require('../config/logger');
 
-// Middleware generador para verificar los errores de express-validator
+// Middleware generador para verificar errores de express-validator
 const validate = (validations) => {
     return async (req, res, next) => {
-        // Ejecutar todas las validaciones definidas
+        // Ejecutar todas las validaciones
         await Promise.all(validations.map(validation => validation.run(req)));
 
         const errors = validationResult(req);
@@ -11,15 +12,18 @@ const validate = (validations) => {
             return next();
         }
 
-        // Si la petición viene de una API / Fetch / Axios / JSON
-        if (req.xhr || req.headers.accept?.includes('json') || req.path.startsWith('/api')) {
+        logger.warn(`Error de validación en ruta: ${req.originalUrl} - IP: ${req.ip}`);
+
+        // Respuesta en formato JSON si es petición AJAX / API / Fetch
+        if (req.xhr || req.headers.accept?.includes('json') || req.path.startsWith('/api') || req.path.startsWith('/admin')) {
             return res.status(400).json({
                 success: false,
+                error: errors.array()[0].msg, // Mensaje principal para toast
                 errors: errors.array().map(err => ({ field: err.path, message: err.msg }))
             });
         }
 
-        // Si viene de un formulario HTML EJS convencional
+        // Renderizado HTML si es navegación web tradicional
         try {
             const viewName = req.route?.path ? req.route.path.replace(/^\//, '') : 'index';
             return res.status(400).render(viewName, {
@@ -30,6 +34,7 @@ const validate = (validations) => {
         } catch (renderError) {
             return res.status(400).json({
                 success: false,
+                error: errors.array()[0].msg,
                 errors: errors.array().map(err => ({ field: err.path, message: err.msg }))
             });
         }
@@ -49,11 +54,13 @@ const authValidation = {
     ]
 };
 
+// Validación de Productos (Soporta archivo subido o URL)
 const productValidation = [
     body('name').trim().notEmpty().withMessage('El nombre del producto es obligatorio'),
     body('price').isFloat({ gt: 0 }).withMessage('El precio debe ser un número mayor a 0'),
     body('stock').isInt({ min: 0 }).withMessage('El stock debe ser un número entero mayor o igual a 0'),
-    body('category').trim().notEmpty().withMessage('Debes seleccionar una categoría')
+    body('category').trim().notEmpty().withMessage('Debes seleccionar una categoría'),
+    body('image').optional().trim()
 ];
 
 const contactValidation = [

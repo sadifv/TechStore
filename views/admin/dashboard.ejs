@@ -31,6 +31,7 @@
     <section class="dashboard-orders">
         <header class="section-header">
             <h2>Gestión de Pedidos y Órdenes</h2>
+            <a href="/admin/orders" class="btn btn-sm btn-outline">Ver Todas las Órdenes &rarr;</a>
         </header>
 
         <table class="data-table">
@@ -42,6 +43,7 @@
                     <th scope="col">Pago</th>
                     <th scope="col">Estado Envío</th>
                     <th scope="col">Fecha</th>
+                    <th scope="col">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,7 +51,7 @@
                     <% orders.forEach(ord => { %>
                         <tr data-id="<%= ord._id %>">
                             <td><strong>#<%= ord._id.toString().substring(0, 8) %></strong></td>
-                            <td><%= ord.user ? ord.user.name : 'Usuario Desconocido' %> (<%= ord.user ? ord.user.email : 'N/A' %>)</td>
+                            <td><%= ord.user ? ord.user.name : (ord.guestInfo ? ord.guestInfo.name + ' (Invitado)' : 'Usuario Desconocido') %> (<%= ord.user ? ord.user.email : (ord.guestInfo ? ord.guestInfo.email : 'N/A') %>)</td>
                             <td>$<%= Number(ord.totalAmount || ord.total || 0).toFixed(2) %></td>
                             <td>
                                 <span class="badge badge-<%= ord.paymentStatus === 'paid' ? 'primary' : 'secondary' %>">
@@ -62,15 +64,21 @@
                                     <option value="processing" <%= ord.status === 'processing' ? 'selected' : '' %>>En Proceso</option>
                                     <option value="shipped" <%= ord.status === 'shipped' ? 'selected' : '' %>>Enviado</option>
                                     <option value="delivered" <%= ord.status === 'delivered' ? 'selected' : '' %>>Entregado</option>
+                                    <option value="completed" <%= ord.status === 'completed' ? 'selected' : '' %>>Completado</option>
                                     <option value="cancelled" <%= ord.status === 'cancelled' ? 'selected' : '' %>>Cancelado</option>
                                 </select>
                             </td>
-                            <td><%= new Date(ord.createdAt).toLocaleDateString() %></td>
+                            <td><%= new Date(ord.createdAt).toLocaleDateString('es-EC') %></td>
+                            <td>
+                                <a href="/admin/orders/<%= ord._id %>" class="btn btn-sm btn-secondary" title="Ver Detalle">
+                                    <i class="ri-eye-line" aria-hidden="true"></i> Detalle
+                                </a>
+                            </td>
                         </tr>
                     <% }) %>
                 <% } else { %>
                     <tr>
-                        <td colspan="6">No hay órdenes registradas aún.</td>
+                        <td colspan="7">No hay órdenes registradas aún.</td>
                     </tr>
                 <% } %>
             </tbody>
@@ -128,7 +136,7 @@
                                     <%= u.role %>
                                 </span>
                             </td>
-                            <td><%= new Date(u.createdAt).toLocaleDateString() %></td>
+                            <td><%= new Date(u.createdAt).toLocaleDateString('es-EC') %></td>
                             <td>
                                 <% if (u.role !== 'admin') { %>
                                     <button type="button" class="btn btn-sm btn-delete btn-delete-user" data-id="<%= u._id %>">
@@ -169,7 +177,7 @@
                             <td><%= msg.name %></td>
                             <td><%= msg.email %></td>
                             <td><%= msg.message %></td>
-                            <td><%= new Date(msg.createdAt).toLocaleDateString() %></td>
+                            <td><%= new Date(msg.createdAt).toLocaleDateString('es-EC') %></td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-delete btn-delete-message" data-id="<%= msg._id %>">
                                     Eliminar
@@ -202,7 +210,7 @@
                     <% subscribers.forEach(sub => { %>
                         <tr data-id="<%= sub._id %>">
                             <td><%= sub.email %></td>
-                            <td><%= new Date(sub.createdAt).toLocaleDateString() %></td>
+                            <td><%= new Date(sub.createdAt).toLocaleDateString('es-EC') %></td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-delete btn-delete-subscriber" data-id="<%= sub._id %>">
                                     Eliminar
@@ -228,8 +236,8 @@
             <button id="btn-close-modal" class="btn-close" aria-label="Cerrar">&times;</button>
         </header>
 
-        <form id="product-form">
-            <input type="hidden" id="product-id" />
+        <form id="product-form" enctype="multipart/form-data">
+            <input type="hidden" id="product-id" name="id" />
 
             <p class="form-field">
                 <label for="prod-name">Nombre del Producto</label>
@@ -272,10 +280,21 @@
                 </p>
 
                 <p class="form-field">
-                    <label for="prod-image">URL Imagen</label>
-                    <input type="text" id="prod-image" name="image" placeholder="https://..." required />
+                    <label for="prod-image-file">Subir Imagen Local (Opcional)</label>
+                    <input type="file" id="prod-image-file" name="imageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
                 </p>
             </fieldset>
+
+            <p class="form-field">
+                <label for="prod-image">URL de Imagen (Si no subes archivo)</label>
+                <input type="text" id="prod-image" name="image" placeholder="https://..." />
+            </p>
+
+            <!-- Previsualización de la imagen -->
+            <figure class="form-field image-preview-container" style="text-align: center; margin: 1rem 0;">
+                <figcaption style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #64748b;">Vista previa de imagen:</figcaption>
+                <img id="prod-image-preview" src="/images/default-product.png" alt="Vista previa del producto" style="max-height: 120px; border-radius: 6px; object-fit: contain; border: 1px solid #cbd5e1; padding: 4px;" />
+            </figure>
 
             <footer class="modal-actions">
                 <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>

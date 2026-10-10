@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnCancelModal = document.getElementById('btn-cancel-modal');
 
+    // Elementos de la imagen y previsualización
+    const imageFileInput = document.getElementById('prod-image-file');
+    const imageUrlInput = document.getElementById('prod-image');
+    const imagePreview = document.getElementById('prod-image-preview');
+
     // Flash Sale modal
     const flashModal = document.getElementById('flash-sale-modal');
     const flashForm = document.getElementById('flash-sale-form');
@@ -24,6 +29,32 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchProducts();
 
     // ==========================================
+    // PREVISUALIZACIÓN DE IMÁGENES
+    // ==========================================
+
+    if (imageFileInput && imagePreview) {
+        imageFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    imagePreview.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    if (imageUrlInput && imagePreview) {
+        imageUrlInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            if (url && (!imageFileInput || !imageFileInput.files.length)) {
+                imagePreview.src = url;
+            }
+        });
+    }
+
+    // ==========================================
     // MODAL DE PRODUCTO (Crear/Editar)
     // ==========================================
 
@@ -31,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnOpenCreate.addEventListener('click', () => {
             productForm.reset();
             document.getElementById('product-id').value = '';
+            if (imagePreview) imagePreview.src = '/images/default-product.png';
             modalTitle.textContent = 'Agregar Producto';
             productModal.showModal();
         });
@@ -45,20 +77,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
 
             const id = document.getElementById('product-id').value;
-            const payload = {
-                name: document.getElementById('prod-name').value.trim(),
-                description: document.getElementById('prod-description').value.trim(),
-                price: window.parsePrice(document.getElementById('prod-price').value),
-                stock: parseInt(document.getElementById('prod-stock').value, 10),
-                category: document.getElementById('prod-category').value,
-                image: document.getElementById('prod-image').value.trim()
-            };
+            const priceVal = parseFloat(document.getElementById('prod-price').value);
 
-            // Validación rápida
-            if (isNaN(payload.price) || payload.price < 0) {
+            if (isNaN(priceVal) || priceVal < 0) {
                 window.showToast('El precio debe ser un número válido mayor o igual a 0.', 'error');
                 return;
             }
+
+            // Construcción de FormData para soporte de archivos binarios
+            const formData = new FormData(productForm);
 
             const isEditing = Boolean(id);
             const url = isEditing ? `/admin/products/${id}` : '/admin/products';
@@ -67,8 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const res = await fetch(url, {
                     method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData // Enviar como multipart/form-data
                 });
 
                 const data = await res.json();
@@ -84,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Ocurrió un error al procesar la solicitud', 'error');
                 }
             } catch (err) {
-                logger.error('Error al guardar producto:', err);
+                console.error('Error al guardar producto:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
@@ -132,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al activar la oferta', 'error');
                 }
             } catch (err) {
-                logger.error('Error al activar flash sale:', err);
+                console.error('Error al activar flash sale:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
@@ -151,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderProducts(data.products);
             }
         } catch (err) {
-            logger.error('Error al cargar productos:', err);
+            console.error('Error al cargar productos:', err);
         }
     }
 
@@ -179,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. Imagen
             const tdImage = document.createElement('td');
             const img = document.createElement('img');
-            img.src = prod.image;
+            img.src = prod.image || '/images/default-product.png';
             img.alt = prod.name;
             img.width = 50;
             img.style.objectFit = 'cover';
@@ -281,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // ACCIONES DE PRODUCTOS: EDITAR, ELIMINAR Y FLASH SALE
+    // EDITAR PRODUCTO Y CARGAR VISTA PREVIA
     // ==========================================
 
     function editProduct(id) {
@@ -293,7 +319,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prod-description').value = prod.description || '';
         document.getElementById('prod-price').value = prod.price;
         document.getElementById('prod-stock').value = prod.stock;
-        document.getElementById('prod-image').value = prod.image;
+        document.getElementById('prod-image').value = prod.image || '';
+
+        if (imageFileInput) imageFileInput.value = '';
+        if (imagePreview) imagePreview.src = prod.image || '/images/default-product.png';
 
         const categorySelect = document.getElementById('prod-category');
         const categoryExists = Array.from(categorySelect.options)
@@ -329,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.showToast(data.error || 'Error al eliminar', 'error');
             }
         } catch (err) {
-            logger.error('Error al eliminar producto:', err);
+            console.error('Error al eliminar producto:', err);
             window.showToast('Error de conexión con el servidor.', 'error');
         }
     }
@@ -366,13 +395,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.showToast(data.error || 'Error al detener la oferta', 'error');
             }
         } catch (err) {
-            logger.error('Error al detener flash sale:', err);
+            console.error('Error al detener flash sale:', err);
             window.showToast('Error de conexión con el servidor.', 'error');
         }
     }
 
     // ==========================================
-    // ACTUALIZACIÓN DEL ESTADO DE ÓRDENES (NEW)
+    // ACTUALIZACIÓN DEL ESTADO DE ÓRDENES (ADMIN)
     // ==========================================
 
     document.addEventListener('change', async (e) => {
@@ -383,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newStatus = statusSelect.value;
 
         try {
-            const res = await fetch(`/api/orders/${orderId}/status`, {
+            const res = await fetch(`/admin/orders/${orderId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -397,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.showToast(data.error || 'Error al actualizar estado', 'error');
             }
         } catch (err) {
-            logger.error('Error al actualizar estado de orden:', err);
+            console.error('Error al actualizar estado de orden:', err);
             window.showToast('Error de conexión con el servidor.', 'error');
         }
     });
@@ -430,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al eliminar el mensaje', 'error');
                 }
             } catch (err) {
-                logger.error('Error al eliminar mensaje:', err);
+                console.error('Error al eliminar mensaje:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;
@@ -459,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al eliminar el suscriptor', 'error');
                 }
             } catch (err) {
-                logger.error('Error al eliminar suscriptor:', err);
+                console.error('Error al eliminar suscriptor:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;
@@ -488,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.showToast(data.error || 'Error al eliminar el usuario', 'error');
                 }
             } catch (err) {
-                logger.error('Error al eliminar usuario:', err);
+                console.error('Error al eliminar usuario:', err);
                 window.showToast('Error de conexión con el servidor.', 'error');
             }
             return;

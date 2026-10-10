@@ -16,18 +16,9 @@
 
     <%- include('components/footer') %>
 
-    <!-- Variable global de sesión -->
-    <script>
-        window.IS_AUTHENTICATED = "<%= typeof user !== 'undefined' && user ? 'true' : 'false' %>" === 'true';
-    </script>
-
-    <!-- Utilidades (showToast, showConfirm, delegación carrito) -->
-    <script src="/js/utils.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
-
-    <!-- Scripts de la aplicación -->
-    <script src="/js/cart.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
-    <script src="/js/navbar.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
-    <script src="/js/ai-assistant.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
-    <script src="/js/main.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+    <script src="/js/main.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
+    <% if (typeof title !== 'undefined' && title === 'Catálogo de Productos - TechStore') { %>
+        <script src="/js/catalog.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
+    <% } %>
 </body>
 </html>

@@ -17,11 +17,13 @@ const productSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        required: [true, 'La URL de la imagen es obligatoria']
+        default: '/images/default-product.png',
+        trim: true
     },
     category: {
         type: String,
-        default: 'General'
+        default: 'General',
+        index: true
     },
     stock: {
         type: Number,
@@ -31,7 +33,8 @@ const productSchema = new mongoose.Schema({
     // FLASH SALE (Oferta Relámpago)
     flashSale: {
         type: Boolean,
-        default: false
+        default: false,
+        index: true
     },
     flashSaleDiscount: {
         type: Number,

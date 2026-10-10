@@ -43,38 +43,32 @@
         </fieldset>
     </form>
 
-    <% if (typeof products !== 'undefined' && products.length > 0) { %>
-        <!-- Grid dinámico/SSR de productos semántico -->
-        <ul id="products-grid" class="products-grid" aria-live="polite">
+    <!-- Contenedor para renderizado dinámico vía API -->
+    <ul id="products-grid" class="products-grid" aria-live="polite">
+        <% if (typeof products !== 'undefined' && products.length > 0) { %>
             <% products.forEach(product => { %>
                 <li>
                     <article class="product-card">
-                        <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy" />
+                        <img src="<%= product.image || '/images/default-product.png' %>" alt="<%= product.name %>" loading="lazy" />
                         <header>
                             <h3><%= product.name %></h3>
                         </header>
                         <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
                         <footer>
-                            <button type="button" class="btn btn-secondary add-to-cart-btn" data-id="<%= product._id %>">
+                            <button type="button" class="btn btn-secondary btn-add-cart" data-id="<%= product._id %>">
                                 Añadir al carrito
                             </button>
                         </footer>
                     </article>
                 </li>
             <% }) %>
-        </ul>
-    <% } else { %>
-        <!-- Contenedor para renderizado dinámico vía API -->
-        <ul id="products-grid" class="products-grid" aria-live="polite">
+        <% } else { %>
             <li class="empty-state-item">
                 <p class="empty-msg">Cargando productos...</p>
             </li>
-        </ul>
-    <% } %>
+        <% } %>
+    </ul>
 
     <!-- Navegación de paginación dinámicas (<nav>) -->
     <nav id="pagination-controls" class="pagination-container" aria-label="Navegación de páginas"></nav>
 </section>
-
-<!-- Script de manipulación dinámica del DOM y paginación -->
-<script src="/js/catalog.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>

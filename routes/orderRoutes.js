@@ -3,20 +3,15 @@ const router = express.Router();
 const { createOrder, confirmOrderPayment, getUserOrders, handleStripeWebhook } = require('../controllers/orderController');
 const { requireAuth } = require('../middleware/authMiddleware');
 
-// 1. RUTA PÚBLICA DE WEBHOOK (Stripe la llama directamente)
-// Requiere 'express.raw' para validar la firma criptográfica del evento
-router.post(
-  '/webhook',
-  express.raw({ type: 'application/json' }),
-  handleStripeWebhook
-);
+// Webhook de Stripe (Público, validado con Stripe Signature)
+// Nota: El middleware express.raw() se aplica globalmente en server.js
+router.post('/webhook', handleStripeWebhook);
 
-// 2. MIDDLEWARE DE AUTENTICACIÓN (Aplica solo a las rutas que están abajo)
-router.use(requireAuth);
-
-// Rutas protegidas para el cliente/usuario
+// Procesar Checkout y Confirmación de Pago (Público: Soporta Invitados y Autenticados)
 router.post('/checkout', createOrder);
 router.get('/confirm', confirmOrderPayment);
-router.get('/', getUserOrders);
+
+// Historial de compras (Protegido: requiere inicio de sesión)
+router.get('/', requireAuth, getUserOrders);
 
 module.exports = router;

@@ -44,6 +44,20 @@
             </button>
         </header>
 
+        <% if (typeof user === 'undefined' || !user) { %>
+            <fieldset class="form-group" id="guest-checkout-fields">
+                <legend>Datos del Comprador</legend>
+                <p class="form-field">
+                    <label for="guest-name">Nombre Completo</label>
+                    <input type="text" id="guest-name" name="guestName" class="form-control" placeholder="Ej. Juan Pérez" required />
+                </p>
+                <p class="form-field">
+                    <label for="guest-email">Correo Electrónico para Recibo</label>
+                    <input type="email" id="guest-email" name="guestEmail" class="form-control" placeholder="correo@ejemplo.com" required />
+                </p>
+            </fieldset>
+        <% } %>
+
         <fieldset class="form-group">
             <legend>Método de Pago</legend>
             <label for="payment-method" class="sr-only">Selecciona tu método de pago</label>

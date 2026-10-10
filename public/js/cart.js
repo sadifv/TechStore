@@ -25,7 +25,6 @@ async function syncGuestCartToUser() {
     try {
         for (const item of localCart) {
             const validId = item.id || item.productId || item._id;
-            // Solo enviar al backend si el ID es un valor real y no nulo/indefinido
             if (validId && validId !== 'undefined' && validId !== 'null') {
                 await fetch('/api/cart/add', {
                     method: 'POST',
@@ -43,7 +42,6 @@ async function syncGuestCartToUser() {
     } catch (error) {
         console.error('Error al sincronizar el carrito local:', error);
     } finally {
-        // Garantiza que el localStorage quede limpio tras intentar la sincronización
         clearGuestCart();
         console.log('Carrito local limpiado tras la sincronización.');
     }
@@ -101,12 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 const data = await response.json();
-                // Extraer lista de ítems soportando la respuesta del controlador
                 const itemsList = data.data ? (data.data.items || data.data) : (data.items || []);
-                
+
                 if (Array.isArray(itemsList)) {
                     cart = itemsList
-                        // Filtro de seguridad: Omite ítems huérfanos sin datos de producto reales
                         .filter(item => item && (item.product || item.productId || item.id))
                         .map(item => {
                             const prod = item.product || {};
@@ -147,13 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function closeCart() {
         if (cartDrawer) {
-            // Quita el foco activo de cualquier elemento interno antes de ocultar
             if (document.activeElement && cartDrawer.contains(document.activeElement)) {
                 document.activeElement.blur();
             }
             cartDrawer.classList.remove('open');
             cartDrawer.setAttribute('aria-hidden', 'true');
-            cartDrawer.setAttribute('inert', ''); // Desactiva interacción para lectores de pantalla
+            cartDrawer.setAttribute('inert', '');
 
             if (cartBtn) {
                 cartBtn.focus();
@@ -169,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!cartCountEl) return;
         const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
         cartCountEl.textContent = totalItems.toString();
-        
+
         cartCountEl.classList.add('bump');
         setTimeout(() => cartCountEl.classList.remove('bump'), 300);
     }
@@ -370,14 +365,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (productId) {
                 await addToCart(productId, 1, productData);
-                
+
                 const icon = document.createElement('i');
                 icon.classList.add('ri-check-line');
-                
+
                 while (addBtn.firstChild) {
                     addBtn.removeChild(addBtn.firstChild);
                 }
-                
+
                 addBtn.appendChild(icon);
                 addBtn.appendChild(document.createTextNode(' ¡Añadido!'));
                 addBtn.disabled = true;
@@ -404,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemEl = e.target.closest('.cart-item');
             const id = itemEl.getAttribute('data-id');
             const item = cart.find(i => i.id === id);
-            
+
             if (item && item.quantity > 1) {
                 await addToCart(id, -1);
             } else {
@@ -461,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Enviar Orden / Iniciar Sesión de Stripe Checkout
+    // Enviar Orden / Iniciar Sesión de Stripe Checkout (Soporta Invitados y Autenticados)
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -469,6 +464,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const submitBtn = document.getElementById('btn-confirm-order');
             const paymentMethodSelect = document.getElementById('payment-method');
             const paymentMethod = paymentMethodSelect ? paymentMethodSelect.value : 'card';
+
+            const payload = {
+                paymentMethod,
+                items: cart.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                }))
+            };
+
+            // Recopilar datos de invitado si el usuario no ha iniciado sesión
+            if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
+                const guestNameInput = document.getElementById('guest-name');
+                const guestEmailInput = document.getElementById('guest-email');
+
+                if (!guestEmailInput || !guestEmailInput.value.trim()) {
+                    notify('Por favor, ingresa un correo electrónico válido.', 'error');
+                    if (checkoutStatus) {
+                        checkoutStatus.textContent = 'Por favor, ingresa un correo electrónico válido.';
+                        checkoutStatus.className = 'form-status error';
+                    }
+                    return;
+                }
+
+                payload.guestInfo = {
+                    name: guestNameInput ? guestNameInput.value.trim() : 'Invitado',
+                    email: guestEmailInput.value.trim()
+                };
+            }
 
             if (submitBtn) {
                 submitBtn.disabled = true;
@@ -482,33 +506,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ paymentMethod })
+                    body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.success && data.url) {
                     clearGuestCart();
-                    // Redirección oficial a la pasarela de pago de Stripe
                     window.location.href = data.url;
                 } else {
-                    if (response.status === 401) {
-                        notify('Debes iniciar sesión para completar la compra.', 'error');
-                        if (checkoutStatus) {
-                            checkoutStatus.textContent = 'Debes iniciar sesión para completar la compra.';
-                            checkoutStatus.className = 'form-status error';
-                        }
-                    } else {
-                        const errorMsg = data.error || 'Ocurrió un error al procesar el pedido.';
-                        notify(errorMsg, 'error');
-                        if (checkoutStatus) {
-                            checkoutStatus.textContent = errorMsg;
-                            checkoutStatus.className = 'form-status error';
-                        }
+                    const errorMsg = data.error || 'Ocurrió un error al procesar el pedido.';
+                    notify(errorMsg, 'error');
+                    if (checkoutStatus) {
+                        checkoutStatus.textContent = errorMsg;
+                        checkoutStatus.className = 'form-status error';
                     }
                 }
             } catch (error) {
-                logger.error('Error durante la orden:', error);
+                console.error('Error durante la orden:', error);
                 notify('Error de conexión con el servidor.', 'error');
                 if (checkoutStatus) {
                     checkoutStatus.textContent = 'Error de conexión con el servidor.';

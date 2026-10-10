@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+
 const { requireAdmin } = require('../middleware/authMiddleware');
 const { logoutUser } = require('../controllers/authController');
 const {
@@ -9,19 +10,26 @@ const {
     activateFlashSale,
     deactivateFlashSale
 } = require('../controllers/productController');
-const { updateOrderStatus } = require('../controllers/orderController'); // 👈 Controlador de estados de orden
+const { updateOrderStatus } = require('../controllers/orderController');
+const { 
+    getAdminOrders, 
+    getAdminOrderDetail, 
+    getPackingSlip 
+} = require('../controllers/adminController');
+const { uploadSingleProductImage } = require('../middleware/uploadMiddleware');
 const { validate, productValidation } = require('../middleware/validationMiddleware');
+
 const Product = require('../models/Product');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
-const Order = require('../models/Order'); // 👈 Modelo de Órdenes
+const Order = require('../models/Order');
 const logger = require('../config/logger');
 
 // Cerrar sesión
 router.get('/logout', logoutUser);
 
-// Vista del Dashboard (Protegida)
+// Dashboard
 router.get('/dashboard', requireAdmin, async (req, res) => {
     try {
         const productsCount = await Product.countDocuments();
@@ -57,19 +65,30 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
     }
 });
 
-// Actualización del Estado de Órdenes (Admin)
+// ==========================================
+// GESTIÓN DE ÓRDENES Y PACKING SLIP
+// ==========================================
+
+router.get('/orders', requireAdmin, getAdminOrders);
+router.get('/orders/:id', requireAdmin, getAdminOrderDetail);
+router.get('/orders/:id/packing-slip', requireAdmin, getPackingSlip);
 router.put('/orders/:id/status', requireAdmin, updateOrderStatus);
 
-// Rutas API CRUD para Administración de Productos
-router.post('/products', requireAdmin, validate(productValidation), createProduct);
-router.put('/products/:id', requireAdmin, validate(productValidation), updateProduct);
+// ==========================================
+// PRODUCTOS Y OFERTAS FLASH
+// ==========================================
+
+router.post('/products', requireAdmin, uploadSingleProductImage, validate(productValidation), createProduct);
+router.put('/products/:id', requireAdmin, uploadSingleProductImage, validate(productValidation), updateProduct);
 router.delete('/products/:id', requireAdmin, deleteProduct);
 
-// Rutas API para Flash Sale
 router.post('/products/:id/flash-sale', requireAdmin, activateFlashSale);
 router.delete('/products/:id/flash-sale', requireAdmin, deactivateFlashSale);
 
-// Rutas API CRUD para Eliminación de Mensajes y Suscriptores
+// ==========================================
+// ELIMINACIÓN DE RECURSOS (ADMIN)
+// ==========================================
+
 router.delete('/messages/:id', requireAdmin, async (req, res) => {
     try {
         await Contact.findByIdAndDelete(req.params.id);
@@ -90,7 +109,6 @@ router.delete('/subscribers/:id', requireAdmin, async (req, res) => {
     }
 });
 
-// Ruta API CRUD para Eliminación de Usuarios
 router.delete('/users/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;

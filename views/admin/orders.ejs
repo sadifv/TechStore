@@ -1,0 +1,89 @@
+<main class="admin-container container">
+  <header class="admin-header">
+    <h2><i class="ri-shopping-bag-line" aria-hidden="true"></i> Gestión de Órdenes</h2>
+    <nav class="admin-filter-nav" aria-label="Filtro de estados">
+      <a href="/admin/orders" class="btn btn-sm <%= !currentStatus ? 'btn-primary' : 'btn-outline' %>">Todas</a>
+      <a href="/admin/orders?status=pending" class="btn btn-sm <%= currentStatus === 'pending' ? 'btn-primary' : 'btn-outline' %>">Pendientes</a>
+      <a href="/admin/orders?status=processing" class="btn btn-sm <%= currentStatus === 'processing' ? 'btn-primary' : 'btn-outline' %>">En Proceso</a>
+      <a href="/admin/orders?status=shipped" class="btn btn-sm <%= currentStatus === 'shipped' ? 'btn-primary' : 'btn-outline' %>">Enviadas</a>
+      <a href="/admin/orders?status=completed" class="btn btn-sm <%= currentStatus === 'completed' ? 'btn-primary' : 'btn-outline' %>">Completadas</a>
+      <a href="/admin/orders?status=cancelled" class="btn btn-sm <%= currentStatus === 'cancelled' ? 'btn-primary' : 'btn-outline' %>">Canceladas</a>
+    </nav>
+  </header>
+
+  <section class="admin-table-wrapper">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID Orden</th>
+          <th>Cliente</th>
+          <th>Fecha</th>
+          <th>Total</th>
+          <th>Estado Pago</th>
+          <th>Estado Envío</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (orders && orders.length > 0) { %>
+          <% orders.forEach(order => { %>
+            <tr>
+              <td><code>#<%= order._id %></code></td>
+              <td>
+                <% if (order.user) { %>
+                  <strong><%= order.user.name %></strong><br>
+                  <small><%= order.user.email %></small>
+                <% } else if (order.guestInfo) { %>
+                  <strong><%= order.guestInfo.name %> (Invitado)</strong><br>
+                  <small><%= order.guestInfo.email %></small>
+                <% } else { %>
+                  <em>Cliente Desconocido</em>
+                <% } %>
+              </td>
+              <td><time datetime="<%= order.createdAt %>"><%= new Date(order.createdAt).toLocaleDateString('es-EC') %></time></td>
+              <td><strong>$<%= order.totalAmount.toFixed(2) %></strong></td>
+              <td>
+                <span class="badge badge-<%= order.paymentStatus === 'paid' ? 'success' : 'warning' %>">
+                  <%= order.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente' %>
+                </span>
+              </td>
+              <td>
+                <select class="form-control select-order-status" data-order-id="<%= order._id %>">
+                  <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pendiente</option>
+                  <option value="processing" <%= order.status === 'processing' ? 'selected' : '' %>>En Proceso</option>
+                  <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Enviado</option>
+                  <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>Entregado</option>
+                  <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Completado</option>
+                  <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelado</option>
+                </select>
+              </td>
+              <td>
+                <a href="/admin/orders/<%= order._id %>" class="btn btn-sm btn-secondary" title="Ver Detalle">
+                  <i class="ri-eye-line" aria-hidden="true"></i> Detalle
+                </a>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="7" style="text-align: center;">No se encontraron órdenes registradas.</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </section>
+
+  <% if (pagination && pagination.totalPages > 1) { %>
+    <nav class="pagination-nav" aria-label="Navegación de páginas">
+      <% if (pagination.currentPage > 1) { %>
+        <a href="/admin/orders?page=<%= pagination.currentPage - 1 %><%= currentStatus ? '&status=' + currentStatus : '' %>" class="btn btn-sm btn-outline">Anterior</a>
+      <% } %>
+      <span>Página <%= pagination.currentPage %> de <%= pagination.totalPages %></span>
+      <% if (pagination.currentPage < pagination.totalPages) { %>
+        <a href="/admin/orders?page=<%= pagination.currentPage + 1 %><%= currentStatus ? '&status=' + currentStatus : '' %>" class="btn btn-sm btn-outline">Siguiente</a>
+      <% } %>
+    </nav>
+  <% } %>
+</main>
+
+<script src="/js/admin-crud.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>

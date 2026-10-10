@@ -1,0 +1,82 @@
+<main class="admin-container container">
+  <header class="admin-header">
+    <div>
+      <a href="/admin/orders" class="btn btn-outline btn-sm">&larr; Volver a Órdenes</a>
+      <h2>Detalle de Orden #<%= order._id %></h2>
+    </div>
+    <div>
+      <a href="/admin/orders/<%= order._id %>/packing-slip" target="_blank" rel="noopener" class="btn btn-secondary">
+        <i class="ri-printer-line" aria-hidden="true"></i> Imprimir Packing Slip
+      </a>
+    </div>
+  </header>
+
+  <section class="order-detail-grid">
+    <article class="order-card">
+      <h3>Información del Cliente</h3>
+      <% if (order.user) { %>
+        <p><strong>Nombre:</strong> <%= order.user.name %></p>
+        <p><strong>Email:</strong> <%= order.user.email %></p>
+      <% } else if (order.guestInfo) { %>
+        <p><strong>Nombre:</strong> <%= order.guestInfo.name %> (Invitado)</p>
+        <p><strong>Email:</strong> <%= order.guestInfo.email %></p>
+      <% } else { %>
+        <p>Cliente sin información registrada</p>
+      <% } %>
+      <p><strong>Fecha de Orden:</strong> <%= new Date(order.createdAt).toLocaleString('es-EC') %></p>
+    </article>
+
+    <article class="order-card">
+      <h3>Estado del Pedido</h3>
+      <fieldset class="form-group">
+        <label for="order-detail-status">Estado Actual:</label>
+        <select id="order-detail-status" class="form-control select-order-status" data-order-id="<%= order._id %>">
+          <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pendiente</option>
+          <option value="processing" <%= order.status === 'processing' ? 'selected' : '' %>>En Proceso</option>
+          <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Enviado</option>
+          <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>Entregado</option>
+          <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Completado</option>
+          <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelado</option>
+        </select>
+      </fieldset>
+    </article>
+  </section>
+
+  <section class="order-items-section" style="margin-top: 2rem;">
+    <h3>Productos Comprados</h3>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio Unitario</th>
+          <th>Cantidad</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% order.items.forEach(item => { %>
+          <tr>
+            <td>
+              <% if (item.product) { %>
+                <strong><%= item.product.name %></strong>
+              <% } else { %>
+                <em>Producto no disponible o eliminado</em>
+              <% } %>
+            </td>
+            <td>$<%= item.price.toFixed(2) %></td>
+            <td><%= item.quantity %></td>
+            <td>$<%= (item.price * item.quantity).toFixed(2) %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" style="text-align: right;"><strong>Total General:</strong></td>
+          <td><strong>$<%= order.totalAmount.toFixed(2) %></strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
+</main>
+
+<script src="/js/admin-crud.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>

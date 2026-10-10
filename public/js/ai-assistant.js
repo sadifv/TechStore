@@ -1,4 +1,3 @@
-// public/js/ai-assistant.js
 document.addEventListener('DOMContentLoaded', () => {
   const chatForm = document.querySelector('#ai-chat-form');
   const chatInput = document.querySelector('#ai-chat-input');
@@ -7,19 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearBtn = document.querySelector('#ai-clear-chat');
   const sendBtn = chatForm?.querySelector('.ai-send');
 
-  // Si no existe el chat, es porque el usuario NO está logueado.
-  // No hay nada que hacer, el HTML ya muestra el bloque de login.
   if (!chatForm || !chatInput || !chatMessages) return;
 
-  // ==========================================
-  // FUNCIONES AUXILIARES
-  // ==========================================
-
-  /**
-   * Crea y añade un mensaje al historial usando SOLO DOM APIs.
-   * @param {'user'|'bot'} sender
-   * @param {string} text
-   */
   function appendMessage(sender, text) {
     const article = document.createElement('article');
     article.classList.add('ai-message');
@@ -41,9 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /**
-   * Muestra el indicador de "escribiendo...".
-   */
   function showTyping() {
     const typing = document.createElement('output');
     typing.classList.add('ai-typing');
@@ -62,9 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /**
-   * Elimina el indicador de "escribiendo...".
-   */
   function hideTyping() {
     const typing = document.querySelector('#ai-typing-indicator');
     if (typing && typing.parentNode) {
@@ -72,14 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /**
-   * Envía un mensaje al backend.
-   */
   async function sendMessage(message) {
     const trimmed = message.trim();
     if (!trimmed) return;
 
-    // Ocultar estado vacío en el primer mensaje
     if (emptyState && !emptyState.hidden) {
       emptyState.hidden = true;
     }
@@ -106,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendMessage('bot', data.error || 'Lo siento, no pude procesar tu mensaje. Intenta de nuevo.');
       }
     } catch (error) {
-      logger.error('Error al comunicarse con la IA:', error);
+      console.error('Error al comunicarse con la IA:', error);
       hideTyping();
       appendMessage('bot', 'Ocurrió un error de conexión con el servidor.');
     } finally {
@@ -115,9 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /**
-   * Carga el historial previo desde el servidor.
-   */
   async function loadHistory() {
     try {
       const response = await fetch('/api/ai/history');
@@ -131,21 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     } catch (error) {
-      logger.error('Error al cargar historial:', error);
+      console.error('Error al cargar historial:', error);
     }
   }
 
-  // ==========================================
-  // EVENT LISTENERS
-  // ==========================================
-
-  // Submit del formulario
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     sendMessage(chatInput.value);
   });
 
-  // Chips de sugerencia (delegación de eventos)
   chatMessages.addEventListener('click', (e) => {
     const btn = e.target.closest('.ai-suggestion');
     if (!btn) return;
@@ -153,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (message) sendMessage(message);
   });
 
-  // Botón de limpiar historial
   if (clearBtn) {
     clearBtn.addEventListener('click', async () => {
       if (!confirm('¿Borrar toda la conversación?')) return;
@@ -163,10 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await response.json();
 
         if (data.success) {
-          // Limpiar el historial del DOM
           chatMessages.replaceChildren();
 
-          // Volver a insertar el estado vacío
           if (emptyState) {
             emptyState.hidden = false;
             chatMessages.appendChild(emptyState);
@@ -175,14 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
           chatInput.focus();
         }
       } catch (error) {
-        logger.error('Error al limpiar historial:', error);
+        console.error('Error al limpiar historial:', error);
       }
     });
   }
-
-  // ==========================================
-  // INICIALIZACIÓN
-  // ==========================================
 
   loadHistory();
   chatInput.focus();
