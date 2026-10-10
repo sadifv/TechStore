@@ -51,15 +51,39 @@ app.set('trust proxy', 1);
 // 3. Middlewares de Seguridad y Logging
 app.use(httpLogger);
 
-// Configuración de Helmet (desactivamos CSP para permitir CDN de RemixIcon)
+// Configuración de Helmet con CSP estricta
 app.use(
   helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"]
+      }
+    },
+    crossOriginEmbedderPolicy: false
   })
 );
 
-// Habilitar CORS
-app.use(cors());
+// Habilitar CORS (restringido a orígenes permitidos)
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+  : ['http://localhost:3001', 'http://127.0.0.1:3001'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('No permitido por CORS'));
+  },
+  credentials: true
+}));
 
 // Limitador de tasa de peticiones para la API
 const apiLimiter = rateLimit({
@@ -93,6 +117,12 @@ const sessionStore = typeof MongoStore.create === 'function'
   : (MongoStore.default && typeof MongoStore.default.create === 'function')
     ? MongoStore.default.create(storeOptions)
     : new MongoStore(storeOptions);
+
+// Validar secreto de sesión en producción
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  logger.error('SESSION_SECRET no está definido en producción. El servidor no puede iniciar.');
+  process.exit(1);
+}
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secreto_techstore',

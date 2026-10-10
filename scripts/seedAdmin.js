@@ -9,8 +9,13 @@ const seedAdmin = async () => {
     await mongoose.connect(mongoURI);
     logger.info('Conectado a MongoDB para ejecutar seedAdmin...');
 
-    const adminEmail = 'admin@techstore.com';
-    const rawPassword = 'admin123password';
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@techstore.com';
+    const rawPassword = process.env.ADMIN_PASSWORD;
+
+    if (!rawPassword) {
+      logger.error('ADMIN_PASSWORD no está definido en el archivo .env');
+      process.exit(1);
+    }
 
     // Verificar si el usuario admin ya existe
     const existingAdmin = await User.findOne({ email: adminEmail });

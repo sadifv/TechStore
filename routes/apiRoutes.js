@@ -12,7 +12,7 @@ const {
     resetPassword 
 } = require('../controllers/authController');
 const { requireAuth } = require('../middleware/authMiddleware');
-const { aiLimiter, aiSlowDown, registerLimiter } = require('../middleware/rateLimiter');
+const { aiLimiter, aiSlowDown, registerLimiter, sensitiveLimiter } = require('../middleware/rateLimiter');
 const { 
     validate, 
     contactValidation, 
@@ -20,9 +20,9 @@ const {
     authValidation 
 } = require('../middleware/validationMiddleware');
 
-// Rutas Públicas de la API (Protegidas con validación de entrada)
-router.post('/contact', validate(contactValidation), sendContactMessage);
-router.post('/newsletter', validate(newsletterValidation), subscribeNewsletter);
+// Rutas Públicas de la API (Protegidas con validación de entrada + rate limiting)
+router.post('/contact', sensitiveLimiter, validate(contactValidation), sendContactMessage);
+router.post('/newsletter', sensitiveLimiter, validate(newsletterValidation), subscribeNewsletter);
 router.get('/products', getProducts);
 
 // Rutas de la IA (requieren login)
@@ -35,8 +35,8 @@ router.post('/auth/register', registerLimiter, validate(authValidation.register)
 router.post('/auth/logout', logoutUser);
 router.get('/auth/me', requireAuth, getMe);
 
-// Rutas de Recuperación de Contraseña
-router.post('/auth/forgot-password', forgotPassword);
-router.post('/auth/reset-password/:token', resetPassword);
+// Rutas de Recuperación de Contraseña (con rate limiting)
+router.post('/auth/forgot-password', sensitiveLimiter, forgotPassword);
+router.post('/auth/reset-password/:token', sensitiveLimiter, resetPassword);
 
 module.exports = router;

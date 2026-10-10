@@ -93,10 +93,30 @@ const registerLimiter = rateLimit({
   }
 });
 
+/**
+ * Limitador para rutas sensibles (contacto, newsletter, recuperación de contraseña).
+ * Evita abuso y spam: 10 peticiones cada 15 minutos por IP.
+ */
+const sensitiveLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10,
+  message: {
+    success: false,
+    error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res, next, options) => {
+    logger.warn(`Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${req.originalUrl}`);
+    res.status(options.statusCode).send(options.message);
+  }
+});
+
 module.exports = {
   loginLimiter,
   adminLimiter,
   aiLimiter,
   aiSlowDown,
-  registerLimiter
+  registerLimiter,
+  sensitiveLimiter
 };
