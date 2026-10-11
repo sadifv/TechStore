@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packing Slip - TechStore</title>
+</head>
+<body class="packing-slip">
+    <header class="packing-header">
+        <p class="packing-logo">TechStore</p>
+        <p class="packing-doc-title">Packing Slip #<%= order._id.toString().slice(-8).toUpperCase() %></p>
+    </header>
+
+    <section class="packing-section">
+        <h2 class="packing-section-title">Información del Cliente</h2>
+        <article class="packing-info-row">
+            <strong class="packing-info-label">Nombre:</strong>
+            <span class="packing-info-value"><%= order.guestInfo?.name || order.user?.name || 'N/A' %></span>
+        </article>
+        <article class="packing-info-row">
+            <strong class="packing-info-label">Email:</strong>
+            <span class="packing-info-value"><%= order.guestInfo?.email || order.user?.email || 'N/A' %></span>
+        </article>
+        <article class="packing-info-row">
+            <strong class="packing-info-label">Dirección:</strong>
+            <span class="packing-info-value">
+                <%= order.shippingAddress?.street || 'Dirección estándar' %>,
+                <%= order.shippingAddress?.city || 'Guayaquil' %>,
+                <%= order.shippingAddress?.country || 'Ecuador' %>
+            </span>
+        </article>
+    </section>
+
+    <section class="packing-section">
+        <h2 class="packing-section-title">Detalles del Pedido</h2>
+        <article class="packing-info-row">
+            <strong class="packing-info-label">Fecha:</strong>
+            <span class="packing-info-value"><%= new Date(order.createdAt).toLocaleDateString('es-EC') %></span>
+        </article>
+        <article class="packing-info-row">
+            <strong class="packing-info-label">Estado:</strong>
+            <span class="packing-info-value"><%= order.status %></span>
+        </article>
+        <article class="packing-info-row">
+            <strong class="packing-info-label">Pago:</strong>
+            <span class="packing-info-value"><%= order.paymentStatus %></span>
+        </article>
+    </section>
+
+    <section class="packing-section">
+        <h2 class="packing-section-title">Productos</h2>
+        <table class="packing-table">
+            <thead>
+                <tr>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Precio Unit.</th>
+                    <th scope="col">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% order.items.forEach(item => { %>
+                <tr>
+                    <td><%= item.product?.name || item.productName || 'Producto' %></td>
+                    <td><%= item.quantity %></td>
+                    <td>$<%= Number(item.price).toFixed(2) %></td>
+                    <td>$<%= Number(item.price * item.quantity).toFixed(2) %></td>
+                </tr>
+                <% }) %>
+                <tr class="packing-total-row">
+                    <td colspan="3"><strong>Total:</strong></td>
+                    <td><strong>$<%= Number(order.totalAmount).toFixed(2) %></strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer class="packing-footer">
+        <p>TechStore - Villa España, Guayaquil, Ecuador | +593 0963976623</p>
+    </footer>
+</body>
+</html>
