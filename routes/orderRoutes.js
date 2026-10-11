@@ -11,6 +11,27 @@ router.post('/webhook', handleStripeWebhook);
 router.post('/checkout', createOrder);
 router.get('/confirm', confirmOrderPayment);
 
+// Página de éxito después del pago
+router.get('/success', async (req, res, next) => {
+    try {
+        const { orderId } = req.query;
+        if (!orderId) {
+            return res.redirect('/');
+        }
+        const Order = require('../models/Order');
+        const order = await Order.findById(orderId).lean();
+        if (!order) {
+            return res.redirect('/');
+        }
+        res.render('checkout-success', {
+            title: 'Pedido Confirmado | TechStore',
+            order
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Historial de compras (Protegido: requiere inicio de sesión)
 router.get('/', requireAuth, getUserOrders);
 

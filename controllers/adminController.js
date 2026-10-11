@@ -3,33 +3,6 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const logger = require('../config/logger');
 
-// @desc    Dashboard principal de Admin (Métricas)
-// @route   GET /admin/dashboard
-// @access  Private/Admin
-const getDashboard = async (req, res, next) => {
-    try {
-        const [totalOrders, totalProducts, totalUsers, recentOrders] = await Promise.all([
-            Order.countDocuments(),
-            Product.countDocuments(),
-            User.countDocuments({ role: 'user' }),
-            Order.find()
-                .populate('user', 'name email')
-                .sort({ createdAt: -1 })
-                .limit(5)
-                .lean()
-        ]);
-
-        res.render('admin/dashboard', {
-            title: 'Panel de Administración | TechStore',
-            stats: { totalOrders, totalProducts, totalUsers },
-            recentOrders
-        });
-    } catch (error) {
-        logger.error(`Error al cargar el dashboard de admin: ${error.message}`);
-        next(error);
-    }
-};
-
 // @desc    Obtener lista de órdenes con paginación y filtro por estado
 // @route   GET /admin/orders
 // @access  Private/Admin
@@ -122,7 +95,6 @@ const getPackingSlip = async (req, res, next) => {
 };
 
 module.exports = {
-    getDashboard,
     getAdminOrders,
     getAdminOrderDetail,
     getPackingSlip

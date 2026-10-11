@@ -52,6 +52,13 @@ router.get('/catalogo', (req, res) => {
 // Vista de detalle de un producto
 router.get('/producto/:id', getProductDetailPage);
 
+// Vista de información legal (privacidad, términos, cookies)
+router.get('/legal', (req, res) => {
+    res.render('legal', {
+        title: 'Información Legal | TechStore'
+    });
+});
+
 // ==========================================
 // AUTENTICACIÓN Y RECUPERACIÓN DE CONTRASEÑA
 // ==========================================
