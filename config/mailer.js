@@ -3,26 +3,68 @@ const ejs = require('ejs');
 const path = require('path');
 const logger = require('./logger');
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-});
+// Validar credenciales al arrancar
+const hasSmtpCredentials = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
 
-/**
- * Función auxiliar para renderizar plantillas EJS y enviar correos
- */
-const sendTemplateEmail = async ({ to, subject, templateName, templateData }) => {
+let transporter = null;
+
+if (hasSmtpCredentials) {
+    transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+        },
+        pool: true,          // Pool de conexiones
+        maxConnections: 5,
+        maxMessages: 100
+    });
+
+    // Verificar conexión SMTP al arrancar
+    transporter.verify((error) => {
+        if (error) {
+            logger.error(`[Mailer] ❌ Error al conectar con Gmail: ${error.message}`);
+        } else {
+            logger.info('[Mailer] ✅ Servidor SMTP listo para enviar correos.');
+        }
+    });
+} else {
+    logger.warn('[Mailer] ⚠️ SMTP_USER o SMTP_PASS no definidos. Correos simulados.');
+}
+
+// Helper: obtener URL base
+const getAppUrl = () => {
+    return process.env.APP_URL || `http://localhost:${process.env.PORT || 3001}`;
+};
+
+// Función auxiliar para renderizar y enviar
+const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} }) => {
+    // Modo simulado si no hay transporter
+    if (!transporter) {
+        logger.warn(`[Mailer] 📧 [SIMULADO] Correo a ${to} (${templateName}) - NO ENVIADO`);
+        return { simulated: true, to, subject, templateName };
+    }
+
     try {
-        if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-            logger.warn(`[Mailer] ⚠️ SMTP_USER o SMTP_PASS no definidos. Correo a ${to} simulado.`);
-            return true;
+        // Validaciones
+        if (!to || !subject || !templateName) {
+            throw new Error('Faltan datos: to, subject o templateName');
         }
 
+        const emailRegex = /^\S+@\S+\.\S+$/;
+        if (!emailRegex.test(to)) {
+            throw new Error(`Email inválido: ${to}`);
+        }
+
+        // Enriquecer datos con appUrl y año actual
+        const enrichedData = {
+            ...templateData,
+            appUrl: getAppUrl(),
+            currentYear: new Date().getFullYear()
+        };
+
         const templatePath = path.join(__dirname, `../views/${templateName}.ejs`);
-        const htmlContent = await ejs.renderFile(templatePath, templateData);
+        const htmlContent = await ejs.renderFile(templatePath, enrichedData);
 
         const mailOptions = {
             from: `"TechStore" <${process.env.SMTP_USER}>`,
@@ -32,33 +74,32 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData }) =>
         };
 
         const info = await transporter.sendMail(mailOptions);
-        logger.info(`✅ Correo (${templateName}) enviado con éxito a ${to} (ID: ${info.messageId})`);
-        return true;
+        logger.info(`✅ Correo (${templateName}) enviado a ${to} (ID: ${info.messageId})`);
+
+        return { success: true, messageId: info.messageId };
     } catch (error) {
-        logger.error(`❌ Error al enviar correo (${templateName}) a ${to}: ${error.message}`, { stack: error.stack });
+        logger.error(`❌ Error al enviar correo (${templateName}) a ${to}: ${error.message}`, {
+            stack: error.stack
+        });
         throw error;
     }
 };
 
-/**
- * Confirmación de Pedido
- */
+// Confirmación de Pedido
 const sendOrderConfirmation = async (userEmail, orderId, totalAmount) => {
     return sendTemplateEmail({
         to: userEmail,
-        subject: '¡Confirmación de tu pedido en TechStore!',
+        subject: `✅ Confirmación de pedido #${String(orderId).slice(-8).toUpperCase()} - TechStore`,
         templateName: 'email-receipt',
         templateData: { orderId, totalAmount }
     });
 };
 
-/**
- * Restablecimiento de Contraseña
- */
+// Restablecimiento de Contraseña
 const sendPasswordResetEmail = async (userEmail, resetUrl) => {
     return sendTemplateEmail({
         to: userEmail,
-        subject: 'Restablecimiento de contraseña | TechStore',
+        subject: '🔐 Restablecimiento de contraseña | TechStore',
         templateName: 'email-reset-password',
         templateData: { resetUrl }
     });
