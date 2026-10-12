@@ -3,7 +3,6 @@ const logger = require('../config/logger');
 
 /**
  * Validación simple basada en reglas (sin dependencias externas).
- * El middleware lee las reglas de validationRules según el método y la ruta.
  */
 
 const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
@@ -51,32 +50,21 @@ const validationRules = {
 // ==========================================
 // HELPERS
 // ==========================================
-
-/**
- * Limpia la URL: quita query strings y trailing slashes.
- * Ej: /api/auth/register?ref=home → /api/auth/register
- */
 const cleanUrl = (url) => {
+    if (!url) return '/';
     return url.split('?')[0].replace(/\/$/, '') || '/';
 };
 
-/**
- * Busca reglas que coincidan con la URL (soporta :params).
- * Ej: '/api/auth/reset-password/abc123' → coincide con '/api/auth/reset-password/:token'
- */
 const findRules = (url) => {
     const clean = cleanUrl(url);
 
-    // Búsqueda exacta primero
     if (validationRules[clean]) {
         return validationRules[clean];
     }
 
-    // Búsqueda por patrón (soporta :params)
     for (const [pattern, rules] of Object.entries(validationRules)) {
         if (!pattern.includes(':')) continue;
 
-        // Convertir patrón a regex: /api/auth/reset-password/:token → /api/auth/reset-password/[^/]+
         const regexPattern = pattern.replace(/:[^/]+/g, '[^/]+');
         const regex = new RegExp(`^${regexPattern}$`);
 
@@ -92,73 +80,101 @@ const findRules = (url) => {
 // MIDDLEWARE PRINCIPAL
 // ==========================================
 const validate = (req, res, next) => {
-    const rules = findRules(req.originalUrl);
+    try {
+        const currentUrl = req.originalUrl || req.url;
+        const rules = findRules(currentUrl);
 
-    // Si no hay reglas para esta ruta, continuar
-    if (!rules) {
-        return next();
+        // Si no hay reglas para esta ruta, continuar de forma segura
+        if (!rules) {
+            return typeof next === 'function' ? next() : res.status(500).json({ success: false, error: 'Error de flujo en servidor' });
+        }
+
+        const errors = [];
+        const data = req.body || {};
+
+        for (const [field, rule] of Object.entries(rules)) {
+            const rawValue = data[field];
+            const value = typeof rawValue === 'string' ? rawValue.trim() : rawValue;
+            const isEmpty = value === undefined || value === null || value === '';
+
+            // Requerido
+            if (rule.required && isEmpty) {
+                errors.push(`${rule.label || field} es obligatorio`);
+                continue;
+            }
+
+            if (!rule.required && isEmpty) {
+                continue;
+            }
+
+            // Email
+            if (rule.email && !isValidEmail(value)) {
+                errors.push(`${rule.label || field} no es un correo válido`);
+            }
+
+            // Min length
+            if (rule.min !== undefined && String(value).length < rule.min) {
+                errors.push(`${rule.label || field} debe tener al menos ${rule.min} caracteres`);
+            }
+
+            // Max length
+            if (rule.max !== undefined && String(value).length > rule.max) {
+                errors.push(`${rule.label || field} no puede superar los ${rule.max} caracteres`);
+            }
+
+            // Numérico
+            if (rule.number && isNaN(Number(value))) {
+                errors.push(`${rule.label || field} debe ser un número`);
+            }
+
+            // Mayor que
+            if (rule.gt !== undefined && Number(value) <= rule.gt) {
+                errors.push(`${rule.label || field} debe ser mayor a ${rule.gt}`);
+            }
+
+            // Entero
+            if (rule.integer && !Number.isInteger(Number(value))) {
+                errors.push(`${rule.label || field} debe ser un número entero`);
+            }
+        }
+
+        if (errors.length > 0) {
+            logger.warn(`Validación fallida en ${req.method} ${currentUrl}: ${errors[0]}`);
+            
+            // ✅ Si la petición es hacia una ruta /api, SIEMPRE responde con JSON
+            if (currentUrl.startsWith('/api') || req.path.startsWith('/api')) {
+                return res.status(400).json({
+                    success: false,
+                    error: errors[0],
+                    errors: errors.map(msg => ({ message: msg }))
+                });
+            }
+
+            // Si es petición por formulario HTML tradicional y no API AJAX/XHR
+            if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+                return res.status(400).render('login', {
+                    title: 'TechStore - Iniciar Sesión',
+                    error: errors[0]
+                });
+            }
+
+            return res.status(400).json({
+                success: false,
+                error: errors[0],
+                errors: errors.map(msg => ({ message: msg }))
+            });
+        }
+
+        if (typeof next === 'function') {
+            return next();
+        }
+    } catch (valError) {
+        logger.error(`Excepción en middleware validate: ${valError.message}`, { stack: valError.stack });
+        if (typeof next === 'function') {
+            return next(valError);
+        }
+        return res.status(500).json({ success: false, error: 'Error interno de validación' });
     }
-
-    const errors = [];
-    const data = req.body || {};
-
-    for (const [field, rule] of Object.entries(rules)) {
-        const rawValue = data[field];
-        const value = typeof rawValue === 'string' ? rawValue.trim() : rawValue;
-        const isEmpty = value === undefined || value === null || value === '';
-
-        // Requerido
-        if (rule.required && isEmpty) {
-            errors.push(`${rule.label || field} es obligatorio`);
-            continue;
-        }
-
-        // Si no es requerido y está vacío → saltar
-        if (!rule.required && isEmpty) {
-            continue;
-        }
-
-        // Email
-        if (rule.email && !isValidEmail(value)) {
-            errors.push(`${rule.label || field} no es un correo válido`);
-        }
-
-        // Min length
-        if (rule.min !== undefined && String(value).length < rule.min) {
-            errors.push(`${rule.label || field} debe tener al menos ${rule.min} caracteres`);
-        }
-
-        // Max length
-        if (rule.max !== undefined && String(value).length > rule.max) {
-            errors.push(`${rule.label || field} no puede superar los ${rule.max} caracteres`);
-        }
-
-        // Numérico
-        if (rule.number && isNaN(Number(value))) {
-            errors.push(`${rule.label || field} debe ser un número`);
-        }
-
-        // Mayor que
-        if (rule.gt !== undefined && Number(value) <= rule.gt) {
-            errors.push(`${rule.label || field} debe ser mayor a ${rule.gt}`);
-        }
-
-        // Entero
-        if (rule.integer && !Number.isInteger(Number(value))) {
-            errors.push(`${rule.label || field} debe ser un número entero`);
-        }
-    }
-
-    if (errors.length > 0) {
-        logger.warn(`Validación fallida en ${req.method} ${req.originalUrl}: ${errors[0]}`);
-        return res.status(400).json({
-            success: false,
-            error: errors[0],
-            errors: errors.map(msg => ({ message: msg }))
-        });
-    }
-
-    next();
 };
 
 module.exports = { validate };

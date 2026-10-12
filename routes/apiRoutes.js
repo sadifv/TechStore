@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { sendContactMessage } = require('../controllers/contactController');
-const { getProducts } = require('../controllers/productController');
+const { getProducts, getProductById } = require('../controllers/productController');
 const { processAiChat, getChatHistory, clearChatHistory } = require('../controllers/aiController');
 const { subscribeNewsletter } = require('../controllers/newsletterController');
 const {
@@ -17,12 +17,12 @@ const { validate } = require('../middleware/validate');
 
 // ==========================================
 // RUTAS PÚBLICAS
-// ✅ FIX: `validate` SIN paréntesis
 // ==========================================
 
 router.post('/contact', sensitiveLimiter, validate, sendContactMessage);
 router.post('/newsletter', sensitiveLimiter, validate, subscribeNewsletter);
 router.get('/products', getProducts);
+router.get('/products/:id', getProductById); 
 
 // ==========================================
 // RUTAS DE LA IA

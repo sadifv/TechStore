@@ -38,14 +38,13 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Middleware Mongoose: Hashear la contraseña antes de guardar solo si ha sido modificada
-userSchema.pre('save', async function(next) {
+// Middleware Mongoose corregido para funciones async (sin parámetro next)
+userSchema.pre('save', async function() {
     if (!this.isModified('password')) {
-        return next();
+        return;
     }
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
 });
 
 module.exports = mongoose.model('User', userSchema);

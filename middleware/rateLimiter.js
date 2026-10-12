@@ -17,18 +17,21 @@ const isApiRequest = (req) =>
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: {
     success: false,
     error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.'
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res, next, options) => {
+  handler: (req, res, next) => {
     logger.warn(`Rate limit excedido en login desde IP: ${req.ip}`);
     if (isApiRequest(req)) {
-      return res.status(options.statusCode).json(options.message);
+      return res.status(429).json({
+        success: false,
+        error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.'
+      });
     }
-    return res.status(options.statusCode).send(options.message.error);
+    return res.status(429).send('Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.');
   }
 });
 
@@ -39,18 +42,21 @@ const loginLimiter = rateLimit({
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: {
     success: false,
     error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.'
   },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res, next, options) => {
+  handler: (req, res, next) => {
     logger.warn(`Rate limit excedido en /admin desde IP: ${req.ip} - Ruta: ${req.originalUrl}`);
     if (isApiRequest(req)) {
-      return res.status(options.statusCode).json(options.message);
+      return res.status(429).json({
+        success: false,
+        error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.'
+      });
     }
-    return res.status(options.statusCode).send(options.message.error);
+    return res.status(429).send('Demasiadas solicitudes. Inténtalo de nuevo más tarde.');
   }
 });
 
@@ -61,18 +67,17 @@ const adminLimiter = rateLimit({
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  message: {
-    success: false,
-    error: 'Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.'
-  },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req, res, next, options) => {
+  handler: (req, res, next) => {
     logger.warn(`Rate limit excedido en /api/ai/chat desde IP: ${req.ip}`);
     if (isApiRequest(req)) {
-      return res.status(options.statusCode).json(options.message);
+      return res.status(429).json({
+        success: false,
+        error: 'Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.'
+      });
     }
-    return res.status(options.statusCode).send(options.message.error);
+    return res.status(429).send('Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.');
   }
 });
 
@@ -93,18 +98,17 @@ const aiSlowDown = slowDown({
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
-  message: {
-    success: false,
-    error: 'Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.'
-  },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req, res, next, options) => {
+  handler: (req, res, next) => {
     logger.warn(`Rate limit excedido en /api/auth/register desde IP: ${req.ip}`);
     if (isApiRequest(req)) {
-      return res.status(options.statusCode).json(options.message);
+      return res.status(429).json({
+        success: false,
+        error: 'Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.'
+      });
     }
-    return res.status(options.statusCode).send(options.message.error);
+    return res.status(429).send('Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.');
   }
 });
 
@@ -115,18 +119,17 @@ const registerLimiter = rateLimit({
 const sensitiveLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: {
-    success: false,
-    error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.'
-  },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req, res, next, options) => {
+  handler: (req, res, next) => {
     logger.warn(`Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${req.originalUrl}`);
     if (isApiRequest(req)) {
-      return res.status(options.statusCode).json(options.message);
+      return res.status(429).json({
+        success: false,
+        error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.'
+      });
     }
-    return res.status(options.statusCode).send(options.message.error);
+    return res.status(429).send('Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.');
   }
 });
 

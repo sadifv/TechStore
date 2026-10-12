@@ -18,7 +18,7 @@ const getProducts = async (req, res, next) => {
         }
 
         if (search) {
-            query.name = { $regex: search, $options: 'i' };
+            query.name = { $regex: search,$options: 'i' };
         }
 
         // Configurar ordenamiento
@@ -74,7 +74,41 @@ const getProducts = async (req, res, next) => {
 };
 
 // ==========================================
-// DETALLE DE PRODUCTO
+// OBTENER PRODUCTO POR ID (API)
+// ==========================================
+
+// @desc    Obtener un producto individual por ID
+// @route   GET /api/products/:id
+// @access  Public
+const getProductById = async (req, res, next) => {
+    try {
+        const product = await Product.findById(req.params.id).lean();
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: 'Recurso no encontrado.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: product
+        });
+    } catch (error) {
+        if (error.name === 'CastError') {
+            return res.status(404).json({
+                success: false,
+                error: 'Recurso no encontrado.'
+            });
+        }
+        logger.error(`Error al obtener producto por ID: ${error.message}`, { stack: error.stack });
+        next(error);
+    }
+};
+
+// ==========================================
+// DETALLE DE PRODUCTO (WEB)
 // ==========================================
 
 // @desc    Vista de detalle de un producto individual
@@ -96,7 +130,6 @@ const getProductDetailPage = async (req, res, next) => {
             product
         });
     } catch (error) {
-        // CastError = ID inválido → 404
         if (error.name === 'CastError') {
             return res.status(404).render('404', {
                 title: 'Producto No Encontrado | TechStore',
@@ -112,9 +145,6 @@ const getProductDetailPage = async (req, res, next) => {
 // CRUD PRODUCTOS
 // ==========================================
 
-// @desc    Crear un nuevo producto
-// @route   POST /admin/products
-// @access  Private/Admin
 const createProduct = async (req, res, next) => {
     try {
         const { name, description, price, category, stock, image } = req.body;
@@ -147,9 +177,6 @@ const createProduct = async (req, res, next) => {
     }
 };
 
-// @desc    Actualizar un producto existente
-// @route   PUT /admin/products/:id
-// @access  Private/Admin
 const updateProduct = async (req, res, next) => {
     try {
         const { name, description, price, category, stock, image } = req.body;
@@ -190,9 +217,6 @@ const updateProduct = async (req, res, next) => {
     }
 };
 
-// @desc    Eliminar un producto
-// @route   DELETE /admin/products/:id
-// @access  Private/Admin
 const deleteProduct = async (req, res, next) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
@@ -220,9 +244,6 @@ const deleteProduct = async (req, res, next) => {
 // FLASH SALE
 // ==========================================
 
-// @desc    Activar Oferta Relámpago (Flash Sale)
-// @route   POST /admin/products/:id/flash-sale
-// @access  Private/Admin
 const activateFlashSale = async (req, res, next) => {
     try {
         const { discount, durationHours } = req.body;
@@ -232,7 +253,6 @@ const activateFlashSale = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Producto no encontrado' });
         }
 
-        // ✅ FIX: Validar si ya tiene una oferta activa
         if (product.flashSale && product.flashSaleEndsAt && new Date(product.flashSaleEndsAt) > new Date()) {
             return res.status(400).json({
                 success: false,
@@ -251,7 +271,6 @@ const activateFlashSale = async (req, res, next) => {
             return res.status(400).json({ success: false, error: 'La duración debe ser entre 1 y 168 horas' });
         }
 
-        // ✅ FIX: Validar originalPrice
         const originalPrice = (
             typeof product.originalPrice === 'number' && product.originalPrice >= 0
                 ? product.originalPrice
@@ -289,9 +308,6 @@ const activateFlashSale = async (req, res, next) => {
     }
 };
 
-// @desc    Desactivar Oferta Relámpago
-// @route   DELETE /admin/products/:id/flash-sale
-// @access  Private/Admin
 const deactivateFlashSale = async (req, res, next) => {
     try {
         const product = await Product.findById(req.params.id);
@@ -300,7 +316,6 @@ const deactivateFlashSale = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Producto no encontrado' });
         }
 
-        // ✅ FIX: Validar que haya una oferta activa
         if (!product.flashSale && product.originalPrice === null) {
             return res.status(400).json({
                 success: false,
@@ -308,7 +323,6 @@ const deactivateFlashSale = async (req, res, next) => {
             });
         }
 
-        // ✅ FIX: Solo restaurar si originalPrice es válido
         if (typeof product.originalPrice === 'number' && product.originalPrice >= 0) {
             product.price = product.originalPrice;
         } else {
@@ -317,7 +331,6 @@ const deactivateFlashSale = async (req, res, next) => {
             );
         }
 
-        // ✅ FIX: Usar null en lugar de undefined (para que Mongoose lo guarde)
         product.flashSale = false;
         product.flashSaleDiscount = 0;
         product.flashSaleEndsAt = null;
@@ -340,6 +353,7 @@ const deactivateFlashSale = async (req, res, next) => {
 
 module.exports = {
     getProducts,
+    getProductById,
     getProductDetailPage,
     createProduct,
     updateProduct,

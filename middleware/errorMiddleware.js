@@ -9,6 +9,11 @@ const errorHandler = (err, req, res, next) => {
         code: err.code
     });
 
+    // ✅ FIX: Manejar específicamente el error de "next is not a function"
+    if (err.message && err.message.includes('next is not a function')) {
+        error.message = 'Error de ejecución en el flujo de middlewares del servidor.';
+    }
+
     // Error de clave duplicada (MongoDB)
     if (err.code === 11000) {
         const field = Object.keys(err.keyValue || {})[0] || 'campo';
@@ -37,7 +42,7 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    res.status(statusCode).json({
+    return res.status(statusCode).json({
         success: false,
         error: error.message || 'Error interno del servidor.'
     });

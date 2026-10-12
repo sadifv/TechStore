@@ -5,6 +5,17 @@ const { sendPasswordResetEmail } = require('../config/mailer');
 const logger = require('../config/logger');
 
 // ==========================================
+// HELPER PARA DETECTAR PETICIONES HTML VS API/JSON
+// ==========================================
+const isHtmlRequest = (req) => {
+    return req.accepts('html') && 
+           !req.xhr && 
+           !req.headers['x-requested-with'] && 
+           !req.is('json') && 
+           !req.headers['content-type']?.includes('json');
+};
+
+// ==========================================
 // REGISTRO
 // ==========================================
 const registerUser = async (req, res, next) => {
@@ -41,7 +52,7 @@ const registerUser = async (req, res, next) => {
             logger.warn(`No se pudo enviar email de bienvenida: ${emailError.message}`);
         }
 
-        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+        if (isHtmlRequest(req)) {
             return res.redirect('/');
         }
 
@@ -51,7 +62,6 @@ const registerUser = async (req, res, next) => {
             user: req.session.user
         });
     } catch (error) {
-        // ✅ FIX: Manejar errores de validación de Mongoose
         if (error.name === 'ValidationError') {
             const message = Object.values(error.errors).map(val => val.message).join(' ');
             return res.status(400).json({ success: false, error: message });
@@ -61,34 +71,43 @@ const registerUser = async (req, res, next) => {
 };
 
 // ==========================================
-// LOGIN
+// LOGIN (Blindado y compatible con API/JSON y Web)
 // ==========================================
-const loginUser = async (req, res, next) => {
+const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // ✅ FIX: Incluir el password (select: false en el modelo)
         const user = await User.findOne({ email }).select('+password');
         if (!user) {
+            if (isHtmlRequest(req)) {
+                return res.status(401).render('login', {
+                    title: 'TechStore - Iniciar Sesión',
+                    error: 'El correo no está registrado. Debes crear una cuenta primero.'
+                });
+            }
             return res.status(401).json({
                 success: false,
                 error: 'El correo no está registrado. Debes crear una cuenta primero.'
             });
         }
 
-        // ✅ FIX: Usar el método comparePassword del modelo si existe
         const isMatch = typeof user.comparePassword === 'function'
             ? await user.comparePassword(password)
             : await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
+            if (isHtmlRequest(req)) {
+                return res.status(401).render('login', {
+                    title: 'TechStore - Iniciar Sesión',
+                    error: 'Contraseña incorrecta. Inténtalo de nuevo.'
+                });
+            }
             return res.status(401).json({
                 success: false,
                 error: 'Contraseña incorrecta. Inténtalo de nuevo.'
             });
         }
 
-        // ✅ Actualizar lastLoginAt
         user.lastLoginAt = new Date();
         await user.save();
 
@@ -101,17 +120,27 @@ const loginUser = async (req, res, next) => {
 
         logger.info(`Login exitoso: ${user.email}`);
 
-        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+        if (isHtmlRequest(req)) {
             return res.redirect('/');
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'Inicio de sesión exitoso.',
             user: req.session.user
         });
     } catch (error) {
-        next(error);
+        logger.error(`Error en loginUser: ${error.message}`, { stack: error.stack });
+        if (isHtmlRequest(req)) {
+            return res.status(500).render('login', {
+                title: 'TechStore - Iniciar Sesión',
+                error: 'Ocurrió un error interno al iniciar sesión.'
+            });
+        }
+        return res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor al iniciar sesión.'
+        });
     }
 };
 
@@ -134,7 +163,7 @@ const logoutUser = (req, res, next) => {
         res.clearCookie('connect.sid', { path: '/' });
         logger.info(`Logout exitoso: ${userEmail}`);
 
-        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+        if (isHtmlRequest(req)) {
             return res.redirect('/login');
         }
 
@@ -161,7 +190,6 @@ const forgotPassword = async (req, res, next) => {
 
         const user = await User.findOne({ email });
 
-        // ✅ FIX: No revelar si el email existe (evita enumeración)
         if (!user) {
             logger.warn(`Intento de reset para email inexistente: ${email}`);
             return res.status(200).json({
@@ -182,7 +210,7 @@ const forgotPassword = async (req, res, next) => {
 
         logger.info(`Email de reset enviado a: ${user.email}`);
 
-        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+        if (isHtmlRequest(req)) {
             return res.redirect('/login');
         }
 
@@ -225,7 +253,7 @@ const resetPassword = async (req, res, next) => {
 
         logger.info(`Contraseña restablecida para: ${user.email}`);
 
-        if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
+        if (isHtmlRequest(req)) {
             return res.redirect('/login');
         }
 

@@ -5,17 +5,11 @@ const { getProductDetailPage } = require('../controllers/productController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { loginUser, registerUser } = require('../controllers/authController');
 const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
-const { validate } = require('../middleware/validate');
 const logger = require('../config/logger');
-
-// ==========================================
-// RUTAS PRINCIPALES
-// ==========================================
 
 router.get('/', async (req, res) => {
     try {
         const now = new Date();
-
         const [featuredProducts, flashSaleProduct] = await Promise.all([
             Product.find().sort({ createdAt: -1 }).limit(6).lean(),
             Product.findOne({ flashSale: true, flashSaleEndsAt: { $gt: now } })
@@ -52,18 +46,13 @@ router.get('/legal', (req, res) => {
     });
 });
 
-// ==========================================
-// AUTENTICACIÓN
-// ✅ FIX: `validate` se usa SIN paréntesis (es middleware directo)
-// ==========================================
-
 router.get('/login', (req, res) => {
     res.render('login', {
         title: 'TechStore - Iniciar Sesión'
     });
 });
 
-router.post('/login', loginLimiter, validate, loginUser);
+router.post('/login', loginLimiter, loginUser);
 
 router.get('/register', (req, res) => {
     res.render('register', {
@@ -71,7 +60,7 @@ router.get('/register', (req, res) => {
     });
 });
 
-router.post('/register', registerLimiter, validate, registerUser);
+router.post('/register', registerLimiter, registerUser);
 
 router.get('/forgot-password', (req, res) => {
     res.render('forgot-password', {
@@ -85,10 +74,6 @@ router.get('/reset-password/:token', (req, res) => {
         token: req.params.token
     });
 });
-
-// ==========================================
-// PERFIL
-// ==========================================
 
 router.get('/profile', requireAuth, (req, res) => {
     res.render('profile', {
