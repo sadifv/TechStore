@@ -1,6 +1,10 @@
 const Product = require('../models/Product');
 const logger = require('../config/logger');
 
+// ==========================================
+// OBTENER PRODUCTOS
+// ==========================================
+
 // @desc    Obtener productos con filtros y paginación
 // @route   GET /api/products
 // @access  Public
@@ -37,7 +41,7 @@ const getProducts = async (req, res, next) => {
 
         // Paginación
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
-        const limitNum = Math.max(1, parseInt(limit, 10) || 8);
+        const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 8));
         const skip = (pageNum - 1) * limitNum;
 
         const [products, totalCount] = await Promise.all([
@@ -64,10 +68,14 @@ const getProducts = async (req, res, next) => {
             }
         });
     } catch (error) {
-        logger.error(`Error al obtener productos: ${error.message}`);
+        logger.error(`Error al obtener productos: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
+
+// ==========================================
+// DETALLE DE PRODUCTO
+// ==========================================
 
 // @desc    Vista de detalle de un producto individual
 // @route   GET /producto/:id
@@ -77,7 +85,7 @@ const getProductDetailPage = async (req, res, next) => {
         const product = await Product.findById(req.params.id).lean();
 
         if (!product) {
-            return res.status(404).render('404', { 
+            return res.status(404).render('404', {
                 title: 'Producto No Encontrado | TechStore',
                 message: 'El producto que buscas no existe o ha sido eliminado.'
             });
@@ -88,10 +96,21 @@ const getProductDetailPage = async (req, res, next) => {
             product
         });
     } catch (error) {
-        logger.error(`Error al cargar detalle del producto: ${error.message}`);
+        // CastError = ID inválido → 404
+        if (error.name === 'CastError') {
+            return res.status(404).render('404', {
+                title: 'Producto No Encontrado | TechStore',
+                message: 'El producto que buscas no existe o ha sido eliminado.'
+            });
+        }
+        logger.error(`Error al cargar detalle del producto: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
+
+// ==========================================
+// CRUD PRODUCTOS
+// ==========================================
 
 // @desc    Crear un nuevo producto
 // @route   POST /admin/products
@@ -123,7 +142,7 @@ const createProduct = async (req, res, next) => {
             data: newProduct
         });
     } catch (error) {
-        logger.error(`Error al crear producto: ${error.message}`);
+        logger.error(`Error al crear producto: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
@@ -166,7 +185,7 @@ const updateProduct = async (req, res, next) => {
             data: product
         });
     } catch (error) {
-        logger.error(`Error al actualizar producto: ${error.message}`);
+        logger.error(`Error al actualizar producto: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
@@ -192,10 +211,14 @@ const deleteProduct = async (req, res, next) => {
             message: 'Producto eliminado correctamente.'
         });
     } catch (error) {
-        logger.error(`Error al eliminar producto: ${error.message}`);
+        logger.error(`Error al eliminar producto: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
+
+// ==========================================
+// FLASH SALE
+// ==========================================
 
 // @desc    Activar Oferta Relámpago (Flash Sale)
 // @route   POST /admin/products/:id/flash-sale
@@ -209,6 +232,14 @@ const activateFlashSale = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Producto no encontrado' });
         }
 
+        // ✅ FIX: Validar si ya tiene una oferta activa
+        if (product.flashSale && product.flashSaleEndsAt && new Date(product.flashSaleEndsAt) > new Date()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Este producto ya tiene una oferta activa. Detén la actual primero.'
+            });
+        }
+
         const discountNum = Number(discount);
         const durationNum = Number(durationHours);
 
@@ -216,7 +247,24 @@ const activateFlashSale = async (req, res, next) => {
             return res.status(400).json({ success: false, error: 'El descuento debe ser entre 1% y 90%' });
         }
 
-        const originalPrice = product.originalPrice || product.price;
+        if (isNaN(durationNum) || durationNum <= 0 || durationNum > 168) {
+            return res.status(400).json({ success: false, error: 'La duración debe ser entre 1 y 168 horas' });
+        }
+
+        // ✅ FIX: Validar originalPrice
+        const originalPrice = (
+            typeof product.originalPrice === 'number' && product.originalPrice >= 0
+                ? product.originalPrice
+                : product.price
+        );
+
+        if (typeof originalPrice !== 'number' || originalPrice < 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'El producto no tiene un precio válido para aplicar descuento.'
+            });
+        }
+
         const discountedPrice = originalPrice * (1 - discountNum / 100);
         const endsAt = new Date(Date.now() + durationNum * 60 * 60 * 1000);
 
@@ -228,15 +276,15 @@ const activateFlashSale = async (req, res, next) => {
 
         await product.save();
 
-        logger.info(`Oferta relámpago activada para ${product.name}: ${discountNum}% off`);
+        logger.info(`Flash sale activada: ${product.name} - ${discountNum}% - Termina: ${endsAt.toISOString()}`);
 
         res.status(200).json({
             success: true,
-            message: 'Oferta relámpago activada con éxito.',
+            message: `Oferta activada en "${product.name}" con ${discountNum}% de descuento.`,
             product
         });
     } catch (error) {
-        logger.error(`Error al activar flash sale: ${error.message}`);
+        logger.error(`Error al activar flash sale: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
@@ -252,26 +300,40 @@ const deactivateFlashSale = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Producto no encontrado' });
         }
 
-        if (product.originalPrice) {
-            product.price = product.originalPrice;
+        // ✅ FIX: Validar que haya una oferta activa
+        if (!product.flashSale && product.originalPrice === null) {
+            return res.status(400).json({
+                success: false,
+                error: 'Este producto no tiene una oferta activa.'
+            });
         }
 
+        // ✅ FIX: Solo restaurar si originalPrice es válido
+        if (typeof product.originalPrice === 'number' && product.originalPrice >= 0) {
+            product.price = product.originalPrice;
+        } else {
+            logger.warn(
+                `Producto "${product.name}" (ID: ${product._id}) no tenía originalPrice válido. Precio actual: ${product.price}`
+            );
+        }
+
+        // ✅ FIX: Usar null en lugar de undefined (para que Mongoose lo guarde)
         product.flashSale = false;
-        product.flashSaleDiscount = undefined;
-        product.flashSaleEndsAt = undefined;
-        product.originalPrice = undefined;
+        product.flashSaleDiscount = 0;
+        product.flashSaleEndsAt = null;
+        product.originalPrice = null;
 
         await product.save();
 
-        logger.info(`Oferta relámpago desactivada para ${product.name}`);
+        logger.info(`Flash sale desactivada: ${product.name} - Precio restaurado a $${product.price}`);
 
         res.status(200).json({
             success: true,
-            message: 'Oferta relámpago detenida y precio restaurado.',
+            message: `Oferta detenida en "${product.name}". Precio restaurado.`,
             product
         });
     } catch (error) {
-        logger.error(`Error al desactivar flash sale: ${error.message}`);
+        logger.error(`Error al desactivar flash sale: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };

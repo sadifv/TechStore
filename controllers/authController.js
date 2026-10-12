@@ -4,9 +4,9 @@ const User = require('../models/User');
 const { sendPasswordResetEmail } = require('../config/mailer');
 const logger = require('../config/logger');
 
-// @desc    Registrar un nuevo usuario
-// @route   POST /api/auth/register
-// @access  Public
+// ==========================================
+// REGISTRO
+// ==========================================
 const registerUser = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
@@ -31,7 +31,16 @@ const registerUser = async (req, res, next) => {
 
         logger.info(`Nuevo usuario registrado: ${newUser.email}`);
 
-        // Si es petición de formulario HTML, redirigir a la página principal
+        // ✅ Enviar email de bienvenida (no bloqueante)
+        try {
+            const { sendWelcomeEmail } = require('../config/mailer');
+            if (typeof sendWelcomeEmail === 'function') {
+                await sendWelcomeEmail(newUser.email, newUser.name);
+            }
+        } catch (emailError) {
+            logger.warn(`No se pudo enviar email de bienvenida: ${emailError.message}`);
+        }
+
         if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
             return res.redirect('/');
         }
@@ -42,18 +51,24 @@ const registerUser = async (req, res, next) => {
             user: req.session.user
         });
     } catch (error) {
+        // ✅ FIX: Manejar errores de validación de Mongoose
+        if (error.name === 'ValidationError') {
+            const message = Object.values(error.errors).map(val => val.message).join(' ');
+            return res.status(400).json({ success: false, error: message });
+        }
         next(error);
     }
 };
 
-// @desc    Procesar inicio de sesión
-// @route   POST /login o /api/auth/login
-// @access  Public
+// ==========================================
+// LOGIN
+// ==========================================
 const loginUser = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
+        // ✅ FIX: Incluir el password (select: false en el modelo)
+        const user = await User.findOne({ email }).select('+password');
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -61,13 +76,21 @@ const loginUser = async (req, res, next) => {
             });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        // ✅ FIX: Usar el método comparePassword del modelo si existe
+        const isMatch = typeof user.comparePassword === 'function'
+            ? await user.comparePassword(password)
+            : await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
                 error: 'Contraseña incorrecta. Inténtalo de nuevo.'
             });
         }
+
+        // ✅ Actualizar lastLoginAt
+        user.lastLoginAt = new Date();
+        await user.save();
 
         req.session.user = {
             id: user._id,
@@ -78,7 +101,6 @@ const loginUser = async (req, res, next) => {
 
         logger.info(`Login exitoso: ${user.email}`);
 
-        // Si es petición de formulario HTML, redirigir a la página principal
         if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
             return res.redirect('/');
         }
@@ -93,15 +115,12 @@ const loginUser = async (req, res, next) => {
     }
 };
 
-// @desc    Cerrar sesión de usuario
-// @route   POST /api/auth/logout o GET /admin/logout
-// @access  Private
+// ==========================================
+// LOGOUT
+// ==========================================
 const logoutUser = (req, res, next) => {
     if (!req.session) {
-        return res.status(200).json({
-            success: true,
-            message: 'No había una sesión activa.'
-        });
+        return res.status(200).json({ success: true, message: 'No había una sesión activa.' });
     }
 
     const userEmail = req.session.user?.email || 'desconocido';
@@ -119,48 +138,41 @@ const logoutUser = (req, res, next) => {
             return res.redirect('/login');
         }
 
-        return res.status(200).json({
-            success: true,
-            message: 'Sesión cerrada correctamente.'
-        });
+        return res.status(200).json({ success: true, message: 'Sesión cerrada correctamente.' });
     });
 };
 
-// @desc    Obtener datos del usuario actual
-// @route   GET /api/auth/me
-// @access  Private
+// ==========================================
+// GET ME
+// ==========================================
 const getMe = (req, res) => {
     if (!req.session || !req.session.user) {
-        return res.status(401).json({
-            success: false,
-            error: 'No autenticado.'
-        });
+        return res.status(401).json({ success: false, error: 'No autenticado.' });
     }
-    res.status(200).json({
-        success: true,
-        user: req.session.user
-    });
+    res.status(200).json({ success: true, user: req.session.user });
 };
 
-// @desc    Solicitar token de recuperación de contraseña
-// @route   POST /api/auth/forgot-password
-// @access  Public
+// ==========================================
+// FORGOT PASSWORD
+// ==========================================
 const forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
 
         const user = await User.findOne({ email });
+
+        // ✅ FIX: No revelar si el email existe (evita enumeración)
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                error: 'No existe una cuenta asociada a este correo electrónico.'
+            logger.warn(`Intento de reset para email inexistente: ${email}`);
+            return res.status(200).json({
+                success: true,
+                message: 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.'
             });
         }
 
-        // Generar token criptográfico y expira en 1 hora
         const resetToken = crypto.randomBytes(32).toString('hex');
         user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hora en ms
+        user.resetPasswordExpires = Date.now() + 3600000;
 
         await user.save();
 
@@ -168,23 +180,24 @@ const forgotPassword = async (req, res, next) => {
 
         await sendPasswordResetEmail(user.email, resetUrl);
 
-        // Si es petición de formulario HTML, redirigir al login
+        logger.info(`Email de reset enviado a: ${user.email}`);
+
         if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
             return res.redirect('/login');
         }
 
         res.status(200).json({
             success: true,
-            message: 'Se ha enviado un correo con las instrucciones de restablecimiento.'
+            message: 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.'
         });
     } catch (error) {
         next(error);
     }
 };
 
-// @desc    Restablecer contraseña usando el token recibido
-// @route   POST /api/auth/reset-password/:token
-// @access  Public
+// ==========================================
+// RESET PASSWORD
+// ==========================================
 const resetPassword = async (req, res, next) => {
     try {
         const { token } = req.params;
@@ -210,7 +223,8 @@ const resetPassword = async (req, res, next) => {
 
         await user.save();
 
-        // Si es petición de formulario HTML, redirigir al login
+        logger.info(`Contraseña restablecida para: ${user.email}`);
+
         if (req.accepts('html') && !req.xhr && !req.headers['x-requested-with']) {
             return res.redirect('/login');
         }

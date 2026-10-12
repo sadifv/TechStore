@@ -3,11 +3,17 @@ const aiClient = require('../config/ai');
 const logger = require('../config/logger');
 const Product = require('../models/Product');
 
-// @desc    Procesar consultas del asistente de IA
-// @route   POST /api/ai/chat
-// @access  Private (requiere login)
 const processAiChat = async (req, res) => {
   try {
+    //  Validar que el cliente de IA esté configurado
+    if (!aiClient) {
+      logger.warn('Intento de usar IA sin GEMINI_API_KEY configurada');
+      return res.status(503).json({
+        success: false,
+        error: 'El asistente de IA no está configurado. Contacta al administrador.'
+      });
+    }
+
     const { message } = req.body;
 
     if (!message || message.trim() === '') {
@@ -17,18 +23,15 @@ const processAiChat = async (req, res) => {
       });
     }
 
-    // 1. Obtener catálogo real desde MongoDB (máximo 30 productos)
     const products = await Product.find({}, 'name price category stock')
       .sort({ createdAt: -1 })
       .limit(30)
       .lean();
 
-    // 2. Construir el contexto del catálogo
     const catalogContext = products.length > 0
       ? products.map(p => `- ${p.name} (${p.category}): $${p.price}${p.stock > 0 ? '' : ' [AGOTADO]'}`).join('\n')
       : 'No hay productos disponibles actualmente.';
 
-    // 3. System prompt con catálogo inyectado
     const systemPrompt = `Eres TechBot, el asistente virtual de TechStore, una tienda e-commerce de tecnología especializada en laptops, smartphones, auriculares y gadgets.
 
 INSTRUCCIONES:
@@ -37,23 +40,19 @@ INSTRUCCIONES:
 - Cuando el usuario pregunte por productos, recomienda SOLO los del catálogo de abajo.
 - Si mencionas un producto, incluye su precio exacto y nombre.
 - Si un producto está marcado [AGOTADO], indícalo y sugiere una alternativa.
-- Si el usuario pregunta por algo que no está en el catálogo, dile amablemente que no lo tienes y ofrece alternativas cercanas.
 - Responde siempre en español.
 
 CATÁLOGO DISPONIBLE:
 ${catalogContext}`;
 
-    // 4. Obtener historial de la sesión (si existe)
     const sessionHistory = req.session.chatHistory || [];
 
-    // 5. Construir mensajes para la IA (system + historial + mensaje nuevo)
     const messages = [
       { role: 'system', content: systemPrompt },
       ...sessionHistory,
       { role: 'user', content: message }
     ];
 
-    // 6. Llamada a la API de Gemini
     const completion = await aiClient.chat.completions.create({
       model: 'gemini-3.8-flash',
       messages,
@@ -71,24 +70,19 @@ ${catalogContext}`;
       });
     }
 
-    // 7. Guardar en el historial de la sesión
     if (!req.session.chatHistory) req.session.chatHistory = [];
     req.session.chatHistory.push(
       { role: 'user', content: message },
       { role: 'assistant', content: aiReply }
     );
 
-    // Limitar a los últimos 20 mensajes (10 intercambios)
     if (req.session.chatHistory.length > 20) {
       req.session.chatHistory = req.session.chatHistory.slice(-20);
     }
 
     logger.info(`IA respondió a "${message.substring(0, 50)}..." - Catálogo: ${products.length} productos`);
 
-    res.status(200).json({
-      success: true,
-      reply: aiReply
-    });
+    res.status(200).json({ success: true, reply: aiReply });
 
   } catch (error) {
     logger.error(`Error en aiController: ${error.message}`, { stack: error.stack });
@@ -110,41 +104,23 @@ ${catalogContext}`;
   }
 };
 
-// @desc    Obtener el historial del chat del usuario actual
-// @route   GET /api/ai/history
-// @access  Private
 const getChatHistory = async (req, res) => {
   try {
     const history = req.session.chatHistory || [];
-    res.status(200).json({
-      success: true,
-      history
-    });
+    res.status(200).json({ success: true, history });
   } catch (error) {
     logger.error(`Error al obtener historial: ${error.message}`);
-    res.status(500).json({
-      success: false,
-      error: 'Error al obtener el historial del chat.'
-    });
+    res.status(500).json({ success: false, error: 'Error al obtener el historial del chat.' });
   }
 };
 
-// @desc    Limpiar el historial del chat del usuario actual
-// @route   DELETE /api/ai/history
-// @access  Private
 const clearChatHistory = async (req, res) => {
   try {
     req.session.chatHistory = [];
-    res.status(200).json({
-      success: true,
-      message: 'Historial del chat eliminado.'
-    });
+    res.status(200).json({ success: true, message: 'Historial del chat eliminado.' });
   } catch (error) {
     logger.error(`Error al limpiar historial: ${error.message}`);
-    res.status(500).json({
-      success: false,
-      error: 'Error al limpiar el historial.'
-    });
+    res.status(500).json({ success: false, error: 'Error al limpiar el historial.' });
   }
 };
 

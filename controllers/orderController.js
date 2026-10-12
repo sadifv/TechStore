@@ -3,17 +3,30 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const logger = require('../config/logger');
 
+// ==========================================
+// CREAR ORDEN
+// ==========================================
+
 // @desc    Crear orden y sesión de Stripe Checkout
 // @route   POST /api/orders/checkout
 // @access  Public (soporta invitados)
 const createOrder = async (req, res, next) => {
     try {
-        const { items, guestInfo, shippingAddress } = req.body;
+        const { items, guestInfo, shippingAddress, paymentMethod } = req.body;
 
+        // ✅ FIX: Validar items
         if (!items || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({
                 success: false,
                 error: 'Debe proporcionar al menos un item en la orden.'
+            });
+        }
+
+        // ✅ FIX: Validar límite máximo de items por orden
+        if (items.length > 50) {
+            return res.status(400).json({
+                success: false,
+                error: 'La orden no puede superar los 50 productos diferentes.'
             });
         }
 
@@ -22,6 +35,23 @@ const createOrder = async (req, res, next) => {
         const orderItems = [];
 
         for (const item of items) {
+            // ✅ FIX: Validar productId
+            if (!item.productId) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Cada item debe tener un productId.'
+                });
+            }
+
+            // ✅ FIX: Validar cantidad (1-99)
+            const quantity = Number(item.quantity) || 1;
+            if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Cantidad inválida para el producto ${item.productId}. Debe ser entre 1 y 99.`
+                });
+            }
+
             const product = await Product.findById(item.productId).lean();
             if (!product) {
                 return res.status(400).json({
@@ -30,9 +60,17 @@ const createOrder = async (req, res, next) => {
                 });
             }
 
-            const quantity = item.quantity || 1;
+            // ✅ FIX: Validar stock
+            if (product.stock < quantity) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Stock insuficiente para "${product.name}". Disponible: ${product.stock}.`
+                });
+            }
+
             totalAmount += product.price * quantity;
 
+            // ✅ Snapshot del nombre (por si el producto se elimina después)
             orderItems.push({
                 product: product._id,
                 productName: product.name,
@@ -46,7 +84,8 @@ const createOrder = async (req, res, next) => {
             items: orderItems,
             totalAmount: Number(totalAmount.toFixed(2)),
             paymentStatus: 'pending',
-            status: 'pending'
+            status: 'pending',
+            paymentMethod: paymentMethod || 'card'
         };
 
         if (req.session?.user) {
@@ -97,7 +136,7 @@ const createOrder = async (req, res, next) => {
         newOrder.stripeSessionId = session.id;
         await newOrder.save();
 
-        logger.info(`Orden creada: ${newOrder._id} - Stripe Session: ${session.id}`);
+        logger.info(`Orden creada: ${newOrder._id} - Stripe Session: ${session.id} - Total: $${totalAmount.toFixed(2)}`);
 
         res.status(201).json({
             success: true,
@@ -110,6 +149,10 @@ const createOrder = async (req, res, next) => {
         next(error);
     }
 };
+
+// ==========================================
+// CONFIRMAR PAGO
+// ==========================================
 
 // @desc    Confirmar pago de orden después de Stripe Checkout
 // @route   GET /api/orders/confirm
@@ -162,6 +205,11 @@ const confirmOrderPayment = async (req, res, next) => {
 
         logger.info(`Pago confirmado para orden: ${order._id}`);
 
+        // ✅ FIX: Redirigir a la página de éxito si es navegación HTML
+        if (req.accepts('html')) {
+            return res.redirect(`/api/orders/success?orderId=${order._id}`);
+        }
+
         res.status(200).json({
             success: true,
             message: 'Pago confirmado exitosamente.',
@@ -172,6 +220,10 @@ const confirmOrderPayment = async (req, res, next) => {
         next(error);
     }
 };
+
+// ==========================================
+// HISTORIAL DE ÓRDENES
+// ==========================================
 
 // @desc    Obtener historial de órdenes del usuario
 // @route   GET /api/orders
@@ -201,12 +253,28 @@ const getUserOrders = async (req, res, next) => {
     }
 };
 
+// ==========================================
+// WEBHOOK DE STRIPE
+// ==========================================
+
 // @desc    Webhook de Stripe para eventos de pago
 // @route   POST /api/orders/webhook
 // @access  Public (validado con Stripe Signature)
 const handleStripeWebhook = async (req, res) => {
     const sig = req.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    // ✅ FIX: Validar que el webhook secret esté configurado
+    if (!endpointSecret) {
+        logger.error('STRIPE_WEBHOOK_SECRET no está configurado en .env');
+        return res.status(500).send('Webhook no configurado.');
+    }
+
+    // ✅ FIX: Validar que req.body sea Buffer (raw)
+    if (!Buffer.isBuffer(req.body)) {
+        logger.error('El body del webhook no está en formato raw. Verifica express.raw() en server.js');
+        return res.status(500).send('Configuración de webhook incorrecta.');
+    }
 
     let event;
 
@@ -217,44 +285,54 @@ const handleStripeWebhook = async (req, res) => {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Manejar eventos
-    switch (event.type) {
-        case 'checkout.session.completed': {
-            const session = event.data.object;
-            const orderId = session.metadata?.orderId;
+    // ✅ try/catch para evitar que el webhook falle y Stripe reintente
+    try {
+        switch (event.type) {
+            case 'checkout.session.completed': {
+                const session = event.data.object;
+                const orderId = session.metadata?.orderId;
 
-            if (orderId) {
-                await Order.findByIdAndUpdate(orderId, {
-                    paymentStatus: 'paid',
-                    status: 'processing'
-                });
-                logger.info(`Webhook: Orden ${orderId} pagada exitosamente.`);
+                if (orderId) {
+                    await Order.findByIdAndUpdate(orderId, {
+                        paymentStatus: 'paid',
+                        status: 'processing'
+                    });
+                    logger.info(`Webhook: Orden ${orderId} pagada exitosamente.`);
+                }
+                break;
             }
-            break;
+
+            case 'checkout.session.expired': {
+                const session = event.data.object;
+                const orderId = session.metadata?.orderId;
+
+                if (orderId) {
+                    await Order.findByIdAndUpdate(orderId, {
+                        paymentStatus: 'failed',
+                        status: 'cancelled'
+                    });
+                    logger.info(`Webhook: Orden ${orderId} expirada/cancelada.`);
+                }
+                break;
+            }
+
+            default:
+                logger.info(`Webhook: Evento no manejado: ${event.type}`);
         }
 
-        case 'checkout.session.expired': {
-            const session = event.data.object;
-            const orderId = session.metadata?.orderId;
-
-            if (orderId) {
-                await Order.findByIdAndUpdate(orderId, {
-                    paymentStatus: 'failed',
-                    status: 'cancelled'
-                });
-                logger.info(`Webhook: Orden ${orderId} expirada/cancelada.`);
-            }
-            break;
-        }
-
-        default:
-            logger.info(`Webhook: Evento no manejado: ${event.type}`);
+        // ✅ Siempre responder 200 para que Stripe no reintente
+        res.json({ received: true });
+    } catch (dbError) {
+        logger.error(`Error procesando webhook de Stripe: ${dbError.message}`, { stack: dbError.stack });
+        res.status(500).json({ error: 'Error procesando webhook.' });
     }
-
-    res.json({ received: true });
 };
 
-// @desc    Actualizar el estado de una orden (Admin)
+// ==========================================
+// ACTUALIZAR ESTADO DE ORDEN (Admin)
+// ==========================================
+
+// @desc    Actualizar el estado de una orden
 // @route   PUT /api/orders/:id/status o /admin/orders/:id/status
 // @access  Private/Admin
 const updateOrderStatus = async (req, res, next) => {
@@ -290,6 +368,7 @@ const updateOrderStatus = async (req, res, next) => {
             order
         });
     } catch (error) {
+        logger.error(`Error al actualizar estado de orden: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
