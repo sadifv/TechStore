@@ -1,0 +1,170 @@
+<main class="admin-container container">
+
+  <!-- Header -->
+  <header class="admin-header">
+    <h2>
+      <i class="ri-user-settings-line" aria-hidden="true"></i>
+      Gestión de Usuarios
+    </h2>
+    <a href="/admin/dashboard" class="btn btn-outline btn-sm">
+      <i class="ri-arrow-left-line" aria-hidden="true"></i>
+      Volver al Dashboard
+    </a>
+  </header>
+
+  <!-- Filtros y búsqueda -->
+  <form class="catalog-filters" role="search" aria-label="Filtros de usuarios" method="GET" action="/admin/users">
+    <fieldset class="filter-group search-group">
+      <legend class="sr-only">Buscar usuario</legend>
+      <i class="ri-search-line search-icon" aria-hidden="true"></i>
+      <input
+        type="search"
+        id="admin-users-search"
+        name="search"
+        placeholder="Buscar por nombre o email..."
+        aria-label="Buscar usuarios"
+        value="<%= typeof currentSearch !== 'undefined' ? currentSearch : '' %>"
+      />
+    </fieldset>
+
+    <fieldset class="filter-group">
+      <legend class="sr-only">Filtrar por rol</legend>
+      <label for="admin-users-role">Rol:</label>
+      <select id="admin-users-role" name="role">
+        <option value="" <%= !currentRole ? 'selected' : '' %>>Todos los roles</option>
+        <option value="user" <%= currentRole === 'user' ? 'selected' : '' %>>Usuarios</option>
+        <option value="admin" <%= currentRole === 'admin' ? 'selected' : '' %>>Administradores</option>
+      </select>
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="ri-filter-3-line" aria-hidden="true"></i>
+      Filtrar
+    </button>
+
+    <% if (currentSearch || currentRole) { %>
+      <a href="/admin/users" class="btn btn-secondary btn-sm">
+        <i class="ri-close-line" aria-hidden="true"></i>
+        Limpiar filtros
+      </a>
+    <% } %>
+  </form>
+
+  <!-- Tabla de usuarios -->
+  <section class="admin-table-wrapper">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th scope="col">Usuario</th>
+          <th scope="col">Email</th>
+          <th scope="col">Rol</th>
+          <th scope="col">Registro</th>
+          <th scope="col">Último acceso</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody aria-live="polite">
+        <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
+          <% users.forEach(u => { %>
+            <tr data-id="<%= u._id %>">
+              <td>
+                <strong><%= u.name %></strong>
+              </td>
+              <td>
+                <a href="mailto:<%= u.email %>"><%= u.email %></a>
+              </td>
+              <td>
+                <span class="badge badge-<%= u.role === 'admin' ? 'primary' : 'secondary' %>">
+                  <% if (u.role === 'admin') { %>
+                    <i class="ri-shield-user-line" aria-hidden="true"></i>
+                  <% } %>
+                  <%= u.role === 'admin' ? 'Admin' : 'Usuario' %>
+                </span>
+              </td>
+              <td>
+                <time datetime="<%= u.createdAt %>">
+                  <%= new Date(u.createdAt).toLocaleDateString('es-EC') %>
+                </time>
+              </td>
+              <td>
+                <% if (u.lastLoginAt) { %>
+                  <time datetime="<%= u.lastLoginAt %>">
+                    <%= new Date(u.lastLoginAt).toLocaleDateString('es-EC') %>
+                  </time>
+                <% } else { %>
+                  <small class="text-muted">Nunca</small>
+                <% } %>
+              </td>
+              <td>
+                <% if (u.role !== 'admin') { %>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-delete btn-delete-user"
+                    data-id="<%= u._id %>"
+                    aria-label="Eliminar usuario <%= u.name %>"
+                  >
+                    <i class="ri-delete-bin-line" aria-hidden="true"></i>
+                    Eliminar
+                  </button>
+                <% } else { %>
+                  <small class="text-muted">
+                    <i class="ri-lock-line" aria-hidden="true"></i>
+                    Protegido
+                  </small>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="6" class="text-center">
+              <% if (currentSearch || currentRole) { %>
+                No se encontraron usuarios con los filtros seleccionados.
+              <% } else { %>
+                No hay usuarios registrados.
+              <% } %>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Paginación -->
+  <% if (typeof pagination !== 'undefined' && pagination && pagination.totalPages > 1) { %>
+    <nav class="pagination-nav" aria-label="Navegación de páginas">
+      <% 
+        // Construir query string preservando filtros
+        const buildUrl = (page) => {
+          const params = new URLSearchParams();
+          if (currentSearch) params.set('search', currentSearch);
+          if (currentRole) params.set('role', currentRole);
+          params.set('page', page);
+          return `/admin/users?${params.toString()}`;
+        };
+      %>
+
+      <% if (pagination.currentPage > 1) { %>
+        <a href="<%= buildUrl(pagination.currentPage - 1) %>" class="btn btn-sm btn-outline">
+          « Anterior
+        </a>
+      <% } %>
+
+      <span class="pagination-info">
+        <strong>Página <%= pagination.currentPage %> de <%= pagination.totalPages %></strong>
+        <% if (pagination.totalUsers) { %>
+          <small>· <%= pagination.totalUsers %> usuarios</small>
+        <% } %>
+      </span>
+
+      <% if (pagination.currentPage < pagination.totalPages) { %>
+        <a href="<%= buildUrl(pagination.currentPage + 1) %>" class="btn btn-sm btn-outline">
+          Siguiente »
+        </a>
+      <% } %>
+    </nav>
+  <% } %>
+
+</main>
+
+<script src="/js/admin-crud.js?v=<%= cacheBust %>" defer></script>
