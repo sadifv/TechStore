@@ -11,84 +11,58 @@ const {
     deactivateFlashSale
 } = require('../controllers/productController');
 const { updateOrderStatus } = require('../controllers/orderController');
-const { 
-    getAdminOrders, 
-    getAdminOrderDetail, 
-    getPackingSlip 
+const {
+    getAdminDashboard,
+    getAdminOrders,
+    getAdminOrderDetail,
+    getPackingSlip,
+    getAdminUsers
 } = require('../controllers/adminController');
 const { uploadSingleProductImage } = require('../middleware/uploadMiddleware');
-const { validate, productValidation } = require('../middleware/validationMiddleware');
+const { validate } = require('../middleware/validate');
 
-const Product = require('../models/Product');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
-const Order = require('../models/Order');
 const logger = require('../config/logger');
 
-// Cerrar sesión
+// ==========================================
+// LOGOUT
+// ==========================================
 router.get('/logout', logoutUser);
 
-// Dashboard
-router.get('/dashboard', requireAdmin, async (req, res) => {
-    try {
-        const productsCount = await Product.countDocuments();
-        const messagesCount = await Contact.countDocuments();
-        const subscribersCount = await Newsletter.countDocuments();
-        const usersCount = await User.countDocuments();
-        const ordersCount = await Order.countDocuments();
-
-        const products = await Product.find().sort({ createdAt: -1 }).lean();
-        const recentMessages = await Contact.find().sort({ createdAt: -1 }).limit(5).lean();
-        const subscribers = await Newsletter.find().sort({ createdAt: -1 }).lean();
-        const users = await User.find({}, '-password').sort({ createdAt: -1 }).lean();
-        const orders = await Order.find().populate('user', 'name email').sort({ createdAt: -1 }).lean();
-
-        res.render('admin/dashboard', {
-            title: 'TechStore - Panel de Administración',
-            stats: {
-                productsCount,
-                messagesCount,
-                subscribersCount,
-                usersCount,
-                ordersCount
-            },
-            products,
-            messages: recentMessages,
-            subscribers,
-            users,
-            orders
-        });
-    } catch (error) {
-        logger.error(`Error al cargar dashboard: ${error.message}`, { stack: error.stack });
-        res.status(500).send('Error del servidor al cargar el panel.');
-    }
-});
+// ==========================================
+// DASHBOARD
+// ==========================================
+router.get('/dashboard', requireAdmin, getAdminDashboard);
 
 // ==========================================
-// GESTIÓN DE ÓRDENES Y PACKING SLIP
+// GESTIÓN DE ÓRDENES
 // ==========================================
-
 router.get('/orders', requireAdmin, getAdminOrders);
 router.get('/orders/:id', requireAdmin, getAdminOrderDetail);
 router.get('/orders/:id/packing-slip', requireAdmin, getPackingSlip);
 router.put('/orders/:id/status', requireAdmin, updateOrderStatus);
 
 // ==========================================
-// PRODUCTOS Y OFERTAS FLASH
+// GESTIÓN DE USUARIOS
 // ==========================================
+router.get('/users', requireAdmin, getAdminUsers);
 
-router.post('/products', requireAdmin, uploadSingleProductImage, validate(productValidation), createProduct);
-router.put('/products/:id', requireAdmin, uploadSingleProductImage, validate(productValidation), updateProduct);
+// ==========================================
+// PRODUCTOS Y OFERTAS FLASH
+// ✅ FIX: `validate` SIN paréntesis
+// ==========================================
+router.post('/products', requireAdmin, uploadSingleProductImage, validate, createProduct);
+router.put('/products/:id', requireAdmin, uploadSingleProductImage, validate, updateProduct);
 router.delete('/products/:id', requireAdmin, deleteProduct);
 
 router.post('/products/:id/flash-sale', requireAdmin, activateFlashSale);
 router.delete('/products/:id/flash-sale', requireAdmin, deactivateFlashSale);
 
 // ==========================================
-// ELIMINACIÓN DE RECURSOS (ADMIN)
+// ELIMINACIÓN DE RECURSOS
 // ==========================================
-
 router.delete('/messages/:id', requireAdmin, async (req, res) => {
     try {
         await Contact.findByIdAndDelete(req.params.id);

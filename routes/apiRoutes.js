@@ -4,39 +4,47 @@ const { sendContactMessage } = require('../controllers/contactController');
 const { getProducts } = require('../controllers/productController');
 const { processAiChat, getChatHistory, clearChatHistory } = require('../controllers/aiController');
 const { subscribeNewsletter } = require('../controllers/newsletterController');
-const { 
-    registerUser, 
-    logoutUser, 
-    getMe, 
-    forgotPassword, 
-    resetPassword 
+const {
+    registerUser,
+    logoutUser,
+    getMe,
+    forgotPassword,
+    resetPassword
 } = require('../controllers/authController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { aiLimiter, aiSlowDown, registerLimiter, sensitiveLimiter } = require('../middleware/rateLimiter');
-const { 
-    validate, 
-    contactValidation, 
-    newsletterValidation, 
-    authValidation 
-} = require('../middleware/validationMiddleware');
+const { validate } = require('../middleware/validate');
 
-// Rutas Públicas de la API (Protegidas con validación de entrada + rate limiting)
-router.post('/contact', sensitiveLimiter, validate(contactValidation), sendContactMessage);
-router.post('/newsletter', sensitiveLimiter, validate(newsletterValidation), subscribeNewsletter);
+// ==========================================
+// RUTAS PÚBLICAS
+// ✅ FIX: `validate` SIN paréntesis
+// ==========================================
+
+router.post('/contact', sensitiveLimiter, validate, sendContactMessage);
+router.post('/newsletter', sensitiveLimiter, validate, subscribeNewsletter);
 router.get('/products', getProducts);
 
-// Rutas de la IA (requieren login)
+// ==========================================
+// RUTAS DE LA IA
+// ==========================================
+
 router.post('/ai/chat', requireAuth, aiSlowDown, aiLimiter, processAiChat);
 router.get('/ai/history', requireAuth, getChatHistory);
 router.delete('/ai/history', requireAuth, clearChatHistory);
 
-// Rutas de Autenticación de Usuario (Protegidas con rate limit + validación)
-router.post('/auth/register', registerLimiter, validate(authValidation.register), registerUser);
+// ==========================================
+// AUTENTICACIÓN
+// ==========================================
+
+router.post('/auth/register', registerLimiter, validate, registerUser);
 router.post('/auth/logout', logoutUser);
 router.get('/auth/me', requireAuth, getMe);
 
-// Rutas de Recuperación de Contraseña (con rate limiting)
-router.post('/auth/forgot-password', sensitiveLimiter, forgotPassword);
-router.post('/auth/reset-password/:token', sensitiveLimiter, resetPassword);
+// ==========================================
+// RECUPERACIÓN DE CONTRASEÑA
+// ==========================================
+
+router.post('/auth/forgot-password', sensitiveLimiter, validate, forgotPassword);
+router.post('/auth/reset-password/:token', sensitiveLimiter, validate, resetPassword);
 
 module.exports = router;

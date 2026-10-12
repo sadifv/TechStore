@@ -4,25 +4,21 @@ const Product = require('../models/Product');
 const { getProductDetailPage } = require('../controllers/productController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { loginUser, registerUser } = require('../controllers/authController');
-const { loginLimiter } = require('../middleware/rateLimiter');
-const { validate, authValidation } = require('../middleware/validationMiddleware');
+const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
+const { validate } = require('../middleware/validate');
 const logger = require('../config/logger');
 
-// Ruta principal (Home) - Carga productos destacados + flash sale activa
+// ==========================================
+// RUTAS PRINCIPALES
+// ==========================================
+
 router.get('/', async (req, res) => {
     try {
         const now = new Date();
 
         const [featuredProducts, flashSaleProduct] = await Promise.all([
-            Product.find()
-                .sort({ createdAt: -1 })
-                .limit(6)
-                .lean(),
-
-            Product.findOne({
-                flashSale: true,
-                flashSaleEndsAt: { $gt: now }
-            })
+            Product.find().sort({ createdAt: -1 }).limit(6).lean(),
+            Product.findOne({ flashSale: true, flashSaleEndsAt: { $gt: now } })
                 .sort({ flashSaleEndsAt: 1 })
                 .lean()
         ]);
@@ -42,17 +38,14 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Vista dedicada para el Catálogo Completo (con filtros y paginación)
 router.get('/catalogo', (req, res) => {
     res.render('components/catalog', {
         title: 'Catálogo de Productos - TechStore'
     });
 });
 
-// Vista de detalle de un producto
 router.get('/producto/:id', getProductDetailPage);
 
-// Vista de información legal (privacidad, términos, cookies)
 router.get('/legal', (req, res) => {
     res.render('legal', {
         title: 'Información Legal | TechStore'
@@ -60,37 +53,32 @@ router.get('/legal', (req, res) => {
 });
 
 // ==========================================
-// AUTENTICACIÓN Y RECUPERACIÓN DE CONTRASEÑA
+// AUTENTICACIÓN
+// ✅ FIX: `validate` se usa SIN paréntesis (es middleware directo)
 // ==========================================
 
-// Vista de Login
 router.get('/login', (req, res) => {
     res.render('login', {
         title: 'TechStore - Iniciar Sesión'
     });
 });
 
-// POST Login (protegido con rate limit + validación de entrada)
-router.post('/login', loginLimiter, validate(authValidation.login), loginUser);
+router.post('/login', loginLimiter, validate, loginUser);
 
-// Vista de Registro
 router.get('/register', (req, res) => {
     res.render('register', {
         title: 'TechStore - Crear Cuenta'
     });
 });
 
-// POST Registro
-router.post('/register', validate(authValidation.register), registerUser);
+router.post('/register', registerLimiter, validate, registerUser);
 
-// Vista de Solicitud de Recuperación de Contraseña
 router.get('/forgot-password', (req, res) => {
     res.render('forgot-password', {
         title: 'TechStore - Recuperar Contraseña'
     });
 });
 
-// Vista de Formulario de Restablecimiento con Token
 router.get('/reset-password/:token', (req, res) => {
     res.render('reset-password', {
         title: 'TechStore - Nueva Contraseña',
@@ -102,7 +90,6 @@ router.get('/reset-password/:token', (req, res) => {
 // PERFIL
 // ==========================================
 
-// Vista del Perfil de Usuario (PROTEGIDA)
 router.get('/profile', requireAuth, (req, res) => {
     res.render('profile', {
         title: 'Mi Perfil | TechStore',
