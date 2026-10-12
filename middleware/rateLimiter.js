@@ -3,13 +3,20 @@ const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 const logger = require('../config/logger');
 
+// Helper: detectar si la petición es API/JSON
+const isApiRequest = (req) =>
+  req.xhr ||
+  req.path.startsWith('/api') ||
+  req.headers.accept?.includes('json') ||
+  req.headers['content-type']?.includes('json');
+
 /**
- * Limitador estricto para el login de administrador.
- * Evita ataques de fuerza bruta: 5 intentos cada 10 minutos por IP.
+ * Limitador estricto para el login.
+ * 5 intentos cada 10 minutos.
  */
 const loginLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutos
-  max: 5, // 5 intentos por IP
+  windowMs: 10 * 60 * 1000,
+  max: 5,
   message: {
     success: false,
     error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.'
@@ -18,16 +25,19 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res, next, options) => {
     logger.warn(`Rate limit excedido en login desde IP: ${req.ip}`);
-    res.status(options.statusCode).send(options.message);
+    if (isApiRequest(req)) {
+      return res.status(options.statusCode).json(options.message);
+    }
+    return res.status(options.statusCode).send(options.message.error);
   }
 });
 
 /**
- * Limitador general para rutas de admin (capa extra, más suave).
+ * Limitador general para rutas de admin.
  * 100 peticiones cada 15 minutos.
  */
 const adminLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: {
     success: false,
@@ -37,18 +47,20 @@ const adminLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res, next, options) => {
     logger.warn(`Rate limit excedido en /admin desde IP: ${req.ip} - Ruta: ${req.originalUrl}`);
-    res.status(options.statusCode).send(options.message);
+    if (isApiRequest(req)) {
+      return res.status(options.statusCode).json(options.message);
+    }
+    return res.status(options.statusCode).send(options.message.error);
   }
 });
 
 /**
  * Limitador específico para el asistente de IA.
- * Protege la cuota gratuita de Gemini contra abuso.
- * 20 peticiones cada 15 minutos por IP.
+ * 20 peticiones cada 15 minutos.
  */
 const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 20, // 20 peticiones por IP
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   message: {
     success: false,
     error: 'Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.'
@@ -57,30 +69,30 @@ const aiLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res, next, options) => {
     logger.warn(`Rate limit excedido en /api/ai/chat desde IP: ${req.ip}`);
-    res.status(options.statusCode).send(options.message);
+    if (isApiRequest(req)) {
+      return res.status(options.statusCode).json(options.message);
+    }
+    return res.status(options.statusCode).send(options.message.error);
   }
 });
 
 /**
- * Ralentiza progresivamente las peticiones a la IA antes de bloquearlas.
- * A partir de la petición 10, cada una tarda 500ms más.
- * Máximo 5 segundos de delay acumulado.
+ * Ralentiza progresivamente las peticiones a la IA.
  */
 const aiSlowDown = slowDown({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  delayAfter: 10, // Después de 10 peticiones empieza a ralentizar
-  delayMs: (hits) => (hits - 10) * 500, // +500ms por cada petición extra
-  maxDelayMs: 5000 // Máximo 5 segundos de delay
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 10,
+  delayMs: (hits) => (hits - 10) * 500,
+  maxDelayMs: 5000
 });
 
 /**
- * Limitador para el registro de usuarios.
- * Evita creación masiva de cuentas desde una misma IP.
+ * Limitador para el registro.
  * 10 registros cada 60 minutos.
  */
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 60 minutos
-  max: 10, // 10 registros por IP
+  windowMs: 60 * 60 * 1000,
+  max: 10,
   message: {
     success: false,
     error: 'Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.'
@@ -89,16 +101,19 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res, next, options) => {
     logger.warn(`Rate limit excedido en /api/auth/register desde IP: ${req.ip}`);
-    res.status(options.statusCode).send(options.message);
+    if (isApiRequest(req)) {
+      return res.status(options.statusCode).json(options.message);
+    }
+    return res.status(options.statusCode).send(options.message.error);
   }
 });
 
 /**
- * Limitador para rutas sensibles (contacto, newsletter, recuperación de contraseña).
- * Evita abuso y spam: 10 peticiones cada 15 minutos por IP.
+ * Limitador para rutas sensibles.
+ * 10 peticiones cada 15 minutos.
  */
 const sensitiveLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
+  windowMs: 15 * 60 * 1000,
   max: 10,
   message: {
     success: false,
@@ -108,7 +123,10 @@ const sensitiveLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res, next, options) => {
     logger.warn(`Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${req.originalUrl}`);
-    res.status(options.statusCode).send(options.message);
+    if (isApiRequest(req)) {
+      return res.status(options.statusCode).json(options.message);
+    }
+    return res.status(options.statusCode).send(options.message.error);
   }
 });
 
