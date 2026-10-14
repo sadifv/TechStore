@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnOpenCreate.addEventListener('click', () => {
             productForm.reset();
             document.getElementById('product-id').value = '';
-            if (imagePreview) imagePreview.src = '/images/default-product.png';
+            if (imagePreview) imagePreview.src = '/images/products/product-placeholder.svg';
             modalTitle.textContent = 'Agregar Producto';
             productModal.showModal();
         });
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const imageCell = document.createElement('td');
             const image = document.createElement('img');
             image.className = 'admin-product-thumbnail';
-            image.src = product.image || '/images/default-product.png';
+            image.src = product.image || '/images/products/product-placeholder.svg';
             image.alt = product.name;
             image.loading = 'lazy';
             imageCell.appendChild(image);
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             categorySelect.value = product.category || '';
             if (imageFileInput) imageFileInput.value = '';
-            if (imagePreview) imagePreview.src = product.image || '/images/default-product.png';
+            if (imagePreview) imagePreview.src = product.image || '/images/products/product-placeholder.svg';
 
             modalTitle.textContent = 'Editar Producto';
             productModal.showModal();

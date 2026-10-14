@@ -235,7 +235,7 @@
         <% topProducts.forEach(function(product) { %>
           <article class="product-card">
             <a href="/producto/<%= product._id %>">
-              <img src="<%= product.image || '/images/default-product.png' %>" alt="<%= product.name %>">
+              <img src="<%= product.image || '/images/products/product-placeholder.svg' %>" alt="<%= product.name %>">
               <h4><%= product.name %></h4>
             </a>
             <p class="product-price">$<%= Number(product.price || 0).toFixed(2) %></p>
@@ -301,7 +301,7 @@
       </p>
       <figure class="form-field image-preview-container">
         <figcaption>Vista previa</figcaption>
-        <img id="prod-image-preview" src="/images/default-product.png" alt="Vista previa del producto" />
+        <img id="prod-image-preview" src="/images/products/product-placeholder.svg" alt="Vista previa del producto" />
       </figure>
       <footer class="modal-actions">
         <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>

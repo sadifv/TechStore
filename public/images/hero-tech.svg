@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Tecnología para tu espacio</title>
+  <desc id="desc">Ilustración de una laptop, un teléfono y audífonos sobre un escritorio moderno.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#dbeafe"/>
+      <stop offset="1" stop-color="#eff6ff"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#64748b"/>
+      <stop offset="1" stop-color="#334155"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="24" stdDeviation="20" flood-color="#1e3a8a" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="800" rx="48" fill="url(#background)"/>
+  <circle cx="1000" cy="145" r="84" fill="#bfdbfe"/>
+  <circle cx="190" cy="185" r="32" fill="#c4b5fd" opacity=".8"/>
+  <path d="M0 605h1200v195H0z" fill="url(#desk)"/>
+  <path d="M0 605h1200v18H0z" fill="#94a3b8" opacity=".7"/>
+  <g filter="url(#shadow)">
+    <rect x="263" y="182" width="606" height="380" rx="26" fill="#0f172a"/>
+    <rect x="282" y="201" width="568" height="342" rx="14" fill="url(#screen)"/>
+    <circle cx="566" cy="191" r="4" fill="#64748b"/>
+    <path d="M203 562h726l-65 55H268z" fill="#cbd5e1"/>
+    <path d="M401 572h330l-18 23H420z" fill="#94a3b8"/>
+    <path d="M282 520h568v23H282z" fill="#1e293b" opacity=".55"/>
+    <path d="M373 462c43-80 95-111 156-93 47 14 61 67 109 62 45-4 85-64 166-95v207H282v-31c39-9 66-22 91-50z" fill="#60a5fa" opacity=".78"/>
+    <path d="M282 489c84-19 112-104 194-93 64 8 84 63 142 55 91-12 137-97 232-101v193H282z" fill="#a78bfa" opacity=".88"/>
+    <circle cx="715" cy="300" r="56" fill="#f8fafc" opacity=".88"/>
+  </g>
+  <g filter="url(#shadow)" transform="rotate(8 955 500)">
+    <rect x="892" y="350" width="150" height="280" rx="28" fill="#0f172a"/>
+    <rect x="903" y="372" width="128" height="236" rx="16" fill="#e0f2fe"/>
+    <rect x="916" y="393" width="102" height="122" rx="12" fill="url(#screen)"/>
+    <circle cx="967" cy="568" r="13" fill="#93c5fd"/>
+  </g>
+  <g transform="translate(128 436)" filter="url(#shadow)">
+    <path d="M8 94V68C8 25 42-8 84-8s76 33 76 76v26" fill="none" stroke="#1e293b" stroke-width="24" stroke-linecap="round"/>
+    <rect x="-4" y="62" width="47" height="93" rx="21" fill="#2563eb"/>
+    <rect x="131" y="62" width="47" height="93" rx="21" fill="#2563eb"/>
+    <path d="M20 82v49M154 82v49" stroke="#bfdbfe" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <path d="M85 665h1030" stroke="#cbd5e1" stroke-width="8" stroke-linecap="round" opacity=".55"/>
+</svg>

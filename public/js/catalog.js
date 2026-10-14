@@ -65,7 +65,7 @@ async function loadProducts(page = 1) {
             media.classList.add('product-card-media');
 
             const img = document.createElement('img');
-            img.src = product.image || '/images/default-product.png';
+            img.src = product.image || '/images/products/product-placeholder.svg';
             img.alt = product.name;
             img.loading = 'lazy';
             media.appendChild(img);

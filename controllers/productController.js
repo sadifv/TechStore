@@ -101,7 +101,7 @@ const getProductDetailPage = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
     try {
         const { name, description, price, category, stock, image } = req.body;
-        let imagePath = '/images/default-product.png';
+        let imagePath = '/images/products/product-placeholder.svg';
         if (req.file) {
             imagePath = `/uploads/products/${req.file.filename}`;
         } else if (image && image.trim() !== '') {

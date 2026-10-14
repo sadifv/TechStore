@@ -10,7 +10,7 @@
         <a href="/catalogo" class="btn btn-primary">Ver catálogo completo</a>
     </article>
     <figure class="hero-media">
-        <img src="/images/hero-gadgets.jpg" alt="Gadgets tecnológicos destacados" />
+        <img src="/images/hero-tech.svg" alt="Laptop, teléfono y audífonos en un espacio de trabajo moderno" />
     </figure>
 </section>
 
@@ -89,7 +89,7 @@
 
                         <a href="/producto/<%= product._id %>" class="product-card-link" aria-label="Ver detalles de <%= product.name %>">
                             <figure class="product-card-media">
-                                <img src="<%= product.image || '/images/placeholder.jpg' %>" alt="<%= product.name %>" loading="lazy" />
+                                <img src="<%= product.image || '/images/products/product-placeholder.svg' %>" alt="<%= product.name %>" loading="lazy" />
                             </figure>
                             <header>
                                 <h3><%= product.name %></h3>
@@ -249,7 +249,7 @@
     <ul class="blog-grid">
         <li>
             <article class="blog-card">
-                <img src="/images/blog-gadgets.jpg" alt="Top Gadgets del Año" />
+                <img src="/images/blog-gadgets.svg" alt="Laptop, teléfono y audífonos inalámbricos" />
                 <header class="blog-content">
                     <h3>Los mejores Gadgets para potenciar tu Setup en 2026</h3>
                     <p>Descubre los accesorios indispensables para optimizar tu espacio de trabajo.</p>
@@ -258,7 +258,7 @@
         </li>
         <li>
             <article class="blog-card">
-                <img src="/images/blog-headphones.jpg" alt="Guía de Audífonos" />
+                <img src="/images/blog-audio.svg" alt="Audífonos inalámbricos con almohadillas acolchadas" />
                 <header class="blog-content">
                     <h3>Guía de compra: Audífonos con Cancelación de Ruido</h3>
                     <p>Te enseñamos a elegir el modelo ideal según tu presupuesto y necesidades.</p>
@@ -267,7 +267,7 @@
         </li>
         <li>
             <article class="blog-card">
-                <img src="/images/blog-smartwatch.jpg" alt="Smartwatches recomendados" />
+                <img src="/images/blog-smartwatch.svg" alt="Reloj inteligente con indicadores de actividad" />
                 <header class="blog-content">
                     <h3>Smartwatches: Monitoreo de salud y rendimiento</h3>
                     <p>Analizamos las funciones clave de los relojes inteligentes más avanzados.</p>
@@ -287,21 +287,21 @@
     <ul class="testimonials-grid">
         <li>
             <article class="testimonial-card">
-                <img src="/images/testimonial-carlos.jpg" alt="Foto de Carlos M." />
+                <span class="testimonial-avatar" aria-hidden="true">CM</span>
                 <blockquote>"Excelente servicio y entrega rapidísima. Los audífonos llegaron en perfecto estado."</blockquote>
                 <cite>- Carlos M.</cite>
             </article>
         </li>
         <li>
             <article class="testimonial-card">
-                <img src="/images/testimonial-laura.jpg" alt="Foto de Laura G." />
+                <span class="testimonial-avatar" aria-hidden="true">LG</span>
                 <blockquote>"Compré una cámara y un smartwatch. La calidad superó mis expectativas totalmente."</blockquote>
                 <cite>- Laura G.</cite>
             </article>
         </li>
         <li>
             <article class="testimonial-card">
-                <img src="/images/testimonial-maria.jpg" alt="Foto de María R." />
+                <span class="testimonial-avatar" aria-hidden="true">MR</span>
                 <blockquote>"El asistente de IA me ayudó a elegir el cargador correcto para mis dispositivos."</blockquote>
                 <cite>- María R.</cite>
             </article>
@@ -315,7 +315,7 @@
 <section class="newsletter-section">
     <article class="newsletter-container">
         <figure class="newsletter-media">
-            <img src="/images/newsletter.jpg" alt="Boletín de novedades" class="newsletter-img" />
+            <img src="/images/newsletter-tech.svg" alt="Dispositivos tecnológicos y un sobre para recibir novedades" class="newsletter-img" />
         </figure>
         <header class="newsletter-content">
             <h2>Suscríbete a nuestras ofertas</h2>

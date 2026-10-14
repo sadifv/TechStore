@@ -1287,12 +1287,18 @@ label.ai-sr-only {
   box-shadow: var(--shadow-card);
 }
 
-.testimonial-card img {
+.testimonial-avatar {
+  display: grid;
   width: 80px;
   height: 80px;
-  border-radius: var(--radius-full);
-  margin: 0 auto var(--space-4) auto;
+  place-items: center;
+  margin: 0 auto var(--space-4);
   border: 3px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #dbeafe, #ede9fe);
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
 }
 
 .testimonial-card blockquote {

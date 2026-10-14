@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title">
+  <title id="title">Cámara web de alta resolución</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#eff6ff"/>
+      <stop offset="1" stop-color="#dbeafe"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" rx="32" fill="url(#bg)"/>
+  <rect x="156" y="203" width="488" height="287" rx="20" fill="#0f172a"/>
+  <rect x="173" y="220" width="454" height="251" rx="11" fill="url(#screen)"/>
+  <circle cx="400" cy="345" r="83" fill="#bfdbfe" opacity=".88"/>
+  <circle cx="400" cy="316" r="31" fill="#475569"/>
+  <path d="M342 395c13-40 37-59 58-59s45 19 58 59" fill="#475569"/>
+  <path d="M347 489v45M453 489v45M293 535h214" stroke="#334155" stroke-width="22" stroke-linecap="round"/>
+  <rect x="312" y="154" width="176" height="74" rx="34" fill="#1e293b"/>
+  <rect x="333" y="171" width="134" height="40" rx="20" fill="#334155"/>
+  <circle cx="400" cy="191" r="23" fill="#0f172a" stroke="#60a5fa" stroke-width="7"/>
+  <circle cx="400" cy="191" r="9" fill="#93c5fd"/>
+  <circle cx="465" cy="190" r="6" fill="#22c55e"/>
+</svg>

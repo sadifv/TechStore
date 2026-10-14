@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 id: prod._id || item.productId || item.id || item._id,
                                 name: prod.name || item.name || 'Producto Desconocido',
                                 price: prod.price !== undefined ? Number(prod.price) : Number(item.price || 0),
-                                image: prod.image || item.image || '/images/default-product.png',
+                                image: prod.image || item.image || '/images/products/product-placeholder.svg',
                                 quantity: item.quantity || 1
                             };
                         });
@@ -479,12 +479,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const productData = card ? {
                 name: card.querySelector('h3')?.textContent || 'Producto',
                 price: parseFloat(card.querySelector('.product-price')?.textContent.replace(/[^\d.,-]/g, '').replace(',', '.') || 0),
-                image: card.querySelector('img')?.src || '',
+                image: card.querySelector('img')?.src || '/images/products/product-placeholder.svg',
                 availableStock: Number.isInteger(stockFromButton) ? stockFromButton : undefined
             } : {
                 name: document.querySelector('.product-detail-title')?.textContent.trim() || document.querySelector('h1')?.textContent.trim() || 'Producto',
                 price: parseFloat(document.querySelector('.product-detail-price')?.textContent.replace(/[^\d.,-]/g, '').replace(',', '.') || 0),
-                image: document.querySelector('.product-detail-media img')?.src || '',
+                image: document.querySelector('.product-detail-media img')?.src || '/images/products/product-placeholder.svg',
                 availableStock: Number.isInteger(stockFromButton)
                     ? stockFromButton
                     : stockFromInput

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 440" role="img" aria-labelledby="title">
+  <title id="title">Reloj inteligente con pantalla de actividad</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ecfeff"/>
+      <stop offset="1" stop-color="#cffafe"/>
+    </linearGradient>
+    <linearGradient id="strap" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#334155"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="440" rx="28" fill="url(#bg)"/>
+  <circle cx="355" cy="220" r="160" fill="#fff" opacity=".6"/>
+  <path d="M295 0h120l-21 116h-78zM316 324h78l21 116H295z" fill="url(#strap)"/>
+  <rect x="260" y="91" width="190" height="258" rx="51" fill="#0f172a"/>
+  <rect x="275" y="107" width="160" height="226" rx="38" fill="#111827"/>
+  <circle cx="355" cy="219" r="72" fill="none" stroke="#1e293b" stroke-width="13"/>
+  <circle cx="355" cy="219" r="72" fill="none" stroke="#22d3ee" stroke-width="13" stroke-linecap="round" stroke-dasharray="290 453" transform="rotate(-90 355 219)"/>
+  <circle cx="355" cy="219" r="51" fill="none" stroke="#1e293b" stroke-width="10"/>
+  <circle cx="355" cy="219" r="51" fill="none" stroke="#818cf8" stroke-width="10" stroke-linecap="round" stroke-dasharray="218 321" transform="rotate(-90 355 219)"/>
+  <text x="355" y="224" fill="#f8fafc" font-family="Arial,sans-serif" font-size="25" font-weight="700" text-anchor="middle">08:42</text>
+  <text x="355" y="264" fill="#94a3b8" font-family="Arial,sans-serif" font-size="14" text-anchor="middle">ACTIVIDAD</text>
+</svg>
