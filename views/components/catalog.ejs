@@ -59,9 +59,9 @@
                             <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
                         </a>
                         <footer>
-                            <button type="button" class="btn add-to-cart-btn" data-id="<%= product._id %>">
+                            <button type="button" class="btn add-to-cart-btn" data-id="<%= product._id %>" data-stock="<%= product.availableStock ?? product.stock %>" <%= (product.availableStock ?? product.stock) === 0 ? 'disabled' : '' %>>
                                 <i class="ri-shopping-cart-line" aria-hidden="true"></i>
-                                Añadir al carrito
+                                <%= (product.availableStock ?? product.stock) === 0 ? 'Agotado' : 'Añadir al carrito' %>
                             </button>
                         </footer>
                     </article>

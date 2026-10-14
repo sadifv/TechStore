@@ -70,6 +70,8 @@ const getProductById = async (req, res, next) => {
         if (!product) {
             return res.status(404).json({ success: false, error: 'Recurso no encontrado.' });
         }
+        const reservedStock = await Reservation.getReservedStock(product._id);
+        product.availableStock = Math.max(0, product.stock - reservedStock);
         res.status(200).json({ success: true, data: product });
     } catch (error) {
         if (error.name === 'CastError') {

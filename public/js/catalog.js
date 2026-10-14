@@ -91,8 +91,10 @@ async function loadProducts(page = 1) {
             const addBtn = document.createElement('button');
             addBtn.type = 'button';
             addBtn.classList.add('btn', 'add-to-cart-btn');
-            addBtn.textContent = 'Agregar al Carrito';
+            addBtn.textContent = Number(product.availableStock) > 0 ? 'Agregar al Carrito' : 'Agotado';
+            addBtn.disabled = Number(product.availableStock) <= 0;
             addBtn.dataset.id = product._id;
+            addBtn.dataset.stock = String(product.availableStock);
             footer.appendChild(addBtn);
 
             article.appendChild(titleLink);

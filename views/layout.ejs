@@ -21,5 +21,11 @@
     <% if (typeof title !== 'undefined' && title === 'Catálogo de Productos - TechStore') { %>
         <script src="/js/catalog.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
     <% } %>
+    <% if (typeof title !== 'undefined' && title === 'TechStore - Inicio') { %>
+        <script src="/js/flash-sale.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
+    <% } %>
+    <% if (typeof product !== 'undefined' && product && product._id) { %>
+        <script src="/js/product-detail.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
+    <% } %>
 </body>
 </html>

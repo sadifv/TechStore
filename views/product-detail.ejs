@@ -40,9 +40,12 @@
     </section>
 
     <section class="product-detail-stock" aria-label="Disponibilidad">
-      <p id="stock-indicator" class="stock-in">
+      <p id="stock-indicator" class="stock-in" aria-live="polite">
         <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
-        En stock · <span id="stock-count"><%= product.availableStock %></span> unidades disponibles
+        <span id="stock-label">En stock</span>
+        <span id="stock-separator" aria-hidden="true">·</span>
+        <span id="stock-count"><%= product.availableStock %></span>
+        <span id="stock-unit-label">unidades disponibles</span>
       </p>
     </section>
 
@@ -64,6 +67,7 @@
         type="button"
         class="btn btn-primary btn-block" 
         data-id="<%= product._id %>"
+        data-stock="<%= product.availableStock %>"
         <%= product.availableStock === 0 ? 'disabled' : '' %>
       >
         <i class="ri-shopping-cart-line" aria-hidden="true"></i>
@@ -73,5 +77,3 @@
 
   </section>
 </article>
-
-<script src="/js/product-detail.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>

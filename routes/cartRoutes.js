@@ -29,6 +29,21 @@ const parseQuantity = (raw) => {
     return qty;
 };
 
+const getAvailableStockForUser = async (product, userId) => {
+    const now = new Date();
+    const [reservedStock, ownReservation] = await Promise.all([
+        Reservation.getReservedStock(product._id),
+        Reservation.findOne({
+            user: userId,
+            product: product._id,
+            status: 'active',
+            expiresAt: { $gt: now }
+        }).select('quantity').lean()
+    ]);
+
+    return Math.max(0, product.stock - reservedStock + (ownReservation?.quantity || 0));
+};
+
 // GET /api/cart - Obtener el carrito del usuario autenticado
 router.get('/', requireAuth, async (req, res, next) => {
     try {
@@ -72,58 +87,90 @@ router.post('/add', requireAuth, async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Producto no encontrado.' });
         }
 
-        // Calcular stock disponible descontando reservas activas
-        const reservedStock = await Reservation.getReservedStock(product._id);
-        const availableStock = Math.max(0, product.stock - reservedStock);
+        const userId = getUserId(req);
+        const [existingCart, availableStock] = await Promise.all([
+            Cart.findOne({ user: userId }).select('items').lean(),
+            getAvailableStockForUser(product, userId)
+        ]);
+        const existingItem = existingCart?.items.find(
+            item => item.product.toString() === productObjectId.toString()
+        );
+        const currentQuantity = existingItem?.quantity || 0;
+        const nextQuantity = currentQuantity + qtyNum;
+        const maxAllowedQuantity = Math.min(availableStock, MAX_QUANTITY_PER_PRODUCT);
 
-        if (availableStock <= 0) {
-            return res.status(400).json({ success: false, error: 'Producto sin stock disponible.' });
-        }
-        if (qtyNum > availableStock) {
+        if (nextQuantity > maxAllowedQuantity) {
+            const remaining = Math.max(0, maxAllowedQuantity - currentQuantity);
             return res.status(400).json({
                 success: false,
-                error: `Solo hay ${availableStock} unidades disponibles.`
+                error: remaining > 0
+                    ? `Solo puedes agregar ${remaining} unidad(es) más. Ya tienes ${currentQuantity} en el carrito y hay ${maxAllowedQuantity} disponibles.`
+                    : `Ya tienes ${currentQuantity} unidad(es) en el carrito, que alcanza(n) el stock disponible (${maxAllowedQuantity}).`
             });
         }
 
-        const userId = getUserId(req);
-
-        // 1. Incrementar cantidad si ya existe
         let cart = await Cart.findOneAndUpdate(
-            { user: userId, 'items.product': productObjectId },
-            { $inc: { 'items.$.quantity': qtyNum } },
+            { user: userId },
+            { $setOnInsert: { user: userId } },
             {
-              returnDocument: 'after'
+                returnDocument: 'after',
+                upsert: true,
+                setDefaultsOnInsert: true
             }
         );
 
-        // 2. Si no existía, añadirlo
+        cart = await Cart.findOneAndUpdate(
+            {
+                user: userId,
+                items: {
+                    $elemMatch: {
+                        product: productObjectId,
+                        quantity: { $lte: maxAllowedQuantity - qtyNum }
+                    }
+                }
+            },
+            { $inc: { 'items.$.quantity': qtyNum } },
+            {
+                returnDocument: 'after'
+            }
+        );
+
         if (!cart) {
             cart = await Cart.findOneAndUpdate(
-                { user: userId },
-                { $push: { items: { product: productObjectId, quantity: qtyNum } } },
                 {
-                  returnDocument: 'after',
-                  upsert: true,
-                  setDefaultsOnInsert: true
-                }
+                    user: userId,
+                    items: { $not: { $elemMatch: { product: productObjectId } } }
+                },
+                { $push: { items: { product: productObjectId, quantity: qtyNum } } },
+                { returnDocument: 'after' }
             );
         }
 
-        // ✅ Limitar si excede el máximo
-        const item = cart.items.find(i => i.product.toString() === productObjectId.toString());
-        if (item && item.quantity > MAX_QUANTITY_PER_PRODUCT) {
-            await Cart.updateOne(
-                { user: userId, 'items.product': productObjectId },
-                { $set: { 'items.$.quantity': MAX_QUANTITY_PER_PRODUCT } }
+        // If another request added the product concurrently, retry against its new quantity.
+        if (!cart) {
+            cart = await Cart.findOneAndUpdate(
+                {
+                    user: userId,
+                    items: {
+                        $elemMatch: {
+                            product: productObjectId,
+                            quantity: { $lte: maxAllowedQuantity - qtyNum }
+                        }
+                    }
+                },
+                { $inc: { 'items.$.quantity': qtyNum } },
+                { returnDocument: 'after' }
             );
-            const cappedCart = await Cart.findById(cart._id).populate('items.product');
-            return res.status(200).json({
-                success: true,
-                message: `Cantidad máxima (${MAX_QUANTITY_PER_PRODUCT}) alcanzada.`,
-                items: cappedCart?.items || []
+        }
+
+        if (!cart) {
+            return res.status(400).json({
+                success: false,
+                error: 'La cantidad solicitada supera el stock disponible. Actualiza el carrito e inténtalo de nuevo.'
             });
         }
+
+        const item = cart.items.find(i => i.product.toString() === productObjectId.toString());
 
         const populatedCart = await Cart.findById(cart._id).populate('items.product');
         logger.info(`Carrito actualizado para usuario ${userId}: ${product.name} x${qtyNum}`);
@@ -173,6 +220,20 @@ router.patch('/quantity/:productId', requireAuth, async (req, res, next) => {
             });
         }
 
+        const product = await Product.findById(productId).select('stock name').lean();
+        if (!product) {
+            return res.status(404).json({ success: false, error: 'Producto no encontrado.' });
+        }
+
+        const availableStock = await getAvailableStockForUser(product, userId);
+        const maxAllowedQuantity = Math.min(availableStock, MAX_QUANTITY_PER_PRODUCT);
+        if (quantity > maxAllowedQuantity) {
+            return res.status(400).json({
+                success: false,
+                error: `Solo hay ${maxAllowedQuantity} unidades disponibles para este producto.`
+            });
+        }
+
         const cart = await Cart.findOneAndUpdate(
             { user: userId, 'items.product': productId },
             { $set: { 'items.$.quantity': quantity } },
@@ -187,8 +248,10 @@ router.patch('/quantity/:productId', requireAuth, async (req, res, next) => {
             { user: userId, product: productId, status: 'active' },
             {
                 quantity,
-                expiresAt: new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000)
-            }
+                expiresAt: new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000),
+                status: 'active'
+            },
+            { upsert: true, setDefaultsOnInsert: true }
         );
 
         res.status(200).json({

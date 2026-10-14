@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const Reservation = require('../models/Reservation');
 const { getProductDetailPage } = require('../controllers/productController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { loginUser, registerUser } = require('../controllers/authController');
@@ -20,9 +21,17 @@ router.get('/', async (req, res) => {
                 .lean()
         ]);
 
+        const products = await Promise.all(featuredProducts.map(async (product) => {
+            const reservedStock = await Reservation.getReservedStock(product._id);
+            return {
+                ...product,
+                availableStock: Math.max(0, product.stock - reservedStock)
+            };
+        }));
+
         res.render('index', {
             title: 'TechStore - Inicio',
-            products: featuredProducts,
+            products,
             flashSale: flashSaleProduct || null,
             monthlyPrice: getMembershipPrice()
         });

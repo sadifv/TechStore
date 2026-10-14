@@ -98,9 +98,9 @@
                         </a>
 
                         <footer>
-                            <button type="button" class="btn btn-primary add-to-cart-btn" data-id="<%= product._id %>">
+                            <button type="button" class="btn btn-primary add-to-cart-btn" data-id="<%= product._id %>" data-stock="<%= product.availableStock ?? product.stock %>" <%= (product.availableStock ?? product.stock) === 0 ? 'disabled' : '' %>>
                                 <i class="ri-shopping-cart-line" aria-hidden="true"></i>
-                                Agregar al Carrito
+                                <%= (product.availableStock ?? product.stock) === 0 ? 'Agotado' : 'Agregar al Carrito' %>
                             </button>
                         </footer>
 
@@ -345,10 +345,5 @@
         <a href="/vip" class="btn btn-primary">Conocer la membresía VIP</a>
     </div>
 </section>
-
-<!-- ==========================================
-     SCRIPTS DE LA HOME
-     ========================================== -->
-<script src="/js/flash-sale.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>
 
 <%- include('components/contact') %>
