@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
 
 const getProducts = async (req, res, next) => {
@@ -33,7 +34,6 @@ const getProducts = async (req, res, next) => {
         ]);
 
         // Calcular stock disponible descontando reservas activas
-        const Reservation = require('../models/Reservation');
         const productsWithAvailability = await Promise.all(
             products.map(async (product) => {
                 const reserved = await Reservation.getReservedStock(product._id);
@@ -85,6 +85,8 @@ const getProductDetailPage = async (req, res, next) => {
         if (!product) {
             return res.status(404).render('404', { title: 'Producto No Encontrado | TechStore', message: 'El producto no existe.' });
         }
+        const reservedStock = await Reservation.getReservedStock(product._id);
+        product.availableStock = Math.max(0, product.stock - reservedStock);
         res.render('product-detail', { title: `${product.name} | TechStore`, product });
     } catch (error) {
         if (error.name === 'CastError') {

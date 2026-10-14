@@ -1,8 +1,38 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
+
+const restoreOrderInventory = async (orderId, items) => {
+    const order = await Order.findOneAndUpdate(
+        {
+            _id: orderId,
+            paymentStatus: 'pending',
+            inventoryRestored: { $ne: true }
+        },
+        {
+            $set: {
+                paymentStatus: 'failed',
+                status: 'cancelled',
+                inventoryRestored: true
+            }
+        },
+        { new: true }
+    );
+
+    if (!order) return false;
+
+    const itemsToRestore = items || order.items.filter(item => item.inventoryReserved);
+    await Promise.all(itemsToRestore.map(item =>
+        Product.updateOne(
+            { _id: item.product },
+            { $inc: { stock: item.quantity } }
+        )
+    ));
+    return true;
+};
 
 // ==========================================
 // CREAR ORDEN
@@ -12,8 +42,18 @@ const logger = require('../config/logger');
 // @route   POST /api/orders/checkout
 // @access  Public (soporta invitados)
 const createOrder = async (req, res, next) => {
+    let newOrder;
+    let reservedItems = [];
+    let stripeSessionId;
     try {
-        const { items, guestInfo, shippingAddress } = req.body;
+        const { items, guestInfo, shippingAddress, paymentMethod = 'card' } = req.body;
+
+        if (paymentMethod !== 'card') {
+            return res.status(400).json({
+                success: false,
+                error: 'El único método de pago disponible es tarjeta.'
+            });
+        }
 
         // ✅ FIX: Validar items
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -31,21 +71,17 @@ const createOrder = async (req, res, next) => {
             });
         }
 
-        // Calcular totalAmount desde los productos en DB
-        let totalAmount = 0;
-        const orderItems = [];
-
+        const userId = req.session?.user?.id || req.session?.user?._id;
+        const normalizedItems = new Map();
         for (const item of items) {
-            // ✅ FIX: Validar productId
-            if (!item.productId) {
+            if (!item?.productId || !mongoose.isObjectIdOrHexString(item.productId)) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Cada item debe tener un productId.'
+                    error: 'Cada item debe tener un productId válido.'
                 });
             }
 
-            // ✅ FIX: Validar cantidad (1-99)
-            const quantity = Number(item.quantity) || 1;
+            const quantity = item.quantity === undefined ? 1 : Number(item.quantity);
             if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
                 return res.status(400).json({
                     success: false,
@@ -53,23 +89,57 @@ const createOrder = async (req, res, next) => {
                 });
             }
 
-            const product = await Product.findById(item.productId).lean();
+            const productId = item.productId.toString();
+            const combinedQuantity = (normalizedItems.get(productId) || 0) + quantity;
+            if (combinedQuantity > 99) {
+                return res.status(400).json({
+                    success: false,
+                    error: `La cantidad total por producto no puede superar 99.`
+                });
+            }
+            normalizedItems.set(productId, combinedQuantity);
+        }
+
+        // Calcular totalAmount desde los productos en DB
+        let totalAmount = 0;
+        const orderItems = [];
+        const reservedStockByProduct = new Map();
+
+        for (const [productId, quantity] of normalizedItems) {
+            const product = await Product.findById(productId).lean();
             if (!product) {
                 return res.status(400).json({
                     success: false,
-                    error: `Producto con ID ${item.productId} no encontrado.`
+                    error: `Producto con ID ${productId} no encontrado.`
                 });
             }
 
-            // ✅ FIX: Validar stock
-            if (product.stock < quantity) {
+            const reservedStock = await Reservation.getReservedStock(product._id);
+            const ownReservation = userId
+                ? await Reservation.findOne({
+                    user: userId,
+                    product: product._id,
+                    status: 'active',
+                    expiresAt: { $gt: new Date() }
+                }).lean()
+                : null;
+            const availableStock = Math.max(
+                0,
+                product.stock - reservedStock + (ownReservation?.quantity || 0)
+            );
+
+            if (availableStock < quantity) {
                 return res.status(400).json({
                     success: false,
-                    error: `Stock insuficiente para "${product.name}". Disponible: ${product.stock}.`
+                    error: `Stock insuficiente para "${product.name}". Disponible: ${availableStock}.`
                 });
             }
 
             totalAmount += product.price * quantity;
+            reservedStockByProduct.set(
+                product._id.toString(),
+                Math.max(0, reservedStock - (ownReservation?.quantity || 0))
+            );
 
             // ✅ Snapshot del nombre (por si el producto se elimina después)
             orderItems.push({
@@ -86,11 +156,12 @@ const createOrder = async (req, res, next) => {
             totalAmount: Number(totalAmount.toFixed(2)),
             paymentStatus: 'pending',
             status: 'pending',
-            paymentMethod: paymentMethod || 'card'
+            paymentMethod,
+            inventoryRestored: false
         };
 
-        if (req.session?.user) {
-            orderData.user = req.session.user.id;
+        if (userId) {
+            orderData.user = userId;
         } else {
             if (!guestInfo?.name || !guestInfo?.email) {
                 return res.status(400).json({
@@ -106,19 +177,27 @@ const createOrder = async (req, res, next) => {
         }
 
         // Crear la orden en MongoDB
-        const newOrder = await Order.create(orderData);
+        newOrder = await Order.create(orderData);
 
-        // ✅ Confirmar reservas y descontar stock
-        for (const item of orderItems) {
-            const product = await Product.findById(item.product);
-            if (product) {
-                product.stock = Math.max(0, product.stock - item.quantity);
-                await product.save();
-            }
-            await Reservation.updateMany(
-                { user: orderData.user, product: item.product, status: 'active' },
-                { $set: { status: 'completed' } }
+        // Descontar inventario con una operación condicional para evitar stock negativo.
+        for (const [index, item] of orderItems.entries()) {
+            const result = await Product.updateOne(
+                {
+                    _id: item.product,
+                    stock: { $gte: item.quantity + reservedStockByProduct.get(item.product.toString()) }
+                },
+                { $inc: { stock: -item.quantity } }
             );
+            if (result.modifiedCount !== 1) {
+                await restoreOrderInventory(newOrder._id, reservedItems);
+                return res.status(409).json({
+                    success: false,
+                    error: `El stock de "${item.productName}" cambió. Actualiza el carrito e inténtalo de nuevo.`
+                });
+            }
+            reservedItems.push(item);
+            newOrder.items[index].inventoryReserved = true;
+            await newOrder.save();
         }
 
         // Construir line items para Stripe
@@ -139,16 +218,24 @@ const createOrder = async (req, res, next) => {
             line_items: lineItems,
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/api/orders/confirm?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${req.protocol}://${req.get('host')}/cart`,
+            cancel_url: `${req.protocol}://${req.get('host')}/api/orders/cancel?orderId=${newOrder._id}`,
             metadata: {
                 orderId: newOrder._id.toString()
             },
             customer_email: guestInfo?.email || req.session?.user?.email || undefined
         });
+        stripeSessionId = session.id;
 
         // Guardar sessionId en la orden
         newOrder.stripeSessionId = session.id;
         await newOrder.save();
+
+        if (userId) {
+            await Reservation.updateMany(
+                { user: userId, product: { $in: orderItems.map(item => item.product) }, status: 'active' },
+                { $set: { status: 'completed' } }
+            );
+        }
 
         logger.info(`Orden creada: ${newOrder._id} - Stripe Session: ${session.id} - Total: $${totalAmount.toFixed(2)}`);
 
@@ -159,7 +246,59 @@ const createOrder = async (req, res, next) => {
             url: session.url
         });
     } catch (error) {
+        if (newOrder && reservedItems.length) {
+            if (stripeSessionId) {
+                try {
+                    await stripe.checkout.sessions.expire(stripeSessionId);
+                } catch (expireError) {
+                    logger.error(`No se pudo expirar la sesión Stripe ${stripeSessionId}: ${expireError.message}`);
+                }
+            }
+            try {
+                await restoreOrderInventory(newOrder._id, reservedItems);
+            } catch (restoreError) {
+                logger.error(`No se pudo restituir el inventario de la orden ${newOrder._id}: ${restoreError.message}`, {
+                    stack: restoreError.stack
+                });
+            }
+        }
         logger.error(`Error al crear orden: ${error.message}`, { stack: error.stack });
+        next(error);
+    }
+};
+
+const cancelOrderCheckout = async (req, res, next) => {
+    try {
+        const { orderId } = req.query;
+        if (!orderId || !mongoose.isObjectIdOrHexString(orderId)) {
+            return res.redirect('/cart');
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order || order.paymentStatus !== 'pending' || !order.stripeSessionId) {
+            return res.redirect('/cart');
+        }
+
+        const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+        if (session.metadata?.orderId !== order._id.toString()) {
+            return res.redirect('/cart');
+        }
+
+        if (session.payment_status === 'paid') {
+            await Order.findOneAndUpdate(
+                { _id: order._id, paymentStatus: 'pending' },
+                { $set: { paymentStatus: 'paid', status: 'processing' } }
+            );
+        } else if (session.status === 'open') {
+            await stripe.checkout.sessions.expire(session.id);
+            await restoreOrderInventory(order._id);
+        } else if (session.status === 'expired') {
+            await restoreOrderInventory(order._id);
+        }
+
+        res.redirect('/cart');
+    } catch (error) {
+        logger.error(`Error al cancelar checkout: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
@@ -201,8 +340,16 @@ const confirmOrderPayment = async (req, res, next) => {
         }
 
         // Actualizar orden
-        const order = await Order.findByIdAndUpdate(
-            orderId,
+        const orderToConfirm = await Order.findById(orderId);
+        if (!orderToConfirm || orderToConfirm.stripeSessionId !== session.id) {
+            return res.status(404).json({
+                success: false,
+                error: 'Orden no encontrada para esta sesión de pago.'
+            });
+        }
+
+        const order = await Order.findOneAndUpdate(
+            { _id: orderId, paymentStatus: 'pending' },
             {
                 paymentStatus: 'paid',
                 status: 'processing'
@@ -211,9 +358,20 @@ const confirmOrderPayment = async (req, res, next) => {
         );
 
         if (!order) {
+            const currentOrder = await Order.findById(orderId).lean();
+            if (currentOrder?.paymentStatus === 'paid') {
+                if (req.accepts('html')) {
+                    return res.redirect(`/api/orders/success?orderId=${currentOrder._id}`);
+                }
+                return res.status(200).json({
+                    success: true,
+                    message: 'Pago confirmado exitosamente.',
+                    order: currentOrder
+                });
+            }
             return res.status(404).json({
                 success: false,
-                error: 'Orden no encontrada.'
+                error: 'La orden ya no está pendiente de pago.'
             });
         }
 
@@ -307,11 +465,12 @@ const handleStripeWebhook = async (req, res) => {
                 const orderId = session.metadata?.orderId;
 
                 if (orderId) {
-                    await Order.findByIdAndUpdate(orderId, {
-                        paymentStatus: 'paid',
-                        status: 'processing'
-                    });
-                    logger.info(`Webhook: Orden ${orderId} pagada exitosamente.`);
+                    const order = await Order.findOneAndUpdate(
+                        { _id: orderId, paymentStatus: 'pending' },
+                        { $set: { paymentStatus: 'paid', status: 'processing' } },
+                        { new: true }
+                    );
+                    if (order) logger.info(`Webhook: Orden ${orderId} pagada exitosamente.`);
                 }
                 break;
             }
@@ -321,11 +480,8 @@ const handleStripeWebhook = async (req, res) => {
                 const orderId = session.metadata?.orderId;
 
                 if (orderId) {
-                    await Order.findByIdAndUpdate(orderId, {
-                        paymentStatus: 'failed',
-                        status: 'cancelled'
-                    });
-                    logger.info(`Webhook: Orden ${orderId} expirada/cancelada.`);
+                    const restored = await restoreOrderInventory(orderId);
+                    if (restored) logger.info(`Webhook: Orden ${orderId} expirada/cancelada; inventario restituido.`);
                 }
                 break;
             }
@@ -389,6 +545,7 @@ const updateOrderStatus = async (req, res, next) => {
 
 module.exports = {
     createOrder,
+    cancelOrderCheckout,
     confirmOrderPayment,
     getUserOrders,
     handleStripeWebhook,

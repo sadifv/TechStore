@@ -6,6 +6,14 @@ const orderItemSchema = new mongoose.Schema({
         ref: 'Product',
         required: true
     },
+    productName: {
+        type: String,
+        trim: true
+    },
+    inventoryReserved: {
+        type: Boolean,
+        default: false
+    },
     quantity: {
         type: Number,
         required: true,
@@ -43,6 +51,10 @@ const orderSchema = new mongoose.Schema({
         enum: ['pending', 'paid', 'failed'],
         default: 'pending',
         index: true
+    },
+    inventoryRestored: {
+        type: Boolean,
+        default: false
     },
     status: {
         type: String,

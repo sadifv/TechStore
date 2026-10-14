@@ -60,12 +60,8 @@
 
         <fieldset class="form-group">
             <legend>Método de Pago</legend>
-            <label for="payment-method" class="sr-only">Selecciona tu método de pago</label>
-            <select id="payment-method" name="paymentMethod" class="form-control" required>
-                <option value="card">Tarjeta de Crédito / Débito</option>
-                <option value="transfer">Transferencia Bancaria Directa</option>
-                <option value="cash">Pago contra entrega (Efectivo)</option>
-            </select>
+            <input id="payment-method" name="paymentMethod" type="hidden" value="card" />
+            <p>Pago seguro con tarjeta de crédito o débito a través de Stripe.</p>
         </fieldset>
 
         <section class="checkout-summary-box" aria-label="Resumen del pago">

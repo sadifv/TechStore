@@ -20,7 +20,7 @@
   // ==========================================
   if (quantityInput && stockIndicator && stockCount) {
     quantityInput.addEventListener('input', () => {
-      const max = parseInt(quantityInput.max, 10);
+      let max = parseInt(quantityInput.max, 10);
       let val = parseInt(quantityInput.value, 10);
 
       if (isNaN(max) || max < 0) max = 0;
@@ -35,10 +35,7 @@
         notify(`Máximo ${max} disponibles`, 'warning');
       }
 
-      // Actualizar indicador visual con stock restante
-      const remaining = max - val;
-
-      if (max === 0 || remaining <= 0) {
+      if (max === 0) {
         stockIndicator.className = 'stock-out';
         stockIndicator.innerHTML = '<i class="ri-close-circle-line"></i> Agotado temporalmente';
         if (addToCartBtn) {
@@ -47,7 +44,7 @@
         }
       } else {
         stockIndicator.className = 'stock-in';
-        stockCount.textContent = remaining;
+        stockCount.textContent = max;
         if (addToCartBtn) {
           addToCartBtn.disabled = false;
           addToCartBtn.textContent = 'Añadir al carrito';
@@ -64,6 +61,10 @@
     const submitBtn = form.querySelector('button[type="button"]');
 
     if (!productId || !quantity || quantity < 1) return;
+    if (typeof window.addToCart !== 'function') {
+      notify('El carrito todavía no está disponible. Inténtalo de nuevo.', 'error');
+      return;
+    }
 
     if (submitBtn) {
       submitBtn.disabled = true;
@@ -71,17 +72,15 @@
     }
 
     try {
-      const response = await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity })
-      });
+      const productData = {
+        name: form.closest('.product-detail-info')?.querySelector('h1')?.textContent.trim() || 'Producto',
+        price: parseFloat(document.querySelector('.product-detail-price')?.textContent.replace(/[^\d.,-]/g, '').replace(',', '.') || 0),
+        image: document.querySelector('.product-detail-media img')?.src || ''
+      };
+      const added = await window.addToCart(productId, quantity, productData);
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (added) {
         if (submitBtn) submitBtn.textContent = '✓ Añadido al carrito';
-        notify('Producto añadido al carrito con éxito', 'success');
 
         setTimeout(() => {
           if (submitBtn) {
@@ -90,15 +89,6 @@
           }
         }, 1500);
 
-        if (typeof window.updateCartBadge === 'function') {
-          window.updateCartBadge();
-        }
-      } else {
-        notify(data.error || 'Error al añadir al carrito.', 'error');
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Añadir al carrito';
-        }
       }
     } catch (error) {
       console.error('Error al añadir al carrito:', error);
@@ -109,4 +99,4 @@
       }
     }
   });
-});
+})();

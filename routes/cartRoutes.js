@@ -156,6 +156,52 @@ router.post('/add', requireAuth, async (req, res, next) => {
     }
 });
 
+// PATCH /api/cart/quantity/:productId
+router.patch('/quantity/:productId', requireAuth, async (req, res, next) => {
+    try {
+        const { productId } = req.params;
+        const quantity = parseQuantity(req.body.quantity);
+        const userId = getUserId(req);
+
+        if (!mongoose.isObjectIdOrHexString(productId)) {
+            return res.status(400).json({ success: false, error: 'ID de producto inválido.' });
+        }
+        if (quantity === null) {
+            return res.status(400).json({
+                success: false,
+                error: `La cantidad debe ser un número entero entre 1 y ${MAX_QUANTITY_PER_PRODUCT}.`
+            });
+        }
+
+        const cart = await Cart.findOneAndUpdate(
+            { user: userId, 'items.product': productId },
+            { $set: { 'items.$.quantity': quantity } },
+            { returnDocument: 'after' }
+        ).populate('items.product');
+
+        if (!cart) {
+            return res.status(404).json({ success: false, error: 'El producto no está en el carrito.' });
+        }
+
+        await Reservation.findOneAndUpdate(
+            { user: userId, product: productId, status: 'active' },
+            {
+                quantity,
+                expiresAt: new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000)
+            }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Cantidad actualizada.',
+            items: cart.items
+        });
+    } catch (error) {
+        logger.error(`Error al actualizar cantidad del carrito: ${error.message}`, { stack: error.stack });
+        next(error);
+    }
+});
+
 // DELETE /api/cart/remove/:productId
 router.delete('/remove/:productId', requireAuth, async (req, res, next) => {
     try {

@@ -105,7 +105,17 @@ const sendPasswordResetEmail = async (userEmail, resetUrl) => {
     });
 };
 
+const sendWelcomeEmail = async (userEmail, name) => {
+    return sendTemplateEmail({
+        to: userEmail,
+        subject: '¡Bienvenido a TechStore!',
+        templateName: 'email-welcome',
+        templateData: { userName: name }
+    });
+};
+
 module.exports = {
     sendOrderConfirmation,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    sendWelcomeEmail
 };

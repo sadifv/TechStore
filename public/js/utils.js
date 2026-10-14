@@ -139,23 +139,6 @@ function showConfirm(message, confirmText = 'Confirmar', cancelText = 'Cancelar'
 window.showConfirm = showConfirm;
 
 /**
- * Delegación de eventos global para añadir productos al carrito
- */
-document.addEventListener('DOMContentLoaded', () => {
-    document.body.addEventListener('click', (e) => {
-        const addBtn = e.target.closest('.add-to-cart-btn, .btn-add-cart');
-        
-        if (addBtn) {
-            const productId = addBtn.dataset.id;
-            
-            if (productId && typeof window.addToCart === 'function') {
-                window.addToCart(productId);
-            }
-        }
-    });
-});
-
-/**
  * Normaliza un valor de precio (acepta comas, puntos, espacios, símbolos)
  * @param {string|number} value - Valor a normalizar
  * @returns {number} - Valor numérico o NaN si inválido

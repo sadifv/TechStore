@@ -134,13 +134,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
                         });
                 } else {
-                    cart = getGuestCart();
+                    cart = [];
                 }
             } else {
-                cart = getGuestCart();
+                throw new Error('No se pudo cargar el carrito desde el servidor.');
             }
         } catch (error) {
-            cart = getGuestCart();
+            console.error('Error al cargar el carrito:', error);
+            notify('No se pudo cargar el carrito. Inténtalo de nuevo.', 'error');
         } finally {
             updateCartCount();
             renderCartItems();
@@ -285,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
             addToGuestCart(productId, quantity, productData);
             notify('Producto añadido al carrito', 'success');
-            return;
+            return true;
         }
 
         try {
@@ -300,16 +301,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     await fetchCart();
                     notify('Producto añadido al carrito', 'success');
-                    return;
+                    return true;
                 }
+                notify(data.error || 'No se pudo actualizar el carrito.', 'error');
+                return false;
             }
-            addToGuestCart(productId, quantity, productData);
-            notify('Producto añadido al carrito', 'success');
+            const data = await response.json().catch(() => ({}));
+            notify(data.error || 'No se pudo actualizar el carrito.', 'error');
+            return false;
         } catch (error) {
-            addToGuestCart(productId, quantity, productData);
-            notify('Producto añadido al carrito', 'success');
+            console.error('Error al actualizar el carrito:', error);
+            notify('Error de conexión al actualizar el carrito.', 'error');
+            return false;
         }
     }
+    window.addToCart = addToCart;
 
     function addToGuestCart(productId, quantity, productData) {
         let localCart = getGuestCart();
@@ -334,6 +340,32 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchCart();
     }
 
+    async function decreaseCartQuantity(productId, quantity) {
+        if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
+            addToGuestCart(productId, -1);
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/cart/quantity/${productId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: quantity - 1 })
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                notify(data.error || 'No se pudo actualizar la cantidad.', 'error');
+                return;
+            }
+
+            await fetchCart();
+        } catch (error) {
+            console.error('Error al reducir la cantidad del carrito:', error);
+            notify('Error de conexión al actualizar el carrito.', 'error');
+        }
+    }
+
     // Eliminar producto
     async function removeFromCart(productId) {
         if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
@@ -346,20 +378,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/api/cart/remove/${productId}`, {
                 method: 'DELETE'
             });
+            const data = await response.json().catch(() => ({}));
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    await fetchCart();
-                    notify('Producto eliminado del carrito', 'info');
-                    return;
-                }
+            if (response.ok && data.success) {
+                await fetchCart();
+                notify('Producto eliminado del carrito', 'info');
+                return;
             }
-            removeFromGuestCart(productId);
-            notify('Producto eliminado del carrito', 'info');
+            notify(data.error || 'No se pudo eliminar el producto del carrito.', 'error');
         } catch (error) {
-            removeFromGuestCart(productId);
-            notify('Producto eliminado del carrito', 'info');
+            console.error('Error al eliminar del carrito:', error);
+            notify('Error de conexión al eliminar el producto.', 'error');
         }
     }
 
@@ -394,9 +423,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const productData = card ? {
                 name: card.querySelector('h3')?.textContent || 'Producto',
-                price: parseFloat(card.querySelector('.product-price')?.textContent.replace('$', '') || 0),
+                price: parseFloat(card.querySelector('.product-price')?.textContent.replace(/[^\d.,-]/g, '').replace(',', '.') || 0),
                 image: card.querySelector('img')?.src || ''
-            } : null;
+            } : {
+                name: document.querySelector('.product-detail-title')?.textContent.trim() || document.querySelector('h1')?.textContent.trim() || 'Producto',
+                price: parseFloat(document.querySelector('.product-detail-price')?.textContent.replace(/[^\d.,-]/g, '').replace(',', '.') || 0),
+                image: document.querySelector('.product-detail-media img')?.src || ''
+            };
 
             if (productId) {
                 // Leer cantidad del input #quantity (si existe)
@@ -411,7 +444,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                await addToCart(productId, requestedQty, productData);
+                const added = await addToCart(productId, requestedQty, productData);
+                if (!added) return;
 
                 const icon = document.createElement('i');
                 icon.classList.add('ri-check-line');
@@ -448,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = cart.find(i => i.id === id);
 
             if (item && item.quantity > 1) {
-                await addToCart(id, -1);
+                await decreaseCartQuantity(id, item.quantity);
             } else {
                 await removeFromCart(id);
             }

@@ -42,7 +42,7 @@
     <section class="product-detail-stock" aria-label="Disponibilidad">
       <p id="stock-indicator" class="stock-in">
         <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
-        En stock · <span id="stock-count"><%= product.stock %></span> unidades disponibles
+        En stock · <span id="stock-count"><%= product.availableStock %></span> unidades disponibles
       </p>
     </section>
 
@@ -56,18 +56,18 @@
         name="quantity" 
         value="1" 
         min="1" 
-        max="<%= product.stock %>" 
-        <%= product.stock === 0 ? 'disabled' : '' %>
+        max="<%= product.availableStock %>"
+        <%= product.availableStock === 0 ? 'disabled' : '' %>
       />
 
       <button 
         type="button"
         class="btn btn-primary btn-block" 
         data-id="<%= product._id %>"
-        <%= product.stock === 0 ? 'disabled' : '' %>
+        <%= product.availableStock === 0 ? 'disabled' : '' %>
       >
         <i class="ri-shopping-cart-line" aria-hidden="true"></i>
-        <%= product.stock === 0 ? 'Producto agotado' : 'Añadir al carrito' %>
+        <%= product.availableStock === 0 ? 'Producto agotado' : 'Añadir al carrito' %>
       </button>
     </form>
 

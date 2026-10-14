@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, confirmOrderPayment, getUserOrders, handleStripeWebhook } = require('../controllers/orderController');
+const { createOrder, cancelOrderCheckout, confirmOrderPayment, getUserOrders, handleStripeWebhook } = require('../controllers/orderController');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 // Webhook de Stripe (Público, validado con Stripe Signature)
@@ -8,6 +8,7 @@ router.post('/webhook', handleStripeWebhook);
 
 // Procesar Checkout y Confirmación de Pago (Público: Soporta Invitados y Autenticados)
 router.post('/checkout', createOrder);
+router.get('/cancel', cancelOrderCheckout);
 router.get('/confirm', confirmOrderPayment);
 
 // Página de éxito después del pago

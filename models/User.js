@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
+    lastLoginAt: Date,
     // Campos para Verificación de Email y Reset de Contraseña
     isVerified: {
         type: Boolean,
