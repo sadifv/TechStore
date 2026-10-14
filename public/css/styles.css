@@ -1575,6 +1575,51 @@ label.ai-sr-only {
   margin-left: 0.25rem;
 }
 
+.login-status-visible {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  margin-top: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  text-align: left;
+}
+
+.login-status-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--color-error);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.login-status-message i {
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  font-size: var(--font-size-lg);
+}
+
+.login-register-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-surface) !important;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: background-color var(--transition-fast);
+}
+
+.login-register-action:hover {
+  background: var(--color-primary-dark);
+}
+
 /* ========================================
    11. FOOTER
    ======================================== */

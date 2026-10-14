@@ -75,19 +75,24 @@ const registerUser = async (req, res, next) => {
 // ==========================================
 const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const email = String(req.body?.email || '').trim().toLowerCase();
+        const password = String(req.body?.password || '');
 
         const user = await User.findOne({ email }).select('+password');
         if (!user) {
+            const message = 'No encontramos una cuenta con ese correo. Puedes crear una cuenta para continuar.';
             if (isHtmlRequest(req)) {
                 return res.status(401).render('login', {
                     title: 'TechStore - Iniciar Sesión',
-                    error: 'El correo no está registrado. Debes crear una cuenta primero.'
+                    error: message,
+                    emailValue: email,
+                    showRegisterLink: true
                 });
             }
             return res.status(401).json({
                 success: false,
-                error: 'El correo no está registrado. Debes crear una cuenta primero.'
+                code: 'ACCOUNT_NOT_FOUND',
+                error: message
             });
         }
 
@@ -96,15 +101,18 @@ const loginUser = async (req, res) => {
             : await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
+            const message = 'La contraseña no coincide. Revísala e inténtalo de nuevo.';
             if (isHtmlRequest(req)) {
                 return res.status(401).render('login', {
                     title: 'TechStore - Iniciar Sesión',
-                    error: 'Contraseña incorrecta. Inténtalo de nuevo.'
+                    error: message,
+                    emailValue: email
                 });
             }
             return res.status(401).json({
                 success: false,
-                error: 'Contraseña incorrecta. Inténtalo de nuevo.'
+                code: 'INVALID_PASSWORD',
+                error: message
             });
         }
 
@@ -134,7 +142,8 @@ const loginUser = async (req, res) => {
         if (isHtmlRequest(req)) {
             return res.status(500).render('login', {
                 title: 'TechStore - Iniciar Sesión',
-                error: 'Ocurrió un error interno al iniciar sesión.'
+                error: 'Ocurrió un error interno al iniciar sesión. Inténtalo de nuevo.',
+                emailValue: String(req.body?.email || '').trim()
             });
         }
         return res.status(500).json({
