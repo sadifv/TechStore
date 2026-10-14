@@ -129,13 +129,16 @@ const sendMembershipWelcomeEmail = async ({
     amount,
     welcomeCouponCode,
     monthlyCouponCode,
-    unsubscribeUrl
+    unsubscribeUrl,
+    isTest = false
 }) => {
     return sendTemplateEmail({
         to,
-        subject: 'Tu membresía TechStore VIP está activa',
+        subject: isTest
+            ? 'Prueba de entrega de correo VIP | TechStore'
+            : 'Tu membresía TechStore VIP está activa',
         templateName: 'email-vip-welcome',
-        templateData: { name, amount, welcomeCouponCode, monthlyCouponCode, unsubscribeUrl }
+        templateData: { name, amount, welcomeCouponCode, monthlyCouponCode, unsubscribeUrl, isTest }
     });
 };
 

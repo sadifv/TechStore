@@ -2074,6 +2074,7 @@ label.ai-sr-only {
 }
 
 .dashboard-orders,
+.dashboard-memberships,
 .dashboard-products,
 .dashboard-messages,
 .dashboard-users,
@@ -3694,6 +3695,7 @@ dialog#checkout-modal {
 }
 
 .dashboard-orders,
+.dashboard-memberships,
 .dashboard-products,
 .dashboard-messages,
 .dashboard-newsletter {
@@ -3701,6 +3703,7 @@ dialog#checkout-modal {
 }
 
 .dashboard-orders .section-title,
+.dashboard-memberships .section-title,
 .dashboard-products .section-title,
 .dashboard-messages .section-title,
 .dashboard-newsletter .section-title {
@@ -3709,6 +3712,12 @@ dialog#checkout-modal {
   border-bottom: 2px solid var(--color-primary);
   color: var(--color-secondary);
   font-size: var(--font-size-xl);
+}
+
+.membership-dashboard-note {
+  margin: -0.5rem 0 1rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 .admin-product-thumbnail {

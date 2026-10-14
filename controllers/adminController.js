@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const Cart = require('../models/Cart');
+const Membership = require('../models/Membership');
 const logger = require('../config/logger');
 
 const getAdminDashboard = async (req, res, next) => {
@@ -15,6 +16,8 @@ const getAdminDashboard = async (req, res, next) => {
             messagesCount,
             subscribersCount,
             activeCartCount,
+            activeMembershipCount,
+            activeMemberships,
             paidOrderStats,
             topProducts,
             products,
@@ -29,6 +32,20 @@ const getAdminDashboard = async (req, res, next) => {
             Contact.countDocuments(),
             Newsletter.countDocuments(),
             Cart.countDocuments({ 'items.0': { $exists: true } }),
+            Membership.countDocuments({
+                status: 'active',
+                currentPeriodEnd: { $gt: new Date() },
+                ...(process.env.NODE_ENV === 'production' ? { provider: { $exists: true, $ne: 'mock' } } : {})
+            }),
+            Membership.find({
+                status: 'active',
+                currentPeriodEnd: { $gt: new Date() },
+                ...(process.env.NODE_ENV === 'production' ? { provider: { $exists: true, $ne: 'mock' } } : {})
+            })
+                .populate('user', 'name email')
+                .sort({ currentPeriodEnd: 1 })
+                .limit(100)
+                .lean(),
             Order.aggregate([
                 { $match: { paymentStatus: 'paid' } },
                 {
@@ -93,6 +110,8 @@ const getAdminDashboard = async (req, res, next) => {
             totalRevenue,
             totalProductsSold,
             activeCartCount,
+            activeMembershipCount,
+            activeMemberships,
             products,
             topProducts,
             orders,

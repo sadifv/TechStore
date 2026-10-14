@@ -22,6 +22,59 @@
         <h3>Carritos Activos</h3>
         <p class="stat-number"><%= activeCartCount %></p>
       </article>
+      <article class="stat-card">
+        <h3>Membresías VIP Activas</h3>
+        <p class="stat-number"><%= activeMembershipCount %></p>
+      </article>
+  </section>
+
+  <section class="dashboard-memberships" aria-labelledby="active-memberships-heading">
+    <header class="section-heading">
+      <div>
+        <h2 id="active-memberships-heading" class="section-title">Suscripciones VIP activas</h2>
+        <p class="membership-dashboard-note">Se muestran las membresías vigentes; la lista presenta hasta 100 usuarios.</p>
+      </div>
+      <a href="/admin/marketing" class="btn btn-sm btn-outline">Gestionar campañas y cupones</a>
+    </header>
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">Usuario</th>
+            <th scope="col">Inicio del período</th>
+            <th scope="col">Vigente hasta</th>
+            <th scope="col">Precio</th>
+            <th scope="col">Proveedor</th>
+            <th scope="col">Estado de renovación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (activeMemberships && activeMemberships.length > 0) { %>
+            <% activeMemberships.forEach(membership => { %>
+              <% const periodStart = membership.currentPeriodStart ? new Date(membership.currentPeriodStart) : null; %>
+              <% const periodEnd = membership.currentPeriodEnd ? new Date(membership.currentPeriodEnd) : null; %>
+              <tr>
+                <td>
+                  <% if (membership.user) { %>
+                    <strong><%= membership.user.name || 'Usuario' %></strong><br>
+                    <a href="mailto:<%= membership.user.email %>"><%= membership.user.email %></a>
+                  <% } else { %>
+                    Cuenta de usuario no disponible
+                  <% } %>
+                </td>
+                <td><%= periodStart && !Number.isNaN(periodStart.getTime()) ? periodStart.toLocaleDateString('es-EC') : 'N/A' %></td>
+                <td><%= periodEnd && !Number.isNaN(periodEnd.getTime()) ? periodEnd.toLocaleDateString('es-EC') : 'N/A' %></td>
+                <td><%= membership.currency || 'USD' %> $<%= Number(membership.amount || 0).toFixed(2) %></td>
+                <td><%= membership.provider === 'mock' ? 'Prueba (sin cobro)' : membership.provider %></td>
+                <td><%= membership.cancelAtPeriodEnd ? 'Cancelada al finalizar el período' : 'Activa' %></td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="6" class="text-center">No hay membresías VIP activas en este momento.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section class="dashboard-orders" aria-label="Órdenes recientes">
