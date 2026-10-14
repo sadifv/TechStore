@@ -15,36 +15,125 @@ function clearGuestCart() {
     localStorage.removeItem(GUEST_CART_KEY);
 }
 
+function removeSyncedGuestCartQuantity(productId, quantity) {
+    const currentCart = getGuestCart();
+    const itemIndex = currentCart.findIndex(item =>
+        String(item.id || item.productId || item._id) === String(productId)
+    );
+    if (itemIndex === -1) return;
+
+    const currentQuantity = Number(currentCart[itemIndex].quantity || 1);
+    const remainingQuantity = currentQuantity - quantity;
+    if (remainingQuantity > 0) {
+        currentCart[itemIndex].quantity = remainingQuantity;
+    } else {
+        currentCart.splice(itemIndex, 1);
+    }
+
+    if (currentCart.length > 0) saveGuestCart(currentCart);
+    else clearGuestCart();
+}
+
+window.removeGuestCartItemsAfterPurchase = (items) => {
+    if (!Array.isArray(items)) return;
+    items.forEach(item => {
+        if (item?.productId && Number.isInteger(item.quantity) && item.quantity > 0) {
+            removeSyncedGuestCartQuantity(item.productId, item.quantity);
+        }
+    });
+    window.dispatchEvent(new CustomEvent('guest-cart:reconciled'));
+};
+
+async function getUserCartQuantities() {
+    const response = await fetch('/api/cart', {
+        cache: 'no-store',
+        headers: { 'Accept': 'application/json' }
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success || !Array.isArray(data.items)) {
+        throw new Error(data.error || 'No se pudo consultar el carrito de la cuenta.');
+    }
+
+    return new Map(data.items.map(item => {
+        const product = item.product;
+        const productId = typeof product === 'object' && product
+            ? product._id
+            : product;
+        return [String(productId), Number(item.quantity) || 0];
+    }));
+}
+
 /**
  * Sincroniza los productos guardados en localStorage con MongoDB al iniciar sesión
  */
 async function syncGuestCartToUser() {
     const localCart = getGuestCart();
-    if (!localCart || localCart.length === 0) return;
+    if (!localCart || localCart.length === 0) {
+        return { syncedCount: 0, failedCount: 0 };
+    }
+
+    let syncedCount = 0;
+    let failedCount = 0;
+    let userCartQuantities;
 
     try {
-        for (const item of localCart) {
-            const validId = item.id || item.productId || item._id;
-            if (validId && validId !== 'undefined' && validId !== 'null') {
-                await fetch('/api/cart/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        productId: validId,
-                        quantity: item.quantity || 1
-                    })
-                });
-            }
-        }
+        userCartQuantities = await getUserCartQuantities();
     } catch (error) {
-        console.error('Error al sincronizar el carrito local:', error);
-    } finally {
-        clearGuestCart();
-        console.log('Carrito local limpiado tras la sincronización.');
+        console.error('No se pudo consultar el carrito de la cuenta:', error);
+        return { syncedCount, failedCount: localCart.length };
     }
+
+    for (const item of localCart) {
+        const validId = item && typeof item === 'object'
+            ? item.id || item.productId || item._id
+            : null;
+        const quantity = Number(item?.quantity || 1);
+        if (!validId || validId === 'undefined' || validId === 'null' ||
+            !Number.isInteger(quantity) || quantity < 1) {
+            failedCount += 1;
+            continue;
+        }
+
+        try {
+            const response = await fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    productId: validId,
+                    quantity
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'El servidor no pudo añadir el producto.');
+            }
+
+            removeSyncedGuestCartQuantity(validId, quantity);
+            userCartQuantities.set(String(validId), (userCartQuantities.get(String(validId)) || 0) + quantity);
+            syncedCount += 1;
+        } catch (error) {
+            console.error(`No se pudo sincronizar el producto ${validId}:`, error);
+            try {
+                const currentQuantities = await getUserCartQuantities();
+                const currentQuantity = currentQuantities.get(String(validId)) || 0;
+                const expectedQuantity = (userCartQuantities.get(String(validId)) || 0) + quantity;
+                userCartQuantities = currentQuantities;
+                if (currentQuantity >= expectedQuantity) {
+                    removeSyncedGuestCartQuantity(validId, quantity);
+                    syncedCount += 1;
+                    continue;
+                }
+            } catch (reconciliationError) {
+                console.error(`No se pudo verificar la sincronización del producto ${validId}:`, reconciliationError);
+            }
+            failedCount += 1;
+        }
+    }
+
+    return { syncedCount, failedCount };
 }
 
 // Exponer funciones globalmente
@@ -154,6 +243,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    window.addEventListener('guest-cart:reconciled', () => {
+        if (window.IS_AUTHENTICATED === false) fetchCart();
+    });
+
     function openCart() {
         if (cartDrawer) {
             cartDrawer.classList.add('open');
@@ -185,6 +278,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cartBtn) cartBtn.addEventListener('click', openCart);
     if (cartCloseBtn) cartCloseBtn.addEventListener('click', closeCart);
     if (cartOverlay) cartOverlay.addEventListener('click', closeCart);
+
+    if (new URLSearchParams(window.location.search).get('checkout') === 'cancelled') {
+        notify('Pago cancelado. Tus productos siguen en el carrito.', 'info');
+        openCart();
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete('checkout');
+        window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+    }
 
     function updateCartCount() {
         if (!cartCountEl) return;
@@ -654,7 +755,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok && data.success && data.url) {
-                    clearGuestCart();
                     window.location.href = data.url;
                 } else {
                     const errorMsg = data.error || 'Ocurrió un error al procesar el pedido.';

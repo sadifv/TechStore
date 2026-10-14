@@ -60,6 +60,7 @@ const orderSchema = new mongoose.Schema({
         enum: ['none', 'reserved', 'redeemed', 'released'],
         default: 'none'
     },
+    cartSnapshotUpdatedAt: Date,
     paymentMethod: {
         type: String,
         enum: ['card', 'transfer', 'cash'],

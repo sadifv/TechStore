@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
+const Cart = require('../models/Cart');
 const logger = require('../config/logger');
 const {
     getCouponDiscount,
@@ -48,11 +49,19 @@ const restoreOrderInventory = async (orderId, items) => {
 };
 
 const markOrderAsPaid = async (orderId) => {
-    const order = await Order.findOneAndUpdate(
+    let order = await Order.findOneAndUpdate(
         { _id: orderId, paymentStatus: 'pending' },
         { $set: { paymentStatus: 'paid', status: 'processing' } },
         { new: true }
     );
+
+    if (!order) {
+        order = await Order.findOne({ _id: orderId, paymentStatus: 'paid' });
+    }
+
+    if (!order) return null;
+
+    await reconcilePaidOrderCart(order);
 
     if (order?.couponReservationStatus === 'reserved') {
         await Order.updateOne(
@@ -62,6 +71,34 @@ const markOrderAsPaid = async (orderId) => {
     }
 
     return order;
+};
+
+const reconcilePaidOrderCart = async (order) => {
+    if (!order.user || !order.cartSnapshotUpdatedAt) return;
+
+    // Never clear cart changes made while the customer was completing payment.
+    const cart = await Cart.findOne({ user: order.user })
+        .select('items updatedAt')
+        .lean();
+    if (!cart || cart.updatedAt?.getTime() !== order.cartSnapshotUpdatedAt.getTime()) return;
+
+    const purchasedQuantities = new Map(
+        order.items.map(item => [item.product.toString(), item.quantity])
+    );
+    const cartQuantities = new Map(
+        cart.items.map(item => [item.product.toString(), item.quantity])
+    );
+    if (
+        purchasedQuantities.size !== cartQuantities.size ||
+        [...purchasedQuantities].some(([productId, quantity]) => cartQuantities.get(productId) !== quantity)
+    ) {
+        return;
+    }
+
+    await Cart.updateOne(
+        { _id: cart._id, updatedAt: order.cartSnapshotUpdatedAt, items: cart.items },
+        { $set: { items: [] } }
+    );
 };
 // ==========================================
 // CREAR ORDEN
@@ -193,6 +230,25 @@ const createOrder = async (req, res, next) => {
 
         const discountAmount = couponDiscount?.discountAmount || 0;
         const finalAmount = Number((totalAmount - discountAmount).toFixed(2));
+        let cartSnapshotUpdatedAt;
+        if (userId) {
+            const userCart = await Cart.findOne({ user: userId })
+                .select('items updatedAt')
+                .lean();
+            const cartQuantities = new Map(
+                (userCart?.items || []).map(item => [item.product.toString(), item.quantity])
+            );
+            const submittedQuantities = new Map(
+                orderItems.map(item => [item.product.toString(), item.quantity])
+            );
+            if (
+                userCart?.updatedAt &&
+                cartQuantities.size === submittedQuantities.size &&
+                [...submittedQuantities].every(([productId, quantity]) => cartQuantities.get(productId) === quantity)
+            ) {
+                cartSnapshotUpdatedAt = userCart.updatedAt;
+            }
+        }
 
         // Construir datos de la orden
         const orderData = {
@@ -206,6 +262,7 @@ const createOrder = async (req, res, next) => {
             paymentStatus: 'pending',
             status: 'pending',
             paymentMethod,
+            cartSnapshotUpdatedAt,
             inventoryRestored: false
         };
 
@@ -350,21 +407,22 @@ const cancelOrderCheckout = async (req, res, next) => {
     try {
         const { orderId } = req.query;
         if (!orderId || !mongoose.isObjectIdOrHexString(orderId)) {
-            return res.redirect('/cart');
+            return res.redirect('/');
         }
 
         const order = await Order.findById(orderId);
         if (!order || order.paymentStatus !== 'pending' || !order.stripeSessionId) {
-            return res.redirect('/cart');
+            return res.redirect('/');
         }
 
         const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
         if (session.metadata?.orderId !== order._id.toString()) {
-            return res.redirect('/cart');
+            return res.redirect('/');
         }
 
         if (session.payment_status === 'paid') {
             await markOrderAsPaid(order._id);
+            return res.redirect(`/api/orders/success?orderId=${order._id}`);
         } else if (session.status === 'open') {
             await stripe.checkout.sessions.expire(session.id);
             await restoreOrderInventory(order._id);
@@ -372,7 +430,7 @@ const cancelOrderCheckout = async (req, res, next) => {
             await restoreOrderInventory(order._id);
         }
 
-        res.redirect('/cart');
+        res.redirect('/?checkout=cancelled');
     } catch (error) {
         logger.error(`Error al cancelar checkout: ${error.message}`, { stack: error.stack });
         next(error);

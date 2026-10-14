@@ -1,4 +1,9 @@
-<section class="checkout-success-container" aria-labelledby="checkout-success-heading">
+<section
+    class="checkout-success-container"
+    aria-labelledby="checkout-success-heading"
+    data-guest-order="<%= order.user ? 'false' : 'true' %>"
+    data-purchased-items="<%= JSON.stringify(order.items.map(item => ({ productId: String(item.product), quantity: item.quantity }))) %>"
+>
     <article class="success-card">
         <header>
             <i class="ri-checkbox-circle-line checkout-success-icon" aria-hidden="true"></i>
@@ -13,6 +18,7 @@
             <% } %>
             <p>Hemos actualizado nuestro inventario y pronto prepararemos tu paquete.</p>
         </section>
+        <script src="/js/checkout-success.js" defer></script>
 
         <footer>
             <a href="/catalogo" class="btn btn-primary">Volver al Catálogo</a>

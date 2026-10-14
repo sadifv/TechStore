@@ -1626,6 +1626,18 @@ label.ai-sr-only {
   background: var(--color-primary-dark);
 }
 
+.login-register-action:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+button.login-register-action {
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* ========================================
    11. FOOTER
    ======================================== */

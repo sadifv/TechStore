@@ -20,7 +20,7 @@ router.get('/success', async (req, res, next) => {
         }
         const Order = require('../models/Order');
         const order = await Order.findById(orderId).lean();
-        if (!order) {
+        if (!order || order.paymentStatus !== 'paid') {
             return res.redirect('/');
         }
         res.render('checkout-success', {
