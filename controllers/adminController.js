@@ -98,7 +98,7 @@ const getAdminDashboard = async (req, res, next) => {
             Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(10).lean(),
             User.find().sort({ createdAt: -1 }).limit(10).lean(),
             Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
-            Newsletter.find().sort({ createdAt: -1 }).lean()
+            Newsletter.find().sort({ createdAt: -1 }).limit(100).lean()
         ]);
 
         const { totalRevenue = 0, totalProductsSold = 0 } = paidOrderStats[0] || {};

@@ -10,6 +10,13 @@ const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
 // ==========================================
 // REGLAS DE VALIDACIÓN POR RUTA
 // ==========================================
+const productValidationRules = {
+    name: { required: true, min: 2, max: 100, label: 'El nombre del producto' },
+    price: { required: true, number: true, gt: 0, label: 'El precio' },
+    stock: { required: true, integer: true, gt: -1, label: 'El stock' },
+    category: { required: true, label: 'La categoría' }
+};
+
 const validationRules = {
     '/api/auth/register': {
         name: { required: true, min: 2, max: 80, label: 'El nombre' },
@@ -39,12 +46,8 @@ const validationRules = {
         email: { required: true, email: true, label: 'El correo' },
         password: { required: true, min: 6, max: 100, label: 'La contraseña' }
     },
-    '/admin/products': {
-        name: { required: true, min: 2, max: 100, label: 'El nombre del producto' },
-        price: { required: true, number: true, gt: 0, label: 'El precio' },
-        stock: { required: true, integer: true, gt: -1, label: 'El stock' },
-        category: { required: true, label: 'La categoría' }
-    }
+    '/admin/products': productValidationRules,
+    '/admin/products/:id': productValidationRules
 };
 
 // ==========================================

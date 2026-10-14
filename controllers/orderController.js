@@ -12,23 +12,54 @@ const {
 } = require('../services/couponService');
 
 const restoreOrderInventory = async (orderId, items) => {
-    const order = await Order.findOneAndUpdate(
-        {
-            _id: orderId,
-            paymentStatus: 'pending',
-            inventoryRestored: { $ne: true }
-        },
-        {
-            $set: {
-                paymentStatus: 'failed',
-                status: 'cancelled',
-                inventoryRestored: true
-            }
-        },
-        { new: false }
+    let order = await Order.findOneAndUpdate(
+        { _id: orderId, paymentStatus: 'pending', inventoryRestored: { $ne: true } },
+        { $set: { paymentStatus: 'failed', status: 'cancelled' } },
+        { new: true }
     );
 
+    if (!order) {
+        order = await Order.findOne({
+            _id: orderId,
+            paymentStatus: 'failed',
+            inventoryRestored: { $ne: true }
+        });
+    }
     if (!order) return false;
+
+    const itemsToRestore = items || order.items.filter(item => item.inventoryReserved);
+    for (const item of itemsToRestore) {
+        // The marker and stock increment share one product update, making Stripe retries idempotent.
+        const restorationKey = `${order._id}:${item.product}`;
+        const result = await Product.updateOne(
+            { _id: item.product, inventoryRestorationKeys: { $ne: restorationKey } },
+            {
+                $inc: { stock: item.quantity },
+                $addToSet: { inventoryRestorationKeys: restorationKey }
+            }
+        );
+
+        if (result.modifiedCount !== 1) {
+            const alreadyRestored = await Product.exists({
+                _id: item.product,
+                inventoryRestorationKeys: restorationKey
+            });
+            if (!alreadyRestored) {
+                throw new Error(`No se pudo restituir el inventario del producto ${item.product} para la orden ${order._id}.`);
+            }
+        }
+    }
+
+    const finalized = await Order.updateOne(
+        { _id: order._id, paymentStatus: 'failed', inventoryRestored: { $ne: true } },
+        { $set: { inventoryRestored: true } }
+    );
+    if (finalized.modifiedCount !== 1) {
+        const currentOrder = await Order.findOne({ _id: order._id, paymentStatus: 'failed', inventoryRestored: true }).lean();
+        if (!currentOrder) {
+            throw new Error(`No se pudo confirmar la restitución de inventario para la orden ${order._id}.`);
+        }
+    }
 
     if (order.couponReservationStatus === 'reserved' && order.coupon) {
         await Order.updateOne(
@@ -37,15 +68,64 @@ const restoreOrderInventory = async (orderId, items) => {
         );
         await releaseCouponReservation(order.coupon);
     }
-
-    const itemsToRestore = items || order.items.filter(item => item.inventoryReserved);
-    await Promise.all(itemsToRestore.map(item =>
-        Product.updateOne(
-            { _id: item.product },
-            { $inc: { stock: item.quantity } }
-        )
-    ));
     return true;
+};
+
+const reconcileExpiredOrders = async () => {
+    const now = new Date();
+    const fallbackExpiry = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const expiredOrders = await Order.find({
+        paymentStatus: { $in: ['pending', 'failed'] },
+        inventoryRestored: { $ne: true },
+        $or: [
+            {
+                stripeSessionId: { $exists: true, $ne: '' },
+                stripeExpiresAt: { $lte: now }
+            },
+            {
+                stripeSessionId: { $exists: true, $ne: '' },
+                stripeExpiresAt: { $exists: false },
+                createdAt: { $lte: fallbackExpiry }
+            },
+            {
+                stripeSessionId: { $in: [null, ''] },
+                createdAt: { $lte: fallbackExpiry }
+            }
+        ]
+    }).sort({ createdAt: 1 }).limit(100);
+
+    let reconciledCount = 0;
+    for (const order of expiredOrders) {
+        try {
+            if (!order.stripeSessionId) {
+                if (await restoreOrderInventory(order._id)) reconciledCount += 1;
+                continue;
+            }
+            const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+            if (session.metadata?.orderId !== order._id.toString()) {
+                logger.error(`La sesión de Stripe ${order.stripeSessionId} no coincide con la orden ${order._id}.`);
+                continue;
+            }
+            if (session.payment_status === 'paid') {
+                if (order.paymentStatus === 'failed') {
+                    logger.error(`La sesión de Stripe ${session.id} figura pagada, pero la orden ${order._id} ya fue marcada como fallida.`);
+                    continue;
+                }
+                await markOrderAsPaid(order._id);
+                reconciledCount += 1;
+                continue;
+            }
+            if (session.status === 'open') {
+                await stripe.checkout.sessions.expire(session.id);
+            } else if (session.status !== 'expired') {
+                continue;
+            }
+            if (await restoreOrderInventory(order._id)) reconciledCount += 1;
+        } catch (error) {
+            logger.error(`No se pudo reconciliar la orden expirada ${order._id}: ${error.message}`, { stack: error.stack });
+        }
+    }
+    return reconciledCount;
 };
 
 const markOrderAsPaid = async (orderId) => {
@@ -353,6 +433,9 @@ const createOrder = async (req, res, next) => {
 
         // Guardar sessionId en la orden
         newOrder.stripeSessionId = session.id;
+        if (session.expires_at) {
+            newOrder.stripeExpiresAt = new Date(session.expires_at * 1000);
+        }
         await newOrder.save();
 
         if (userId) {
@@ -584,7 +667,7 @@ const handleStripeWebhook = async (req, res) => {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // ✅ try/catch para evitar que el webhook falle y Stripe reintente
+    // Stripe debe reintentar eventos cuando la restitución no se haya completado.
     try {
         switch (event.type) {
             case 'checkout.session.completed': {
@@ -613,7 +696,6 @@ const handleStripeWebhook = async (req, res) => {
                 logger.info(`Webhook: Evento no manejado: ${event.type}`);
         }
 
-        // ✅ Siempre responder 200 para que Stripe no reintente
         res.json({ received: true });
     } catch (dbError) {
         logger.error(`Error procesando webhook de Stripe: ${dbError.message}`, { stack: dbError.stack });
@@ -631,25 +713,53 @@ const handleStripeWebhook = async (req, res) => {
 const updateOrderStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
-        const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
+        const validStatuses = ['processing', 'shipped', 'delivered', 'completed'];
 
         if (!validStatuses.includes(status)) {
             return res.status(400).json({
                 success: false,
-                error: 'Estado no válido. Opciones: pending, processing, shipped, delivered, completed, cancelled'
+                error: 'Estado no válido. Las órdenes pagadas pueden avanzar a procesamiento, envío, entrega o completada.'
             });
         }
 
-        const order = await Order.findByIdAndUpdate(
-            req.params.id,
-            { status },
+        const currentOrder = await Order.findById(req.params.id).select('paymentStatus status');
+        if (!currentOrder) {
+            return res.status(404).json({ success: false, error: 'Orden no encontrada.' });
+        }
+        if (currentOrder.paymentStatus !== 'paid') {
+            return res.status(409).json({
+                success: false,
+                error: 'No se puede cambiar el estado de envío hasta confirmar el pago.'
+            });
+        }
+        if (currentOrder.status === status) {
+            return res.status(200).json({ success: true, message: 'La orden ya tiene ese estado.', order: currentOrder });
+        }
+
+        const nextStatuses = {
+            pending: ['processing'],
+            processing: ['shipped'],
+            shipped: ['delivered'],
+            delivered: ['completed'],
+            completed: []
+        };
+        if (!nextStatuses[currentOrder.status]?.includes(status)) {
+            return res.status(409).json({
+                success: false,
+                error: 'La orden solo puede avanzar al siguiente estado del flujo de envío.'
+            });
+        }
+
+        const order = await Order.findOneAndUpdate(
+            { _id: req.params.id, paymentStatus: 'paid', status: currentOrder.status },
+            { $set: { status } },
             { new: true }
         );
 
         if (!order) {
-            return res.status(404).json({
+            return res.status(409).json({
                 success: false,
-                error: 'Orden no encontrada.'
+                error: 'La orden cambió mientras se actualizaba. Recarga e inténtalo de nuevo.'
             });
         }
 
@@ -670,6 +780,7 @@ module.exports = {
     createOrder,
     cancelOrderCheckout,
     confirmOrderPayment,
+    reconcileExpiredOrders,
     getUserOrders,
     handleStripeWebhook,
     updateOrderStatus

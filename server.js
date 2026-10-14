@@ -58,6 +58,19 @@ cron.schedule('*/10 * * * *', async () => {
     }
 });
 
+// Reintentar la conciliación de inventario de sesiones Stripe expiradas cada 10 minutos.
+cron.schedule('*/10 * * * *', async () => {
+    try {
+        const { reconcileExpiredOrders } = require('./controllers/orderController');
+        const reconciledOrders = await reconcileExpiredOrders();
+        if (reconciledOrders > 0) {
+            logger.info(`Órdenes de Stripe vencidas reconciliadas: ${reconciledOrders}`);
+        }
+    } catch (cronError) {
+        logger.error(`Error en cron job de conciliación de checkout: ${cronError.message}`, { stack: cronError.stack });
+    }
+});
+
 // Expirar membresías de prueba al completar sus 30 días; no se renuevan sin cobro.
 cron.schedule('15 0 * * *', async () => {
     try {

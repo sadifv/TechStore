@@ -471,6 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const orderId = statusSelect.getAttribute('data-order-id');
         const newStatus = statusSelect.value;
+        const previousStatus = statusSelect.dataset.currentStatus || statusSelect.value;
 
         if (!orderId || !newStatus) return;
 
@@ -486,17 +487,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
                 if (window.showToast) window.showToast(errorData.error || `Error HTTP ${res.status}`, 'error');
+                statusSelect.value = previousStatus;
                 return;
             }
 
             const data = await res.json();
 
-            if (data.success && window.showToast) {
-                window.showToast('Estado de la orden actualizado', 'success');
+            if (data.success) {
+                statusSelect.dataset.currentStatus = newStatus;
+                if (window.showToast) window.showToast('Estado de la orden actualizado', 'success');
+            } else {
+                statusSelect.value = previousStatus;
+                if (window.showToast) window.showToast(data.error || 'No se pudo actualizar el estado.', 'error');
             }
         } catch (err) {
             console.error('Error al actualizar estado de orden:', err);
             if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
+            statusSelect.value = previousStatus;
         } finally {
             statusSelect.disabled = false;
         }

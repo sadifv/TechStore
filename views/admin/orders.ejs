@@ -49,14 +49,13 @@
               </td>
               <td>
                 <label class="sr-only" for="order-status-<%= order._id %>">Estado de la orden #<%= order._id %></label>
-                <select id="order-status-<%= order._id %>" class="form-control select-order-status" data-order-id="<%= order._id %>">
-                  <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pendiente</option>
-                  <option value="processing" <%= order.status === 'processing' ? 'selected' : '' %>>En Proceso</option>
-                  <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Enviado</option>
-                  <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>Entregado</option>
-                  <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Completado</option>
-                  <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelado</option>
+                <select id="order-status-<%= order._id %>" class="form-control select-order-status" data-order-id="<%= order._id %>" data-current-status="<%= order.status %>" <%= order.paymentStatus !== 'paid' || order.status === 'completed' || order.status === 'cancelled' ? 'disabled' : '' %>>
+                  <% const allowedStatuses = order.paymentStatus !== 'paid' ? [order.status] : order.status === 'pending' ? ['pending', 'processing'] : order.status === 'processing' ? ['processing', 'shipped'] : order.status === 'shipped' ? ['shipped', 'delivered'] : order.status === 'delivered' ? ['delivered', 'completed'] : [order.status]; %>
+                  <% allowedStatuses.forEach(status => { %>
+                    <option value="<%= status %>" selected><%= ({ pending: 'Pendiente', processing: 'En proceso', shipped: 'Enviado', delivered: 'Entregado', completed: 'Completado', cancelled: 'Cancelado' })[status] || status %></option>
+                  <% }); %>
                 </select>
+                <% if (order.paymentStatus !== 'paid') { %><small class="text-muted">Disponible después del pago</small><% } %>
               </td>
               <td>
                 <a href="/admin/orders/<%= order._id %>" class="btn btn-sm btn-secondary" title="Ver Detalle">

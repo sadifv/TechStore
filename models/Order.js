@@ -85,11 +85,14 @@ const orderSchema = new mongoose.Schema({
     stripeSessionId: {
         type: String
     },
+    stripeExpiresAt: Date,
     shippingAddress: {
         street: { type: String, default: 'Dirección estándar' },
         city: { type: String, default: 'Guayaquil' },
         country: { type: String, default: 'Ecuador' }
     }
 }, { timestamps: true });
+
+orderSchema.index({ paymentStatus: 1, stripeExpiresAt: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

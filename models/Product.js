@@ -30,6 +30,11 @@ const productSchema = new mongoose.Schema({
         default: 10,
         min: 0
     },
+    inventoryRestorationKeys: {
+        type: [String],
+        default: [],
+        select: false
+    },
     // FLASH SALE (Oferta Relámpago)
     flashSale: {
         type: Boolean,

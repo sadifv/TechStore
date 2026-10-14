@@ -29,4 +29,6 @@ const newsletterSchema = new mongoose.Schema({
     }
 });
 
+newsletterSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Newsletter', newsletterSchema);

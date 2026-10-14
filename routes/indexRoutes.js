@@ -6,12 +6,11 @@ const { getProductDetailPage } = require('../controllers/productController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { loginUser, registerUser } = require('../controllers/authController');
 const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
-const logger = require('../config/logger');
 const { getPaymentMode, getMembershipPrice } = require('../services/membershipBilling');
 const { getMembershipConfig } = require('../config/membershipConfig');
 const { getMockCheckoutPage } = require('../controllers/membershipController');
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         const now = new Date();
         const [featuredProducts, flashSaleProduct] = await Promise.all([
@@ -36,13 +35,7 @@ router.get('/', async (req, res) => {
             monthlyPrice: getMembershipPrice()
         });
     } catch (error) {
-        logger.error(`Error al cargar la página principal: ${error.message}`, { stack: error.stack });
-        res.render('index', {
-            title: 'TechStore - Inicio',
-            products: [],
-            flashSale: null,
-            monthlyPrice: getMembershipPrice()
-        });
+        next(error);
     }
 });
 
