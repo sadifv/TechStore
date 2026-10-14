@@ -3,7 +3,18 @@ const router = express.Router();
 const { sendContactMessage } = require('../controllers/contactController');
 const { getProducts, getProductById } = require('../controllers/productController');
 const { processAiChat, getChatHistory, clearChatHistory } = require('../controllers/aiController');
-const { subscribeNewsletter } = require('../controllers/newsletterController');
+const {
+    subscribeNewsletter,
+    unsubscribeNewsletter,
+    unsubscribeCampaignMarketing
+} = require('../controllers/newsletterController');
+const {
+    getMembershipStatus,
+    startMembershipCheckout,
+    confirmMockMembership,
+    cancelMembership,
+    unsubscribeVipMarketing
+} = require('../controllers/membershipController');
 const {
     registerUser,
     logoutUser,
@@ -21,6 +32,13 @@ const { validate } = require('../middleware/validate');
 
 router.post('/contact', sensitiveLimiter, validate, sendContactMessage);
 router.post('/newsletter', sensitiveLimiter, validate, subscribeNewsletter);
+router.get('/newsletter/unsubscribe/:token', unsubscribeNewsletter);
+router.get('/marketing/unsubscribe', unsubscribeCampaignMarketing);
+router.get('/membership', requireAuth, getMembershipStatus);
+router.post('/membership/checkout', requireAuth, sensitiveLimiter, startMembershipCheckout);
+router.post('/membership/mock-confirm', requireAuth, sensitiveLimiter, confirmMockMembership);
+router.post('/membership/cancel', requireAuth, sensitiveLimiter, cancelMembership);
+router.get('/membership/unsubscribe/:token', unsubscribeVipMarketing);
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById); 
 

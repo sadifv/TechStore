@@ -1,0 +1,102 @@
+<section class="container admin-marketing" aria-labelledby="marketing-heading">
+    <header class="admin-header">
+        <div>
+            <h1 id="marketing-heading">Marketing y membresías</h1>
+            <p>Administra cupones y envía campañas solo a usuarios con consentimiento.</p>
+        </div>
+        <a href="/admin/dashboard" class="btn btn-secondary">Volver al panel</a>
+    </header>
+
+    <section class="marketing-grid" aria-label="Herramientas de marketing">
+        <article class="admin-marketing-card">
+            <h2>Crear cupón</h2>
+            <form id="admin-coupon-form" class="admin-marketing-form">
+                <label>Código<input name="code" required minlength="4" maxlength="32" pattern="[A-Za-z0-9_-]+" placeholder="VERANO10"></label>
+                <label>Descuento (%)<input name="discountPercent" type="number" min="1" max="100" required value="10"></label>
+                <label>Descuento máximo ($)<input name="maxDiscountAmount" type="number" min="0.01" step="0.01" required value="8"></label>
+                <label>Compra mínima ($)<input name="minOrderAmount" type="number" min="0" step="0.01" required value="50"></label>
+                <label>Usos máximos (opcional)<input name="maxRedemptions" type="number" min="1" step="1" placeholder="Sin límite"></label>
+                <label>Vence (opcional)<input name="expiresAt" type="datetime-local"></label>
+                <label class="marketing-form-wide">Descripción<input name="description" maxlength="200" placeholder="Promoción de temporada"></label>
+                <button type="submit" class="btn btn-primary">Guardar cupón</button>
+            </form>
+            <output id="coupon-status" class="form-status" aria-live="polite"></output>
+        </article>
+
+        <article class="admin-marketing-card">
+            <h2>Enviar campaña</h2>
+            <p>El envío respeta las bajas. Sin SMTP configurado, queda registrado como simulado y no se envía ningún correo.</p>
+            <form id="admin-campaign-form" class="admin-marketing-form">
+                <label>Nombre interno<input name="name" required maxlength="100"></label>
+                <label>Asunto del correo<input name="subject" required maxlength="150"></label>
+                <label>Público
+                    <select name="audience" required>
+                        <option value="newsletter">Boletín gratuito</option>
+                        <option value="vip">VIP con consentimiento de marketing</option>
+                        <option value="all">Boletín y VIP (sin duplicados)</option>
+                    </select>
+                </label>
+                <label>Cupón (opcional)
+                    <select name="couponCode">
+                        <option value="">Sin cupón</option>
+                        <% coupons.filter(coupon => coupon.active).forEach(coupon => { %>
+                            <option value="<%= coupon.code %>"><%= coupon.code %></option>
+                        <% }); %>
+                    </select>
+                </label>
+                <label class="marketing-form-wide">Mensaje
+                    <textarea name="content" required maxlength="5000" rows="6" placeholder="Escribe el mensaje de la campaña..."></textarea>
+                </label>
+                <button type="submit" class="btn btn-primary">Enviar campaña</button>
+            </form>
+            <output id="campaign-status" class="form-status" aria-live="polite"></output>
+        </article>
+    </section>
+
+    <section class="admin-marketing-card" aria-labelledby="coupon-list-heading">
+        <h2 id="coupon-list-heading">Cupones</h2>
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead><tr><th scope="col">Código</th><th scope="col">Descuento</th><th scope="col">Mínimo</th><th scope="col">Usos</th><th scope="col">Vencimiento</th><th scope="col">Estado</th><th scope="col">Acción</th></tr></thead>
+                <tbody id="admin-coupons-list">
+                    <% if (coupons.length) { coupons.forEach(coupon => { %>
+                        <tr data-coupon-id="<%= coupon._id %>">
+                            <td><strong><%= coupon.code %></strong></td>
+                            <td><%= coupon.discountPercent %>% (máx. $<%= Number(coupon.maxDiscountAmount).toFixed(2) %>)</td>
+                            <td>$<%= Number(coupon.minOrderAmount).toFixed(2) %></td>
+                            <td><%= coupon.redemptionCount %><%= coupon.maxRedemptions ? ` / ${coupon.maxRedemptions}` : '' %></td>
+                            <td><%= coupon.expiresAt && !Number.isNaN(new Date(coupon.expiresAt).getTime()) ? new Date(coupon.expiresAt).toLocaleDateString('es-EC') : 'Sin vencimiento' %></td>
+                            <td class="coupon-state"><%= coupon.active ? 'Activo' : 'Pausado' %></td>
+                            <td><button type="button" class="btn btn-sm btn-outline btn-toggle-coupon"><%= coupon.active ? 'Pausar' : 'Activar' %></button></td>
+                        </tr>
+                    <% }); } else { %>
+                        <tr><td colspan="7">Aún no hay cupones.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-marketing-card" aria-labelledby="campaign-history-heading">
+        <h2 id="campaign-history-heading">Historial de campañas</h2>
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead><tr><th scope="col">Nombre</th><th scope="col">Público</th><th scope="col">Estado</th><th scope="col">Destinatarios</th><th scope="col">Fecha</th></tr></thead>
+                <tbody>
+                    <% if (campaigns.length) { campaigns.forEach(campaign => { %>
+                        <tr>
+                            <td><%= campaign.name %></td>
+                            <td><%= campaign.audience %></td>
+                            <td><%= campaign.status %></td>
+                            <td><%= campaign.recipientCount %> destinatarios · <%= campaign.sentCount %> enviados · <%= campaign.failedCount %> fallidos<%= campaign.simulated ? ' · simulado' : '' %></td>
+                            <td><%= campaign.createdAt && !Number.isNaN(new Date(campaign.createdAt).getTime()) ? new Date(campaign.createdAt).toLocaleString('es-EC') : 'N/A' %></td>
+                        </tr>
+                    <% }); } else { %>
+                        <tr><td colspan="5">Aún no hay campañas.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+<script src="/js/admin-marketing.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>

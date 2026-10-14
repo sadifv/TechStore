@@ -409,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('.btn-edit-product') ||
             e.target.closest('.btn-delete-product') ||
             e.target.closest('.btn-flash-product') ||
+            e.target.closest('.btn-stop-flash-product') ||
             e.target.closest('.btn-delete-user') ||
             e.target.closest('.btn-delete-message') ||
             e.target.closest('.btn-delete-subscriber')) {
@@ -548,6 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const payload = {
                 paymentMethod,
+                couponCode: document.getElementById('checkout-coupon-code')?.value.trim(),
                 items: cart.map(item => ({
                     productId: item.id,
                     quantity: item.quantity,

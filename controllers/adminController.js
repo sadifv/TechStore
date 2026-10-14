@@ -17,6 +17,7 @@ const getAdminDashboard = async (req, res, next) => {
             activeCartCount,
             paidOrderStats,
             topProducts,
+            products,
             orders,
             users,
             messages,
@@ -76,6 +77,7 @@ const getAdminDashboard = async (req, res, next) => {
                     }
                 }
             ]),
+            Product.find().sort({ createdAt: -1 }).limit(100).lean(),
             Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(10).lean(),
             User.find().sort({ createdAt: -1 }).limit(10).lean(),
             Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
@@ -91,7 +93,7 @@ const getAdminDashboard = async (req, res, next) => {
             totalRevenue,
             totalProductsSold,
             activeCartCount,
-            products: topProducts,
+            products,
             topProducts,
             orders,
             users,

@@ -34,3 +34,10 @@ Asegúrate de tener instalado en tu sistema:
 2. **Configurar el entorno:** copia `.env.example` a `.env` y completa las credenciales necesarias. En producción, define `ALLOWED_ORIGINS` con los dominios exactos de la tienda, separados por comas y sin espacios; si queda vacío, el navegador bloqueará las solicitudes de esos orígenes.
 
    Para enviar correos, configura `SMTP_USER` y `SMTP_PASS` con credenciales válidas de Gmail y una contraseña de aplicación. Si aparece `getaddrinfo ENOTFOUND smtp.gmail.com`, revisa la conexión DNS/red del servidor o utiliza un proveedor SMTP accesible desde ese entorno.
+
+## Membresía VIP y campañas
+
+- La página `/vip` explica la membresía mensual de **$4.99**. En desarrollo, `MEMBERSHIP_PAYMENT_MODE=mock` habilita una pantalla de confirmación de prueba que activa el acceso por 30 días sin pedir tarjeta. El simulador se rechaza fuera de `NODE_ENV=development`; en producción el sitio informa que los pagos VIP aún no están disponibles.
+- La activación de prueba genera un cupón de bienvenida (15%, máximo $10) y uno mensual (10%, máximo $8); ambos requieren una compra mínima de $50, son de un solo uso y vencen al terminar el período VIP. Estos valores se pueden ajustar con `VIP_MONTHLY_PRICE`, `VIP_COUPON_MIN_ORDER`, `VIP_WELCOME_DISCOUNT_PERCENT`, `VIP_WELCOME_MAX_DISCOUNT`, `VIP_MONTHLY_DISCOUNT_PERCENT` y `VIP_MONTHLY_MAX_DISCOUNT`.
+- El modo de prueba no cobra ni renueva automáticamente. La membresía expira a los 30 días; la renovación queda para la integración futura con un proveedor compatible con Ecuador. Los cupones se validan en el servidor y su uso se reserva durante el checkout; si el pago se cancela o vence, el cupón queda disponible otra vez.
+- El boletín sigue siendo gratuito e independiente. La página `/admin/marketing` permite administrar cupones y enviar campañas al boletín, a miembros VIP que dieron consentimiento, o a ambos. Los mensajes incluyen un enlace de baja. Sin credenciales SMTP, se registran como simulados y no se envían.

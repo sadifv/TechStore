@@ -11,6 +11,19 @@
         </article>
     </section>
 
+    <section
+        class="membership-card profile-membership-card"
+        data-membership-panel
+        data-authenticated="true"
+        aria-labelledby="profile-membership-heading"
+    >
+        <h2 id="profile-membership-heading">Membresía VIP</h2>
+        <p id="membership-status" class="membership-status" aria-live="polite">Cargando estado...</p>
+        <div id="membership-coupons" class="membership-coupons" aria-live="polite"></div>
+        <button type="button" id="membership-cancel" class="btn btn-secondary" hidden>Cancelar al final del período</button>
+        <a href="/vip" class="btn btn-outline">Ver planes y beneficios</a>
+    </section>
+
     <!-- Historial de Compras -->
     <section class="orders-section">
         <h2>Historial de Compras</h2>
@@ -24,3 +37,4 @@
 </section>
 
 <script src="/js/profile.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+<script src="/js/membership.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>

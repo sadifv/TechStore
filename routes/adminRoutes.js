@@ -25,6 +25,12 @@ const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
 const logger = require('../config/logger');
+const {
+    getAdminMarketing,
+    createAdminCoupon,
+    updateAdminCouponStatus,
+    sendAdminCampaign
+} = require('../controllers/marketingController');
 
 // ==========================================
 // LOGOUT
@@ -35,6 +41,10 @@ router.get('/logout', logoutUser);
 // DASHBOARD
 // ==========================================
 router.get('/dashboard', requireAdmin, getAdminDashboard);
+router.get('/marketing', requireAdmin, getAdminMarketing);
+router.post('/coupons', requireAdmin, createAdminCoupon);
+router.patch('/coupons/:id/status', requireAdmin, updateAdminCouponStatus);
+router.post('/campaigns', requireAdmin, sendAdminCampaign);
 
 // ==========================================
 // GESTIÓN DE ÓRDENES

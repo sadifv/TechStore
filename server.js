@@ -58,6 +58,22 @@ cron.schedule('*/10 * * * *', async () => {
     }
 });
 
+// Expirar membresías de prueba al completar sus 30 días; no se renuevan sin cobro.
+cron.schedule('15 0 * * *', async () => {
+    try {
+        const Membership = require('./models/Membership');
+        const result = await Membership.updateMany(
+            { status: 'active', currentPeriodEnd: { $lte: new Date() } },
+            { $set: { status: 'expired' } }
+        );
+        if (result.modifiedCount > 0) {
+            logger.info(`Membresías VIP expiradas: ${result.modifiedCount}`);
+        }
+    } catch (cronError) {
+        logger.error(`Error al expirar membresías VIP: ${cronError.message}`, { stack: cronError.stack });
+    }
+});
+
 // 2. Confiar en el proxy (IMPORTANTE para producción / Nginx / Render)
 app.set('trust proxy', 1); 
 

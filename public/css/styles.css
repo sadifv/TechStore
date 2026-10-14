@@ -46,6 +46,283 @@
   --z-fixed: 300;
 }
 
+.membership-page {
+  max-width: 1040px;
+  margin: 3rem auto 5rem;
+}
+
+.membership-hero {
+  padding: clamp(2rem, 6vw, 4.5rem) 1.5rem;
+  text-align: center;
+  color: var(--color-surface);
+  background: linear-gradient(135deg, var(--color-secondary), var(--color-primary-dark));
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-hover);
+}
+
+.membership-hero h1 {
+  max-width: 720px;
+  margin: 0.75rem auto;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.1;
+  color: var(--color-surface);
+}
+
+.membership-hero > p:not(.membership-price) {
+  max-width: 680px;
+  margin: 1rem auto;
+  color: var(--color-surface);
+}
+
+.membership-eyebrow {
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.membership-price {
+  margin: 1.5rem 0 0.5rem;
+}
+
+.membership-price strong {
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+}
+
+.membership-price span {
+  color: var(--color-surface);
+}
+
+.membership-payment-note {
+  font-size: var(--font-size-sm);
+}
+
+.membership-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.membership-card,
+.admin-marketing-card {
+  padding: 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.membership-benefits .membership-card > i {
+  color: var(--color-primary);
+  font-size: 1.8rem;
+}
+
+.membership-card h2 {
+  margin: 0.5rem 0;
+  font-size: var(--font-size-xl);
+}
+
+.membership-account-card {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+}
+
+.membership-account-card h2 {
+  margin: 0;
+}
+
+.membership-status {
+  color: var(--color-text-muted);
+}
+
+.membership-status.error,
+.membership-unavailable {
+  color: var(--color-error);
+}
+
+.membership-coupons {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+#membership-cancel[hidden] {
+  display: none;
+}
+
+.membership-form {
+  display: grid;
+  gap: 1rem;
+  width: min(100%, 620px);
+}
+
+.membership-form[hidden] {
+  display: none;
+}
+
+.membership-consent,
+.newsletter-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.membership-consent input,
+.newsletter-consent input {
+  flex: 0 0 auto;
+  margin-top: 0.2rem;
+}
+
+.membership-checkout-card {
+  max-width: 640px;
+  margin: 5rem auto;
+}
+
+.membership-checkout-card .membership-eyebrow {
+  color: var(--color-primary);
+}
+
+.vip-promo-section {
+  max-width: 1040px;
+  margin: 3rem auto;
+  padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+  color: var(--color-surface);
+  background: linear-gradient(120deg, var(--color-secondary), var(--color-primary-dark));
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.vip-promo-content {
+  max-width: 760px;
+  margin: auto;
+}
+
+.vip-promo-content h2 {
+  margin: 0.75rem auto;
+  color: var(--color-surface);
+  font-size: var(--font-size-3xl);
+  line-height: 1.2;
+}
+
+.vip-promo-content p {
+  margin: 1rem 0 1.5rem;
+  color: var(--color-surface);
+}
+
+.newsletter-consent {
+  margin: 0 0 1rem;
+}
+
+.profile-membership-card {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  margin: 2rem 0;
+}
+
+.admin-marketing {
+  display: grid;
+  gap: 1.5rem;
+  margin: 2rem auto 5rem;
+}
+
+.admin-marketing > .admin-header {
+  align-items: center;
+}
+
+.admin-marketing > .admin-header p {
+  margin-top: 0.4rem;
+  color: var(--color-text-muted);
+}
+
+.marketing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.25rem;
+}
+
+.admin-marketing-card > h2 {
+  margin-bottom: 1rem;
+}
+
+.admin-marketing-card > p {
+  margin: -0.5rem 0 1rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.admin-marketing-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.admin-marketing-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.admin-marketing-form input,
+.admin-marketing-form select,
+.admin-marketing-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.65rem 0.75rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: inherit;
+}
+
+.admin-marketing-form textarea {
+  resize: vertical;
+}
+
+.marketing-form-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-marketing-card .admin-table-wrapper {
+  overflow-x: auto;
+}
+
+@media (max-width: 760px) {
+  .membership-benefits,
+  .marketing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .membership-page {
+    margin: 1.5rem auto 3rem;
+  }
+
+  .membership-card,
+  .admin-marketing-card {
+    padding: 1.1rem;
+  }
+
+  .admin-marketing-form {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-form-wide {
+    grid-column: auto;
+  }
+}
+
 /* ========================================
    2. RESET Y ESTRUCTURA GENERAL
    ======================================== */
@@ -1923,6 +2200,78 @@ dialog::backdrop {
   margin: 0;
 }
 
+.confirm-dialog {
+  max-width: 440px;
+  overflow: hidden;
+  animation: confirm-dialog-enter 180ms ease-out;
+}
+
+.confirm-dialog .modal-card {
+  padding: 1.5rem;
+}
+
+.confirm-dialog .modal-header {
+  justify-content: flex-start;
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.75rem;
+}
+
+.confirm-dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.confirm-dialog-heading h3 {
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: 1.1rem;
+}
+
+.confirm-dialog-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff1f2;
+  color: #e11d48;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.confirm-dialog .modal-confirm-message {
+  padding: 0.5rem 0;
+  color: var(--color-text-muted);
+}
+
+.confirm-dialog .modal-actions {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+}
+
+.confirm-dialog .btn-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.confirm-dialog .btn-danger:hover {
+  background: #b91c1c;
+}
+
+@keyframes confirm-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
 .modal-card {
   padding: 1.75rem;
 }
@@ -2033,6 +2382,24 @@ dialog::backdrop {
   line-height: 1.6;
   margin: 0 0 var(--space-4) 0;
   padding: var(--space-4) 0;
+}
+
+@media (max-width: 520px) {
+  .confirm-dialog {
+    width: calc(100% - 2rem);
+  }
+
+  .confirm-dialog .modal-card {
+    padding: 1.25rem;
+  }
+
+  .confirm-dialog .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-dialog .modal-actions .btn {
+    width: 100%;
+  }
 }
 
 /* ========================================
@@ -3327,17 +3694,61 @@ dialog#checkout-modal {
 }
 
 .dashboard-orders,
-.dashboard-products {
+.dashboard-products,
+.dashboard-messages,
+.dashboard-newsletter {
   margin-bottom: 2.5rem;
 }
 
 .dashboard-orders .section-title,
-.dashboard-products .section-title {
+.dashboard-products .section-title,
+.dashboard-messages .section-title,
+.dashboard-newsletter .section-title {
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--color-primary);
   color: var(--color-secondary);
   font-size: var(--font-size-xl);
+}
+
+.admin-product-thumbnail {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 250px;
+}
+
+.admin-message-content {
+  max-width: 360px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.image-preview-container {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.image-preview-container figcaption {
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.image-preview-container img {
+  max-width: 100%;
+  max-height: 160px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  padding: 0.25rem;
 }
 
 .dashboard-products .products-grid {

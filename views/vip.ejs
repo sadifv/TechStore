@@ -1,0 +1,61 @@
+<section
+    class="container membership-page"
+    id="membership-page"
+    data-membership-panel
+    data-authenticated="<%= user ? 'true' : 'false' %>"
+    data-payment-mode="<%= paymentMode %>"
+    aria-labelledby="membership-heading"
+>
+    <header class="membership-hero">
+        <span class="membership-eyebrow">TECHSTORE VIP</span>
+        <h1 id="membership-heading">Más beneficios para tus compras de tecnología</h1>
+        <p>Accede a cupones VIP y recibe avisos anticipados de campañas y lanzamientos.</p>
+        <p class="membership-price"><strong>$<%= monthlyPrice.toFixed(2) %></strong><span> / mes</span></p>
+        <p class="membership-payment-note">
+            La renovación automática se habilitará cuando integremos un proveedor de pago compatible con Ecuador.
+        </p>
+    </header>
+
+    <section class="membership-benefits" aria-label="Beneficios incluidos">
+        <article class="membership-card">
+            <i class="ri-coupon-3-line" aria-hidden="true"></i>
+            <h2>Cupón de bienvenida</h2>
+            <p><%= welcomeDiscountPercent %>% de descuento, hasta $<%= welcomeMaxDiscount.toFixed(2) %>, en compras desde $<%= couponMinOrder.toFixed(2) %>. Un uso.</p>
+        </article>
+        <article class="membership-card">
+            <i class="ri-calendar-check-line" aria-hidden="true"></i>
+            <h2>Cupón VIP mensual</h2>
+            <p><%= monthlyDiscountPercent %>% de descuento, hasta $<%= monthlyMaxDiscount.toFixed(2) %>, en compras desde $<%= couponMinOrder.toFixed(2) %> durante tu período activo. Un uso.</p>
+        </article>
+        <article class="membership-card">
+            <i class="ri-notification-3-line" aria-hidden="true"></i>
+            <h2>Avisos anticipados</h2>
+            <p>Recibe antes que el público las campañas y lanzamientos que el equipo marque como VIP.</p>
+        </article>
+    </section>
+
+    <article class="membership-card membership-account-card" aria-labelledby="membership-account-heading">
+        <h2 id="membership-account-heading">Tu membresía</h2>
+        <p id="membership-status" class="membership-status" aria-live="polite">Cargando estado...</p>
+        <div id="membership-coupons" class="membership-coupons" aria-live="polite"></div>
+        <button type="button" id="membership-cancel" class="btn btn-secondary" hidden>Cancelar al final del período</button>
+
+        <% if (!user) { %>
+            <p>Inicia sesión para suscribirte y consultar tus cupones.</p>
+            <a href="/login?redirect=/vip" class="btn btn-primary">Iniciar sesión</a>
+        <% } else if (paymentMode === 'mock') { %>
+            <form id="membership-subscribe-form" class="membership-form">
+                <label class="membership-consent">
+                    <input type="checkbox" name="marketingOptIn" value="true">
+                    Quiero recibir campañas y avisos VIP por correo. Puedo darme de baja cuando quiera.
+                </label>
+                <button type="submit" id="membership-subscribe" class="btn btn-primary">Activar membresía de prueba</button>
+                <p class="membership-payment-note">Simulación disponible solo en desarrollo: no se realizará ningún cobro.</p>
+            </form>
+        <% } else { %>
+            <p class="membership-unavailable" role="status">El pago de membresías todavía no está disponible. No se activará ninguna suscripción hasta integrar un proveedor compatible.</p>
+            <button type="button" class="btn btn-primary" disabled>Pago no disponible</button>
+        <% } %>
+    </article>
+</section>
+<script src="/js/membership.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>

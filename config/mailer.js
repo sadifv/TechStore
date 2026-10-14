@@ -114,8 +114,35 @@ const sendWelcomeEmail = async (userEmail, name) => {
     });
 };
 
+const sendMarketingCampaignEmail = async ({ to, subject, name, content, couponCode, unsubscribeUrl }) => {
+    return sendTemplateEmail({
+        to,
+        subject,
+        templateName: 'email-campaign',
+        templateData: { name, content, couponCode, unsubscribeUrl }
+    });
+};
+
+const sendMembershipWelcomeEmail = async ({
+    to,
+    name,
+    amount,
+    welcomeCouponCode,
+    monthlyCouponCode,
+    unsubscribeUrl
+}) => {
+    return sendTemplateEmail({
+        to,
+        subject: 'Tu membresía TechStore VIP está activa',
+        templateName: 'email-vip-welcome',
+        templateData: { name, amount, welcomeCouponCode, monthlyCouponCode, unsubscribeUrl }
+    });
+};
+
 module.exports = {
     sendOrderConfirmation,
     sendPasswordResetEmail,
-    sendWelcomeEmail
+    sendWelcomeEmail,
+    sendMarketingCampaignEmail,
+    sendMembershipWelcomeEmail
 };

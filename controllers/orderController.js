@@ -4,6 +4,11 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
+const {
+    getCouponDiscount,
+    reserveCoupon,
+    releaseCouponReservation
+} = require('../services/couponService');
 
 const restoreOrderInventory = async (orderId, items) => {
     const order = await Order.findOneAndUpdate(
@@ -19,10 +24,18 @@ const restoreOrderInventory = async (orderId, items) => {
                 inventoryRestored: true
             }
         },
-        { new: true }
+        { new: false }
     );
 
     if (!order) return false;
+
+    if (order.couponReservationStatus === 'reserved' && order.coupon) {
+        await Order.updateOne(
+            { _id: orderId, couponReservationStatus: 'reserved' },
+            { $set: { couponReservationStatus: 'released' } }
+        );
+        await releaseCouponReservation(order.coupon);
+    }
 
     const itemsToRestore = items || order.items.filter(item => item.inventoryReserved);
     await Promise.all(itemsToRestore.map(item =>
@@ -34,6 +47,22 @@ const restoreOrderInventory = async (orderId, items) => {
     return true;
 };
 
+const markOrderAsPaid = async (orderId) => {
+    const order = await Order.findOneAndUpdate(
+        { _id: orderId, paymentStatus: 'pending' },
+        { $set: { paymentStatus: 'paid', status: 'processing' } },
+        { new: true }
+    );
+
+    if (order?.couponReservationStatus === 'reserved') {
+        await Order.updateOne(
+            { _id: order._id, couponReservationStatus: 'reserved' },
+            { $set: { couponReservationStatus: 'redeemed' } }
+        );
+    }
+
+    return order;
+};
 // ==========================================
 // CREAR ORDEN
 // ==========================================
@@ -45,8 +74,11 @@ const createOrder = async (req, res, next) => {
     let newOrder;
     let reservedItems = [];
     let stripeSessionId;
+    let couponReservationHeld = false;
+    let reservedCouponId;
+    let couponDiscount;
     try {
-        const { items, guestInfo, shippingAddress, paymentMethod = 'card' } = req.body;
+        const { items, guestInfo, shippingAddress, paymentMethod = 'card', couponCode } = req.body;
 
         if (paymentMethod !== 'card') {
             return res.status(400).json({
@@ -150,10 +182,27 @@ const createOrder = async (req, res, next) => {
             });
         }
 
+        totalAmount = Number(totalAmount.toFixed(2));
+        if (couponCode) {
+            couponDiscount = await getCouponDiscount({
+                code: couponCode,
+                userId,
+                subtotal: totalAmount
+            });
+        }
+
+        const discountAmount = couponDiscount?.discountAmount || 0;
+        const finalAmount = Number((totalAmount - discountAmount).toFixed(2));
+
         // Construir datos de la orden
         const orderData = {
             items: orderItems,
-            totalAmount: Number(totalAmount.toFixed(2)),
+            subtotalAmount: totalAmount,
+            totalAmount: finalAmount,
+            discountAmount,
+            coupon: couponDiscount?.coupon._id,
+            couponCode: couponDiscount?.coupon.code,
+            couponReservationStatus: couponDiscount ? 'reserved' : 'none',
             paymentStatus: 'pending',
             status: 'pending',
             paymentMethod,
@@ -174,6 +223,12 @@ const createOrder = async (req, res, next) => {
 
         if (shippingAddress) {
             orderData.shippingAddress = shippingAddress;
+        }
+
+        if (couponDiscount) {
+            await reserveCoupon(couponDiscount.coupon);
+            couponReservationHeld = true;
+            reservedCouponId = couponDiscount.coupon._id;
         }
 
         // Crear la orden en MongoDB
@@ -212,8 +267,19 @@ const createOrder = async (req, res, next) => {
             }
         }));
 
+        let stripeDiscounts;
+        if (discountAmount > 0) {
+            const stripeCoupon = await stripe.coupons.create({
+                amount_off: Math.round(discountAmount * 100),
+                currency: 'usd',
+                duration: 'once',
+                name: `Cupón ${couponDiscount.coupon.code}`
+            });
+            stripeDiscounts = [{ coupon: stripeCoupon.id }];
+        }
+
         // Crear sesión de Stripe Checkout
-        const session = await stripe.checkout.sessions.create({
+        const stripeSessionOptions = {
             payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment',
@@ -223,7 +289,9 @@ const createOrder = async (req, res, next) => {
                 orderId: newOrder._id.toString()
             },
             customer_email: guestInfo?.email || req.session?.user?.email || undefined
-        });
+        };
+        if (stripeDiscounts) stripeSessionOptions.discounts = stripeDiscounts;
+        const session = await stripe.checkout.sessions.create(stripeSessionOptions);
         stripeSessionId = session.id;
 
         // Guardar sessionId en la orden
@@ -237,7 +305,8 @@ const createOrder = async (req, res, next) => {
             );
         }
 
-        logger.info(`Orden creada: ${newOrder._id} - Stripe Session: ${session.id} - Total: $${totalAmount.toFixed(2)}`);
+        couponReservationHeld = false;
+        logger.info(`Orden creada: ${newOrder._id} - Stripe Session: ${session.id} - Total: $${finalAmount.toFixed(2)}`);
 
         res.status(201).json({
             success: true,
@@ -246,7 +315,7 @@ const createOrder = async (req, res, next) => {
             url: session.url
         });
     } catch (error) {
-        if (newOrder && reservedItems.length) {
+        if (newOrder) {
             if (stripeSessionId) {
                 try {
                     await stripe.checkout.sessions.expire(stripeSessionId);
@@ -256,13 +325,23 @@ const createOrder = async (req, res, next) => {
             }
             try {
                 await restoreOrderInventory(newOrder._id, reservedItems);
+                couponReservationHeld = false;
             } catch (restoreError) {
                 logger.error(`No se pudo restituir el inventario de la orden ${newOrder._id}: ${restoreError.message}`, {
                     stack: restoreError.stack
                 });
             }
+        } else if (couponReservationHeld) {
+            try {
+                await releaseCouponReservation(reservedCouponId);
+            } catch (releaseError) {
+                logger.error(`No se pudo liberar la reserva del cupón: ${releaseError.message}`, { stack: releaseError.stack });
+            }
         }
         logger.error(`Error al crear orden: ${error.message}`, { stack: error.stack });
+        if (error.statusCode && !newOrder) {
+            return res.status(error.statusCode).json({ success: false, error: error.message });
+        }
         next(error);
     }
 };
@@ -285,10 +364,7 @@ const cancelOrderCheckout = async (req, res, next) => {
         }
 
         if (session.payment_status === 'paid') {
-            await Order.findOneAndUpdate(
-                { _id: order._id, paymentStatus: 'pending' },
-                { $set: { paymentStatus: 'paid', status: 'processing' } }
-            );
+            await markOrderAsPaid(order._id);
         } else if (session.status === 'open') {
             await stripe.checkout.sessions.expire(session.id);
             await restoreOrderInventory(order._id);
@@ -348,14 +424,7 @@ const confirmOrderPayment = async (req, res, next) => {
             });
         }
 
-        const order = await Order.findOneAndUpdate(
-            { _id: orderId, paymentStatus: 'pending' },
-            {
-                paymentStatus: 'paid',
-                status: 'processing'
-            },
-            { new: true }
-        );
+        const order = await markOrderAsPaid(orderId);
 
         if (!order) {
             const currentOrder = await Order.findById(orderId).lean();
@@ -465,11 +534,7 @@ const handleStripeWebhook = async (req, res) => {
                 const orderId = session.metadata?.orderId;
 
                 if (orderId) {
-                    const order = await Order.findOneAndUpdate(
-                        { _id: orderId, paymentStatus: 'pending' },
-                        { $set: { paymentStatus: 'paid', status: 'processing' } },
-                        { new: true }
-                    );
+                    const order = await markOrderAsPaid(orderId);
                     if (order) logger.info(`Webhook: Orden ${orderId} pagada exitosamente.`);
                 }
                 break;

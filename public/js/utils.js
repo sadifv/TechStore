@@ -76,10 +76,19 @@ function showConfirm(message, confirmText = 'Confirmar', cancelText = 'Cancelar'
         const header = document.createElement('header');
         header.className = 'modal-header';
 
+        const heading = document.createElement('div');
+        heading.className = 'confirm-dialog-heading';
+
+        const icon = document.createElement('span');
+        icon.className = 'confirm-dialog-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '!';
+
         const title = document.createElement('h3');
         title.textContent = 'Confirmar acción';
 
-        header.appendChild(title);
+        heading.append(icon, title);
+        header.appendChild(heading);
 
         // Cuerpo del mensaje
         const body = document.createElement('p');
@@ -97,7 +106,7 @@ function showConfirm(message, confirmText = 'Confirmar', cancelText = 'Cancelar'
 
         const btnConfirm = document.createElement('button');
         btnConfirm.type = 'button';
-        btnConfirm.className = 'btn btn-primary';
+        btnConfirm.className = 'btn btn-danger';
         btnConfirm.textContent = confirmText;
 
         footer.appendChild(btnCancel);

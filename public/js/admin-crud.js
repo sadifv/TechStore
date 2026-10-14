@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // ELEMENTOS DEL DOM
     // ==========================================
+    const productsList = document.getElementById('admin-products-list');
     const productModal = document.getElementById('product-modal');
     const productForm = document.getElementById('product-form');
     const modalTitle = document.getElementById('modal-title');
@@ -25,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const flashDiscount = document.getElementById('flash-discount');
     const flashDuration = document.getElementById('flash-duration');
     const flashFinalPrice = document.getElementById('flash-final-price');
+
+    if (productsList) fetchProducts();
 
     // ==========================================
     // PREVISUALIZACIÓN DE IMÁGENES
@@ -100,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.showToast(isEditing ? 'Producto actualizado correctamente' : 'Producto creado con éxito', 'success');
                     }
                     closeModal();
-                    window.location.reload();
+                    fetchProducts();
                 } else {
                     if (window.showToast) window.showToast(data.error || 'Ocurrió un error al procesar la solicitud', 'error');
                 }
@@ -148,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     if (window.showToast) window.showToast(data.message, 'success');
                     closeFlashModal();
-                    window.location.reload();
+                    fetchProducts();
                 } else {
                     if (window.showToast) window.showToast(data.error || 'Error al activar la oferta', 'error');
                 }
@@ -157,6 +160,105 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
+    }
+
+    async function fetchProducts() {
+        try {
+            const response = await fetch('/api/products?limit=100');
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `Error HTTP ${response.status}`);
+            }
+            renderProducts(data.products);
+        } catch (error) {
+            console.error('Error al cargar productos del panel:', error);
+            if (productsList) {
+                productsList.replaceChildren();
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 7;
+                cell.className = 'text-center';
+                cell.textContent = 'No se pudieron cargar los productos.';
+                row.appendChild(cell);
+                productsList.appendChild(row);
+            }
+            if (window.showToast) window.showToast('No se pudieron cargar los productos.', 'error');
+        }
+    }
+
+    function renderProducts(products) {
+        if (!productsList) return;
+
+        productsList.replaceChildren();
+        window.adminProductsCache = products;
+
+        if (products.length === 0) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = 7;
+            cell.className = 'text-center';
+            cell.textContent = 'No hay productos registrados.';
+            row.appendChild(cell);
+            productsList.appendChild(row);
+            return;
+        }
+
+        products.forEach(product => {
+            const row = document.createElement('tr');
+            row.dataset.id = product._id;
+
+            const imageCell = document.createElement('td');
+            const image = document.createElement('img');
+            image.className = 'admin-product-thumbnail';
+            image.src = product.image || '/images/default-product.png';
+            image.alt = product.name;
+            image.loading = 'lazy';
+            imageCell.appendChild(image);
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = product.name;
+
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = product.category;
+
+            const priceCell = document.createElement('td');
+            priceCell.textContent = `$${Number(product.price).toFixed(2)}`;
+
+            const stockCell = document.createElement('td');
+            stockCell.textContent = product.stock;
+
+            const saleCell = document.createElement('td');
+            const isFlashSaleActive = product.flashSale &&
+                product.flashSaleEndsAt &&
+                new Date(product.flashSaleEndsAt) > new Date();
+            saleCell.textContent = isFlashSaleActive
+                ? `Activa · ${product.flashSaleDiscount}%`
+                : 'Sin oferta';
+
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'admin-actions';
+            actionsCell.append(
+                createProductAction('Editar', 'btn-edit-product', product._id),
+                createProductAction('Eliminar', 'btn-delete-product', product._id),
+                createProductAction(
+                    isFlashSaleActive ? 'Detener oferta' : 'Poner en oferta',
+                    isFlashSaleActive ? 'btn-stop-flash-product' : 'btn-flash-product',
+                    product._id
+                )
+            );
+
+            row.append(imageCell, nameCell, categoryCell, priceCell, stockCell, saleCell, actionsCell);
+            productsList.appendChild(row);
+        });
+    }
+
+    function createProductAction(label, className, productId) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `btn btn-sm ${className}`;
+        button.dataset.id = productId;
+        button.textContent = label;
+        return button;
     }
 
     // ==========================================
@@ -170,7 +272,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = deleteProdBtn.getAttribute('data-id');
             if (!id) return;
 
-            const confirmed = confirm('¿Estás seguro de que deseas eliminar este producto?');
+            const confirmed = await window.showConfirm(
+                'Se eliminará este producto del catálogo. Esta acción no se puede deshacer.',
+                'Eliminar producto',
+                'Conservar producto'
+            );
             if (!confirmed) return;
 
             try {
@@ -179,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.success) {
                     if (window.showToast) window.showToast('Producto eliminado correctamente', 'success');
-                    window.location.reload();
+                    await fetchProducts();
                 } else {
                     if (window.showToast) window.showToast(data.error || 'Error al eliminar', 'error');
                 }
@@ -194,25 +300,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editProdBtn) {
             const id = editProdBtn.getAttribute('data-id');
             if (!id) return;
-
-            // Buscar el producto en la tabla (datos ya renderizados con EJS)
-            const row = editProdBtn.closest('tr');
-            if (!row) return;
-
-            const nameCell = row.children[1];
-            const categoryCell = row.children[2];
-            const priceCell = row.children[3];
-            const stockCell = row.children[4];
-
+            const product = (window.adminProductsCache || []).find(item => item._id === id);
+            if (!product) return;
             document.getElementById('product-id').value = id;
-            document.getElementById('prod-name').value = nameCell ? nameCell.textContent.trim() : '';
-            document.getElementById('prod-description').value = '';
-            document.getElementById('prod-price').value = priceCell ? parseFloat(priceCell.textContent.replace('$', '')) || 0 : 0;
-            document.getElementById('prod-stock').value = stockCell ? parseInt(stockCell.textContent) || 0 : 0;
-            document.getElementById('prod-image').value = '';
-
-            if (imagePreview) imagePreview.src = '/images/default-product.png';
-            document.getElementById('prod-category').value = categoryCell ? categoryCell.textContent.trim() : '';
+            document.getElementById('prod-name').value = product.name;
+            document.getElementById('prod-description').value = product.description || '';
+            document.getElementById('prod-price').value = product.price;
+            document.getElementById('prod-stock').value = product.stock;
+            document.getElementById('prod-image').value = product.image || '';
+            const categorySelect = document.getElementById('prod-category');
+            if (product.category && !Array.from(categorySelect.options).some(option => option.value === product.category)) {
+                const option = document.createElement('option');
+                option.value = product.category;
+                option.textContent = product.category;
+                categorySelect.appendChild(option);
+            }
+            categorySelect.value = product.category || '';
+            if (imageFileInput) imageFileInput.value = '';
+            if (imagePreview) imagePreview.src = product.image || '/images/default-product.png';
 
             modalTitle.textContent = 'Editar Producto';
             productModal.showModal();
@@ -224,21 +329,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (flashProdBtn) {
             const id = flashProdBtn.getAttribute('data-id');
             if (!id) return;
-
-            const row = flashProdBtn.closest('tr');
-            if (!row) return;
-
-            const nameCell = row.children[1];
-            const priceCell = row.children[3];
-
+            const product = (window.adminProductsCache || []).find(item => item._id === id);
+            if (!product) return;
             flashProductId.value = id;
-            flashProductName.textContent = nameCell ? nameCell.textContent.trim() : '-';
-            flashCurrentPrice.textContent = priceCell ? priceCell.textContent.trim() : '$0.00';
-            flashCurrentPrice.dataset.price = priceCell ? parseFloat(priceCell.textContent.replace('$', '')) || 0 : 0;
+            flashProductName.textContent = product.name;
+            flashCurrentPrice.textContent = `$${Number(product.price).toFixed(2)}`;
+            flashCurrentPrice.dataset.price = product.price;
             flashDiscount.value = 20;
             flashDuration.value = 24;
             updateFinalPrice();
             flashModal.showModal();
+            return;
+        }
+
+        const stopFlashProdBtn = e.target.closest('.btn-stop-flash-product');
+        if (stopFlashProdBtn) {
+            const id = stopFlashProdBtn.getAttribute('data-id');
+            if (!id) return;
+            const confirmed = await window.showConfirm(
+                'Se detendrá la oferta y el precio volverá a su valor original.',
+                'Detener oferta',
+                'Mantener oferta'
+            );
+            if (!confirmed) return;
+            try {
+                const response = await fetch(`/admin/products/${id}/flash-sale`, { method: 'DELETE' });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'No se pudo detener la oferta.');
+                }
+                if (window.showToast) window.showToast(data.message, 'success');
+                await fetchProducts();
+            } catch (error) {
+                console.error('Error al detener oferta:', error);
+                if (window.showToast) window.showToast(error.message || 'Error al detener la oferta.', 'error');
+            }
             return;
         }
 
@@ -248,7 +373,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = deleteMsgBtn.getAttribute('data-id');
             if (!id) return;
 
-            const confirmed = confirm('¿Estás seguro de que deseas eliminar este mensaje?');
+            const confirmed = await window.showConfirm(
+                'Este mensaje de contacto se eliminará permanentemente.',
+                'Eliminar mensaje',
+                'Conservar mensaje'
+            );
             if (!confirmed) return;
 
             try {
@@ -275,7 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = deleteSubBtn.getAttribute('data-id');
             if (!id) return;
 
-            const confirmed = confirm('¿Estás seguro de que deseas eliminar este suscriptor?');
+            const confirmed = await window.showConfirm(
+                'Se eliminará este correo de la lista del newsletter.',
+                'Eliminar suscriptor',
+                'Conservar suscriptor'
+            );
             if (!confirmed) return;
 
             try {
@@ -302,7 +435,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = deleteUserBtn.getAttribute('data-id');
             if (!id) return;
 
-            const confirmed = confirm('¿Estás seguro de que deseas eliminar este usuario?');
+            const confirmed = await window.showConfirm(
+                'Esta cuenta de usuario se eliminará permanentemente.',
+                'Eliminar usuario',
+                'Conservar usuario'
+            );
             if (!confirmed) return;
 
             try {

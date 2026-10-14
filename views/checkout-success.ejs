@@ -8,6 +8,9 @@
         <section class="order-details" aria-label="Resumen del pedido">
             <p>Tu pedido con ID <strong><%= order._id %></strong> ha sido procesado correctamente.</p>
             <p>Total pagado: <strong>$<%= Number(order.totalAmount).toFixed(2) %></strong></p>
+            <% if (Number(order.discountAmount || 0) > 0) { %>
+                <p>Cupón <strong><%= order.couponCode %></strong>: descuento de <strong>$<%= Number(order.discountAmount).toFixed(2) %></strong></p>
+            <% } %>
             <p>Hemos actualizado nuestro inventario y pronto prepararemos tu paquete.</p>
         </section>
 

@@ -6,6 +6,9 @@ const { requireAuth } = require('../middleware/authMiddleware');
 const { loginUser, registerUser } = require('../controllers/authController');
 const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
 const logger = require('../config/logger');
+const { getPaymentMode, getMembershipPrice } = require('../services/membershipBilling');
+const { getMembershipConfig } = require('../config/membershipConfig');
+const { getMockCheckoutPage } = require('../controllers/membershipController');
 
 router.get('/', async (req, res) => {
     try {
@@ -20,14 +23,16 @@ router.get('/', async (req, res) => {
         res.render('index', {
             title: 'TechStore - Inicio',
             products: featuredProducts,
-            flashSale: flashSaleProduct || null
+            flashSale: flashSaleProduct || null,
+            monthlyPrice: getMembershipPrice()
         });
     } catch (error) {
         logger.error(`Error al cargar la página principal: ${error.message}`, { stack: error.stack });
         res.render('index', {
             title: 'TechStore - Inicio',
             products: [],
-            flashSale: null
+            flashSale: null,
+            monthlyPrice: getMembershipPrice()
         });
     }
 });
@@ -39,6 +44,16 @@ router.get('/catalogo', (req, res) => {
 });
 
 router.get('/producto/:id', getProductDetailPage);
+
+router.get('/vip', (req, res) => {
+    res.render('vip', {
+        title: 'Membresía VIP | TechStore',
+        paymentMode: getPaymentMode(),
+        ...getMembershipConfig()
+    });
+});
+
+router.get('/vip/checkout', requireAuth, getMockCheckoutPage);
 
 router.get('/legal', (req, res) => {
     res.render('legal', {

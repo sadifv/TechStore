@@ -68,7 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch('/api/newsletter', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({
+            email,
+            consent: document.querySelector('#newsletter-consent')?.checked === true
+          })
         });
 
         const data = await response.json();
@@ -78,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
           newsletterStatus.className = 'form-status success';
           newsletterForm.reset();
         } else {
-          newsletterStatus.textContent = data.message || 'Error al procesar la suscripción.';
+          newsletterStatus.textContent = data.error || data.message || 'Error al procesar la suscripción.';
           newsletterStatus.className = 'form-status error';
         }
       } catch (error) {

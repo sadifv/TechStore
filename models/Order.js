@@ -41,6 +41,25 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    subtotalAmount: {
+        type: Number,
+        min: 0
+    },
+    discountAmount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    coupon: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Coupon'
+    },
+    couponCode: String,
+    couponReservationStatus: {
+        type: String,
+        enum: ['none', 'reserved', 'redeemed', 'released'],
+        default: 'none'
+    },
     paymentMethod: {
         type: String,
         enum: ['card', 'transfer', 'cash'],

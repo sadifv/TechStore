@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const newsletterSchema = new mongoose.Schema({
     email: {
@@ -11,6 +12,20 @@ const newsletterSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    isSubscribed: {
+        type: Boolean,
+        default: true
+    },
+    consentedAt: {
+        type: Date,
+        default: Date.now
+    },
+    unsubscribeToken: {
+        type: String,
+        default: () => crypto.randomBytes(24).toString('hex'),
+        unique: true,
+        sparse: true
     }
 });
 

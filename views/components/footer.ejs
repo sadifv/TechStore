@@ -64,8 +64,15 @@
             <p>Pago seguro con tarjeta de crédito o débito a través de Stripe.</p>
         </fieldset>
 
+        <fieldset class="form-group">
+            <legend>Cupón de descuento</legend>
+            <label for="checkout-coupon-code">Código (opcional)</label>
+            <input type="text" id="checkout-coupon-code" name="couponCode" class="form-control" maxlength="32" autocomplete="off" placeholder="Ingresa tu código" />
+            <small>El servidor validará el cupón y calculará el descuento antes del pago.</small>
+        </fieldset>
+
         <section class="checkout-summary-box" aria-label="Resumen del pago">
-            <span>Monto Total a Pagar:</span>
+            <span>Subtotal antes del cupón:</span>
             <strong id="checkout-modal-total">$0.00</strong>
         </section>
 
@@ -112,6 +119,7 @@
         <ul>
             <li><a href="/">Inicio</a></li>
             <li><a href="/catalogo">Catálogo</a></li>
+            <li><a href="/vip">Membresía VIP</a></li>
             <li><a href="/#contacto">Contacto</a></li>
             <li><a href="/#ai-assistant">IA Assistant</a></li>
         </ul>
