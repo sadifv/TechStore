@@ -27,5 +27,10 @@ Asegúrate de tener instalado en tu sistema:
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone [https://github.com/tu-usuario/techstore.git](https://github.com/tu-usuario/techstore.git)
-   cd techstore
+   git clone https://github.com/sadifv/TechStore.git
+   cd TechStore
+   ```
+
+2. **Configurar el entorno:** copia `.env.example` a `.env` y completa las credenciales necesarias. En producción, define `ALLOWED_ORIGINS` con los dominios exactos de la tienda, separados por comas y sin espacios; si queda vacío, el navegador bloqueará las solicitudes de esos orígenes.
+
+   Para enviar correos, configura `SMTP_USER` y `SMTP_PASS` con credenciales válidas de Gmail y una contraseña de aplicación. Si aparece `getaddrinfo ENOTFOUND smtp.gmail.com`, revisa la conexión DNS/red del servidor o utiliza un proveedor SMTP accesible desde ese entorno.

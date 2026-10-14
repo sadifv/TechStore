@@ -4,10 +4,14 @@ const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    logger.error(`${err.message} - URL: ${req.originalUrl} - Method: ${req.method}`, {
-        stack: err.stack,
-        code: err.code
-    });
+    const statusCode = err.statusCode || err.status || 500;
+    const logMessage = `${err.message} - URL: ${req.originalUrl} - Method: ${req.method}`;
+    const logMetadata = { stack: err.stack, code: err.code };
+    if (statusCode >= 500) {
+        logger.error(logMessage, logMetadata);
+    } else {
+        logger.warn(logMessage, logMetadata);
+    }
 
     // ✅ FIX: Manejar específicamente el error de "next is not a function"
     if (err.message && err.message.includes('next is not a function')) {
@@ -31,8 +35,6 @@ const errorHandler = (err, req, res, next) => {
     if (err.name === 'CastError') {
         return res.status(400).json({ success: false, error: 'Recurso no encontrado. ID inválido.' });
     }
-
-    const statusCode = err.statusCode || 500;
 
     // Si es navegación web y error 500 → renderizar vista
     if (req.accepts('html') && !req.xhr && !req.path.startsWith('/api') && statusCode === 500) {

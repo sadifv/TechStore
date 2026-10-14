@@ -45,6 +45,19 @@ cron.schedule('*/5 * * * *', async () => {
     }
 });
 
+// CRON JOB: Limpiar reservas expiradas cada 10 minutos
+cron.schedule('*/10 * * * *', async () => {
+    try {
+        const Reservation = require('./models/Reservation');
+        const cleaned = await Reservation.cleanupExpired();
+        if (cleaned > 0) {
+            logger.info(`Reservas expiradas limpiadas (cron): ${cleaned}`);
+        }
+    } catch (cronError) {
+        logger.error(`Error en cron job reservation cleanup: ${cronError.message}`, { stack: cronError.stack });
+    }
+});
+
 // 2. Confiar en el proxy (IMPORTANTE para producción / Nginx / Render)
 app.set('trust proxy', 1); 
 
@@ -83,7 +96,9 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error('No permitido por CORS'));
+    const corsError = new Error('No permitido por CORS');
+    corsError.statusCode = 403;
+    return callback(corsError);
   },
   credentials: true
 }));

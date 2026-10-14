@@ -1,353 +1,94 @@
-<main class="admin-dashboard container">
-    <header class="dashboard-header">
-        <h1>Panel de Administración</h1>
-        <p>Bienvenido al sistema de gestión de TechStore.</p>
-    </header>
+<section class="admin-container container" aria-labelledby="admin-dashboard-heading">
+  <header class="admin-header">
+    <h1 id="admin-dashboard-heading"><i class="ri-dashboard-line" aria-hidden="true"></i> Panel de Administración</h1>
+  </header>
 
-    <section class="dashboard-stats">
-        <article class="stat-card">
-            <h3>Productos Totales</h3>
-            <p class="stat-number"><%= stats.productsCount %></p>
-        </article>
-        <article class="stat-card">
-            <h3>Órdenes Totales</h3>
-            <p class="stat-number"><%= typeof stats.ordersCount !== 'undefined' ? stats.ordersCount : (typeof orders !== 'undefined' ? orders.length : 0) %></p>
-        </article>
-        <article class="stat-card">
-            <h3>Mensajes Recibidos</h3>
-            <p class="stat-number"><%= stats.messagesCount %></p>
-        </article>
-        <article class="stat-card">
-            <h3>Suscriptores Boletín</h3>
-            <p class="stat-number"><%= typeof stats.subscribersCount !== 'undefined' ? stats.subscribersCount : (typeof subscribers !== 'undefined' ? subscribers.length : 0) %></p>
-        </article>
-        <article class="stat-card">
-            <h3>Usuarios Registrados</h3>
-            <p class="stat-number"><%= typeof stats.usersCount !== 'undefined' ? stats.usersCount : (typeof users !== 'undefined' ? users.length : 0) %></p>
-        </article>
-    </section>
+  <section class="dashboard-stats" aria-label="Resumen de ventas">
+    <h2 class="sr-only">Resumen de ventas</h2>
+      <article class="stat-card">
+        <h3>Órdenes Totales</h3>
+        <p class="stat-number"><%= totalOrders %></p>
+      </article>
+      <article class="stat-card">
+        <h3>Ingresos Pagados</h3>
+        <p class="stat-number">$<%= Number(totalRevenue).toFixed(2) %></p>
+      </article>
+      <article class="stat-card">
+        <h3>Productos Vendidos</h3>
+        <p class="stat-number"><%= totalProductsSold %></p>
+      </article>
+      <article class="stat-card">
+        <h3>Carritos Activos</h3>
+        <p class="stat-number"><%= activeCartCount %></p>
+      </article>
+  </section>
 
-    <!-- Gestión de Pedidos y Órdenes -->
-    <section class="dashboard-orders">
-        <header class="section-header">
-            <h2>Gestión de Pedidos y Órdenes</h2>
-            <a href="/admin/orders" class="btn btn-sm btn-outline">Ver Todas las Órdenes &rarr;</a>
-        </header>
+  <section class="dashboard-orders" aria-label="Órdenes recientes">
+    <div class="section-heading">
+      <h2 class="section-title">Órdenes Recientes</h2>
+      <a href="/admin/orders" class="btn btn-sm btn-outline">Ver todas</a>
+    </div>
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Cliente</th>
+            <th scope="col">Total</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (orders && orders.length > 0) { %>
+            <% orders.forEach(function(order, index) { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <td>
+                  <% if (order.user) { %>
+                    <%= order.user.name %> <small><%= order.user.email %></small>
+                  <% } else if (order.guestInfo) { %>
+                    <%= order.guestInfo.name %> (Invitado)
+                  <% } else { %>
+                    Invitado
+                  <% } %>
+                </td>
+                <td>$<%= Number(order.totalAmount || 0).toFixed(2) %></td>
+                <td><span class="status-<%= order.status %>"><%= order.status %></span></td>
+                <td>
+                  <%= order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-EC') : 'N/A' %>
+                </td>
+                <td>
+                  <a href="/admin/orders/<%= order._id %>" class="btn btn-sm btn-primary">Ver</a>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="6" class="text-center">No hay órdenes registradas.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th scope="col">ID Orden</th>
-                    <th scope="col">Cliente</th>
-                    <th scope="col">Total</th>
-                    <th scope="col">Pago</th>
-                    <th scope="col">Estado Envío</th>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (typeof orders !== 'undefined' && orders && orders.length > 0) { %>
-                    <% orders.forEach(ord => { %>
-                        <tr data-id="<%= ord._id %>">
-                            <td><strong>#<%= ord._id.toString().substring(0, 8) %></strong></td>
-                            <td><%= ord.user ? ord.user.name : (ord.guestInfo ? ord.guestInfo.name + ' (Invitado)' : 'Usuario Desconocido') %> (<%= ord.user ? ord.user.email : (ord.guestInfo ? ord.guestInfo.email : 'N/A') %>)</td>
-                            <td>$<%= Number(ord.totalAmount || ord.total || 0).toFixed(2) %></td>
-                            <td>
-                                <span class="badge badge-<%= ord.paymentStatus === 'paid' ? 'primary' : 'secondary' %>">
-                                    <%= ord.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente' %>
-                                </span>
-                            </td>
-                            <td>
-                                <select class="select-order-status" data-order-id="<%= ord._id %>">
-                                    <option value="pending" <%= ord.status === 'pending' ? 'selected' : '' %>>Pendiente</option>
-                                    <option value="processing" <%= ord.status === 'processing' ? 'selected' : '' %>>En Proceso</option>
-                                    <option value="shipped" <%= ord.status === 'shipped' ? 'selected' : '' %>>Enviado</option>
-                                    <option value="delivered" <%= ord.status === 'delivered' ? 'selected' : '' %>>Entregado</option>
-                                    <option value="completed" <%= ord.status === 'completed' ? 'selected' : '' %>>Completado</option>
-                                    <option value="cancelled" <%= ord.status === 'cancelled' ? 'selected' : '' %>>Cancelado</option>
-                                </select>
-                            </td>
-                            <td><%= new Date(ord.createdAt).toLocaleDateString('es-EC') %></td>
-                            <td>
-                                <a href="/admin/orders/<%= ord._id %>" class="btn btn-sm btn-secondary" title="Ver Detalle">
-                                    <i class="ri-eye-line" aria-hidden="true"></i> Detalle
-                                </a>
-                            </td>
-                        </tr>
-                    <% }) %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="7">No hay órdenes registradas aún.</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Gestión del Catálogo (CRUD) -->
-    <section class="dashboard-products">
-        <header class="section-header">
-            <h2>Gestión de Catálogo</h2>
-            <button id="btn-open-create-modal" class="btn btn-primary">+ Nuevo Producto</button>
-        </header>
-
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th scope="col">Imagen</th>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Categoría</th>
-                    <th scope="col">Precio</th>
-                    <th scope="col">Stock</th>
-                    <th scope="col">Oferta</th>
-                    <th scope="col">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="admin-products-list">
-                <!-- Se poblará vía JS -->
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Lista de Usuarios Registrados -->
-    <section class="dashboard-users">
-        <header class="section-header">
-            <h2>Usuarios Registrados</h2>
-        </header>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Rol</th>
-                    <th scope="col">Fecha Registro</th>
-                    <th scope="col">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
-                    <% users.forEach(u => { %>
-                        <tr data-id="<%= u._id %>">
-                            <td><%= u.name %></td>
-                            <td><%= u.email %></td>
-                            <td>
-                                <span class="badge badge-<%= u.role === 'admin' ? 'primary' : 'secondary' %>">
-                                    <%= u.role %>
-                                </span>
-                            </td>
-                            <td><%= new Date(u.createdAt).toLocaleDateString('es-EC') %></td>
-                            <td>
-                                <% if (u.role !== 'admin') { %>
-                                    <button type="button" class="btn btn-sm btn-delete btn-delete-user" data-id="<%= u._id %>">
-                                        Eliminar
-                                    </button>
-                                <% } else { %>
-                                    <small style="color: #888;">Protegido</small>
-                                <% } %>
-                            </td>
-                        </tr>
-                    <% }) %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="5">No hay usuarios registrados.</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Mensajes de Contacto Recientes -->
-    <section class="dashboard-messages">
-        <h2>Últimos Mensajes de Contacto</h2>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Mensaje</th>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (messages && messages.length > 0) { %>
-                    <% messages.forEach(msg => { %>
-                        <tr data-id="<%= msg._id %>">
-                            <td><%= msg.name %></td>
-                            <td><%= msg.email %></td>
-                            <td><%= msg.message %></td>
-                            <td><%= new Date(msg.createdAt).toLocaleDateString('es-EC') %></td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-delete btn-delete-message" data-id="<%= msg._id %>">
-                                    Eliminar
-                                </button>
-                            </td>
-                        </tr>
-                    <% }) %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="5">No hay mensajes registrados.</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Suscriptores al Boletín -->
-    <section class="dashboard-newsletter">
-        <h2>Suscriptores al Boletín</h2>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th scope="col">Email</th>
-                    <th scope="col">Fecha de Suscripción</th>
-                    <th scope="col">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (typeof subscribers !== 'undefined' && subscribers && subscribers.length > 0) { %>
-                    <% subscribers.forEach(sub => { %>
-                        <tr data-id="<%= sub._id %>">
-                            <td><%= sub.email %></td>
-                            <td><%= new Date(sub.createdAt).toLocaleDateString('es-EC') %></td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-delete btn-delete-subscriber" data-id="<%= sub._id %>">
-                                    Eliminar
-                                </button>
-                            </td>
-                        </tr>
-                    <% }) %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="3">No hay suscriptores registrados al boletín.</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-    </section>
-</main>
-
-<!-- Modal Semántico (Producto) -->
-<dialog id="product-modal" class="modal-dialog">
-    <article class="modal-card">
-        <header class="modal-header">
-            <h3 id="modal-title">Agregar Producto</h3>
-            <button id="btn-close-modal" class="btn-close" aria-label="Cerrar">&times;</button>
-        </header>
-
-        <form id="product-form" enctype="multipart/form-data">
-            <input type="hidden" id="product-id" name="id" />
-
-            <p class="form-field">
-                <label for="prod-name">Nombre del Producto</label>
-                <input type="text" id="prod-name" name="name" required />
-            </p>
-
-            <p class="form-field">
-                <label for="prod-description">Descripción</label>
-                <textarea id="prod-description" name="description" rows="3" required></textarea>
-            </p>
-
-            <fieldset class="form-group-inline">
-                <p class="form-field">
-                    <label for="prod-price">Precio ($)</label>
-                    <input type="number" id="prod-price" name="price" step="0.01" min="0" required />
-                </p>
-
-                <p class="form-field">
-                    <label for="prod-stock">Stock</label>
-                    <input type="number" id="prod-stock" name="stock" min="0" required />
-                </p>
-            </fieldset>
-
-            <fieldset class="form-group-inline">
-                <p class="form-field">
-                    <label for="prod-category">Categoría</label>
-                    <select id="prod-category" name="category" required>
-                        <option value="">— Selecciona una categoría —</option>
-                        <option value="Laptops">Laptops</option>
-                        <option value="Smartphones">Smartphones</option>
-                        <option value="Audio">Audio</option>
-                        <option value="Accesorios">Accesorios</option>
-                        <option value="Periféricos">Periféricos</option>
-                        <option value="Monitores">Monitores</option>
-                        <option value="Almacenamiento">Almacenamiento</option>
-                        <option value="Componentes">Componentes</option>
-                        <option value="Gaming">Gaming</option>
-                        <option value="Redes">Redes</option>
-                    </select>
-                </p>
-
-                <p class="form-field">
-                    <label for="prod-image-file">Subir Imagen Local (Opcional)</label>
-                    <input type="file" id="prod-image-file" name="imageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
-                </p>
-            </fieldset>
-
-            <p class="form-field">
-                <label for="prod-image">URL de Imagen (Si no subes archivo)</label>
-                <input type="text" id="prod-image" name="image" placeholder="https://..." />
-            </p>
-
-            <!-- Previsualización de la imagen -->
-            <figure class="form-field image-preview-container" style="text-align: center; margin: 1rem 0;">
-                <figcaption style="font-size: 0.85rem; margin-bottom: 0.5rem; color: #64748b;">Vista previa de imagen:</figcaption>
-                <img id="prod-image-preview" src="/images/default-product.png" alt="Vista previa del producto" style="max-height: 120px; border-radius: 6px; object-fit: contain; border: 1px solid #cbd5e1; padding: 4px;" />
-            </figure>
-
-            <footer class="modal-actions">
-                <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar Producto</button>
-            </footer>
-        </form>
-    </article>
-</dialog>
-
-<!-- Modal Semántico (Flash Sale) -->
-<dialog id="flash-sale-modal" class="modal-dialog">
-    <article class="modal-card">
-        <header class="modal-header">
-            <h3>🔥 Poner en Oferta Relámpago</h3>
-            <button id="btn-close-flash-modal" class="btn-close" aria-label="Cerrar">&times;</button>
-        </header>
-
-        <form id="flash-sale-form">
-            <input type="hidden" id="flash-product-id" />
-
-            <p class="form-field">
-                <label>Producto</label>
-                <output id="flash-product-name" class="flash-product-name">-</output>
-            </p>
-
-            <p class="form-field">
-                <label>Precio actual</label>
-                <output id="flash-current-price" class="flash-current-price">$0.00</output>
-            </p>
-
-            <fieldset class="form-group-inline">
-                <p class="form-field">
-                    <label for="flash-discount">Descuento (%)</label>
-                    <input type="number" id="flash-discount" name="discount" min="1" max="90" value="20" required />
-                </p>
-
-                <p class="form-field">
-                    <label for="flash-duration">Duración (horas)</label>
-                    <input type="number" id="flash-duration" name="durationHours" min="1" max="168" value="24" required />
-                </p>
-            </fieldset>
-
-            <p class="form-field">
-                <label>Precio final</label>
-                <output id="flash-final-price" class="flash-final-price" aria-live="polite">$0.00</output>
-            </p>
-
-            <footer class="modal-actions">
-                <button type="button" id="btn-cancel-flash-modal" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" class="btn btn-primary">🔥 Activar Oferta</button>
-            </footer>
-        </form>
-    </article>
-</dialog>
-
-<script src="/js/admin-crud.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>
+  <section class="dashboard-products" aria-label="Productos más vendidos">
+    <h2 class="section-title">Productos Más Vendidos</h2>
+    <div class="products-grid">
+      <% if (topProducts && topProducts.length > 0) { %>
+        <% topProducts.forEach(function(product) { %>
+          <article class="product-card">
+            <a href="/producto/<%= product._id %>">
+              <img src="<%= product.image || '/images/default-product.png' %>" alt="<%= product.name %>">
+              <h4><%= product.name %></h4>
+            </a>
+            <p class="product-price">$<%= Number(product.price || 0).toFixed(2) %></p>
+            <small><%= product.unitsSold %> vendidos</small>
+          </article>
+        <% }); %>
+      <% } else { %>
+        <p class="empty-msg">Todavía no hay productos vendidos.</p>
+      <% } %>
+    </div>
+  </section>
+</section>

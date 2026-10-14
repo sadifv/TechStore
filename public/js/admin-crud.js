@@ -1,14 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const productsList = document.getElementById('admin-products-list');
+    // ==========================================
+    // ELEMENTOS DEL DOM
+    // ==========================================
     const productModal = document.getElementById('product-modal');
     const productForm = document.getElementById('product-form');
     const modalTitle = document.getElementById('modal-title');
-
     const btnOpenCreate = document.getElementById('btn-open-create-modal');
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnCancelModal = document.getElementById('btn-cancel-modal');
 
-    // Elementos de la imagen y previsualización
+    // Elementos de imagen
     const imageFileInput = document.getElementById('prod-image-file');
     const imageUrlInput = document.getElementById('prod-image');
     const imagePreview = document.getElementById('prod-image-preview');
@@ -24,9 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const flashDiscount = document.getElementById('flash-discount');
     const flashDuration = document.getElementById('flash-duration');
     const flashFinalPrice = document.getElementById('flash-final-price');
-
-    // Cargar catálogo al iniciar
-    fetchProducts();
 
     // ==========================================
     // PREVISUALIZACIÓN DE IMÁGENES
@@ -80,13 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const priceVal = parseFloat(document.getElementById('prod-price').value);
 
             if (isNaN(priceVal) || priceVal < 0) {
-                window.showToast('El precio debe ser un número válido mayor o igual a 0.', 'error');
+                if (window.showToast) window.showToast('El precio debe ser un número válido mayor o igual a 0.', 'error');
                 return;
             }
 
-            // Construcción de FormData para soporte de archivos binarios
             const formData = new FormData(productForm);
-
             const isEditing = Boolean(id);
             const url = isEditing ? `/admin/products/${id}` : '/admin/products';
             const method = isEditing ? 'PUT' : 'POST';
@@ -94,24 +90,23 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const res = await fetch(url, {
                     method,
-                    body: formData // Enviar como multipart/form-data
+                    body: formData
                 });
 
                 const data = await res.json();
 
                 if (data.success) {
-                    window.showToast(
-                        isEditing ? 'Producto actualizado correctamente' : 'Producto creado con éxito',
-                        'success'
-                    );
+                    if (window.showToast) {
+                        window.showToast(isEditing ? 'Producto actualizado correctamente' : 'Producto creado con éxito', 'success');
+                    }
                     closeModal();
-                    fetchProducts();
+                    window.location.reload();
                 } else {
-                    window.showToast(data.error || 'Ocurrió un error al procesar la solicitud', 'error');
+                    if (window.showToast) window.showToast(data.error || 'Ocurrió un error al procesar la solicitud', 'error');
                 }
             } catch (err) {
                 console.error('Error al guardar producto:', err);
-                window.showToast('Error de conexión con el servidor.', 'error');
+                if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
     }
@@ -151,254 +146,183 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (data.success) {
-                    window.showToast(data.message, 'success');
+                    if (window.showToast) window.showToast(data.message, 'success');
                     closeFlashModal();
-                    fetchProducts();
+                    window.location.reload();
                 } else {
-                    window.showToast(data.error || 'Error al activar la oferta', 'error');
+                    if (window.showToast) window.showToast(data.error || 'Error al activar la oferta', 'error');
                 }
             } catch (err) {
                 console.error('Error al activar flash sale:', err);
-                window.showToast('Error de conexión con el servidor.', 'error');
+                if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
             }
         });
     }
 
     // ==========================================
-    // OBTENER Y RENDERIZAR PRODUCTOS
+    // ACCIONES DE EDICIÓN Y ELIMINACIÓN DESDE LA TABLA
     // ==========================================
 
-    async function fetchProducts() {
-        try {
-            const res = await fetch('/api/products?limit=50');
-            const data = await res.json();
+    document.addEventListener('click', async (e) => {
+        // Botón Eliminar Producto
+        const deleteProdBtn = e.target.closest('.btn-delete-product');
+        if (deleteProdBtn) {
+            const id = deleteProdBtn.getAttribute('data-id');
+            if (!id) return;
 
-            if (data.success) {
-                renderProducts(data.products);
+            const confirmed = confirm('¿Estás seguro de que deseas eliminar este producto?');
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(`/admin/products/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    if (window.showToast) window.showToast('Producto eliminado correctamente', 'success');
+                    window.location.reload();
+                } else {
+                    if (window.showToast) window.showToast(data.error || 'Error al eliminar', 'error');
+                }
+            } catch (err) {
+                console.error('Error al eliminar producto:', err);
             }
-        } catch (err) {
-            console.error('Error al cargar productos:', err);
-        }
-    }
-
-    function renderProducts(products) {
-        if (!productsList) return;
-
-        productsList.replaceChildren();
-
-        if (products.length === 0) {
-            const tr = document.createElement('tr');
-            const td = document.createElement('td');
-            td.colSpan = 7;
-            td.textContent = 'No hay productos registrados.';
-            tr.appendChild(td);
-            productsList.appendChild(tr);
             return;
         }
 
-        window.adminProductsCache = products;
+        // Botón Editar Producto
+        const editProdBtn = e.target.closest('.btn-edit-product');
+        if (editProdBtn) {
+            const id = editProdBtn.getAttribute('data-id');
+            if (!id) return;
 
-        products.forEach(prod => {
-            const tr = document.createElement('tr');
-            tr.dataset.id = prod._id;
+            // Buscar el producto en la tabla (datos ya renderizados con EJS)
+            const row = editProdBtn.closest('tr');
+            if (!row) return;
 
-            // 1. Imagen
-            const tdImage = document.createElement('td');
-            const img = document.createElement('img');
-            img.src = prod.image || '/images/default-product.png';
-            img.alt = prod.name;
-            img.width = 50;
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '4px';
-            tdImage.appendChild(img);
+            const nameCell = row.children[1];
+            const categoryCell = row.children[2];
+            const priceCell = row.children[3];
+            const stockCell = row.children[4];
 
-            // 2. Nombre
-            const tdName = document.createElement('td');
-            const strong = document.createElement('strong');
-            strong.textContent = prod.name;
-            tdName.appendChild(strong);
+            document.getElementById('product-id').value = id;
+            document.getElementById('prod-name').value = nameCell ? nameCell.textContent.trim() : '';
+            document.getElementById('prod-description').value = '';
+            document.getElementById('prod-price').value = priceCell ? parseFloat(priceCell.textContent.replace('$', '')) || 0 : 0;
+            document.getElementById('prod-stock').value = stockCell ? parseInt(stockCell.textContent) || 0 : 0;
+            document.getElementById('prod-image').value = '';
 
-            // 3. Categoría
-            const tdCategory = document.createElement('td');
-            const spanCategory = document.createElement('span');
-            spanCategory.textContent = prod.category;
-            tdCategory.appendChild(spanCategory);
+            if (imagePreview) imagePreview.src = '/images/default-product.png';
+            document.getElementById('prod-category').value = categoryCell ? categoryCell.textContent.trim() : '';
 
-            // 4. Precio
-            const tdPrice = document.createElement('td');
-            if (prod.flashSale && prod.originalPrice) {
-                const priceContainer = document.createElement('span');
-                priceContainer.classList.add('price-container');
+            modalTitle.textContent = 'Editar Producto';
+            productModal.showModal();
+            return;
+        }
 
-                const original = document.createElement('del');
-                original.classList.add('price-original');
-                original.textContent = `$${Number(prod.originalPrice).toFixed(2)}`;
+        // Botón Flash Sale
+        const flashProdBtn = e.target.closest('.btn-flash-product');
+        if (flashProdBtn) {
+            const id = flashProdBtn.getAttribute('data-id');
+            if (!id) return;
 
-                const final = document.createElement('strong');
-                final.classList.add('price-flash');
-                final.textContent = ` $${Number(prod.price).toFixed(2)}`;
+            const row = flashProdBtn.closest('tr');
+            if (!row) return;
 
-                priceContainer.append(original, final);
-                tdPrice.appendChild(priceContainer);
-            } else {
-                tdPrice.textContent = `$${Number(prod.price).toFixed(2)}`;
-            }
+            const nameCell = row.children[1];
+            const priceCell = row.children[3];
 
-            // 5. Stock
-            const tdStock = document.createElement('td');
-            tdStock.textContent = prod.stock;
+            flashProductId.value = id;
+            flashProductName.textContent = nameCell ? nameCell.textContent.trim() : '-';
+            flashCurrentPrice.textContent = priceCell ? priceCell.textContent.trim() : '$0.00';
+            flashCurrentPrice.dataset.price = priceCell ? parseFloat(priceCell.textContent.replace('$', '')) || 0 : 0;
+            flashDiscount.value = 20;
+            flashDuration.value = 24;
+            updateFinalPrice();
+            flashModal.showModal();
+            return;
+        }
 
-            // 6. Estado de Oferta
-            const tdFlashStatus = document.createElement('td');
-            if (prod.flashSale && prod.flashSaleEndsAt) {
-                const endsAt = new Date(prod.flashSaleEndsAt);
-                if (endsAt > new Date()) {
-                    const badge = document.createElement('span');
-                    badge.classList.add('badge-flash-active');
-                    badge.textContent = `🔥 ${prod.flashSaleDiscount}% activo`;
-                    badge.title = `Termina: ${endsAt.toLocaleString()}`;
-                    tdFlashStatus.appendChild(badge);
+        // Botón Eliminar Mensaje
+        const deleteMsgBtn = e.target.closest('.btn-delete-message');
+        if (deleteMsgBtn) {
+            const id = deleteMsgBtn.getAttribute('data-id');
+            if (!id) return;
+
+            const confirmed = confirm('¿Estás seguro de que deseas eliminar este mensaje?');
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(`/admin/messages/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    const tr = deleteMsgBtn.closest('tr');
+                    if (tr) tr.remove();
+                    if (window.showToast) window.showToast('Mensaje eliminado correctamente', 'success');
                 } else {
-                    const badge = document.createElement('span');
-                    badge.classList.add('badge-flash-expired');
-                    badge.textContent = 'Expirada';
-                    tdFlashStatus.appendChild(badge);
+                    if (window.showToast) window.showToast(data.error || 'Error al eliminar el mensaje', 'error');
                 }
-            } else {
-                const span = document.createElement('span');
-                span.classList.add('badge-flash-inactive');
-                span.textContent = '—';
-                tdFlashStatus.appendChild(span);
+            } catch (err) {
+                console.error('Error al eliminar mensaje:', err);
+                if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
             }
-
-            // 7. Acciones
-            const tdActions = document.createElement('td');
-
-            const btnEdit = document.createElement('button');
-            btnEdit.type = 'button';
-            btnEdit.className = 'btn btn-sm btn-edit';
-            btnEdit.textContent = 'Editar';
-            btnEdit.addEventListener('click', () => editProduct(prod._id));
-
-            const btnDelete = document.createElement('button');
-            btnDelete.type = 'button';
-            btnDelete.className = 'btn btn-sm btn-delete';
-            btnDelete.textContent = 'Eliminar';
-            btnDelete.addEventListener('click', () => deleteProduct(prod._id));
-
-            const btnFlash = document.createElement('button');
-            btnFlash.type = 'button';
-            btnFlash.className = 'btn btn-sm btn-flash';
-            if (prod.flashSale && prod.flashSaleEndsAt && new Date(prod.flashSaleEndsAt) > new Date()) {
-                btnFlash.textContent = '⏹️ Detener';
-                btnFlash.title = 'Detener la oferta y restaurar precio';
-                btnFlash.addEventListener('click', () => deactivateFlashSale(prod._id));
-            } else {
-                btnFlash.textContent = '🔥 Oferta';
-                btnFlash.title = 'Poner en oferta relámpago';
-                btnFlash.addEventListener('click', () => openFlashModal(prod));
-            }
-
-            tdActions.append(btnEdit, ' ', btnDelete, ' ', btnFlash);
-
-            tr.append(tdImage, tdName, tdCategory, tdPrice, tdStock, tdFlashStatus, tdActions);
-            productsList.appendChild(tr);
-        });
-    }
-
-    // ==========================================
-    // EDITAR PRODUCTO Y CARGAR VISTA PREVIA
-    // ==========================================
-
-    function editProduct(id) {
-        const prod = (window.adminProductsCache || []).find(p => p._id === id);
-        if (!prod) return;
-
-        document.getElementById('product-id').value = prod._id;
-        document.getElementById('prod-name').value = prod.name;
-        document.getElementById('prod-description').value = prod.description || '';
-        document.getElementById('prod-price').value = prod.price;
-        document.getElementById('prod-stock').value = prod.stock;
-        document.getElementById('prod-image').value = prod.image || '';
-
-        if (imageFileInput) imageFileInput.value = '';
-        if (imagePreview) imagePreview.src = prod.image || '/images/default-product.png';
-
-        const categorySelect = document.getElementById('prod-category');
-        const categoryExists = Array.from(categorySelect.options)
-            .some(opt => opt.value === prod.category);
-
-        if (!categoryExists && prod.category) {
-            const newOption = document.createElement('option');
-            newOption.value = prod.category;
-            newOption.textContent = prod.category;
-            categorySelect.appendChild(newOption);
+            return;
         }
-        categorySelect.value = prod.category || '';
 
-        modalTitle.textContent = 'Editar Producto';
-        productModal.showModal();
-    }
+        // Botón Eliminar Suscriptor
+        const deleteSubBtn = e.target.closest('.btn-delete-subscriber');
+        if (deleteSubBtn) {
+            const id = deleteSubBtn.getAttribute('data-id');
+            if (!id) return;
 
-    async function deleteProduct(id) {
-        const confirmed = await window.showConfirm(
-            '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.',
-            'Eliminar'
-        );
-        if (!confirmed) return;
+            const confirmed = confirm('¿Estás seguro de que deseas eliminar este suscriptor?');
+            if (!confirmed) return;
 
-        try {
-            const res = await fetch(`/admin/products/${id}`, { method: 'DELETE' });
-            const data = await res.json();
+            try {
+                const res = await fetch(`/admin/subscribers/${id}`, { method: 'DELETE' });
+                const data = await res.json();
 
-            if (data.success) {
-                window.showToast('Producto eliminado correctamente', 'success');
-                fetchProducts();
-            } else {
-                window.showToast(data.error || 'Error al eliminar', 'error');
+                if (data.success) {
+                    const tr = deleteSubBtn.closest('tr');
+                    if (tr) tr.remove();
+                    if (window.showToast) window.showToast('Suscriptor eliminado correctamente', 'success');
+                } else {
+                    if (window.showToast) window.showToast(data.error || 'Error al eliminar el suscriptor', 'error');
+                }
+            } catch (err) {
+                console.error('Error al eliminar suscriptor:', err);
+                if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
             }
-        } catch (err) {
-            console.error('Error al eliminar producto:', err);
-            window.showToast('Error de conexión con el servidor.', 'error');
+            return;
         }
-    }
 
-    function openFlashModal(prod) {
-        flashProductId.value = prod._id;
-        flashProductName.textContent = prod.name;
-        flashCurrentPrice.textContent = `$${Number(prod.price).toFixed(2)}`;
-        flashCurrentPrice.dataset.price = prod.price;
-        flashDiscount.value = 20;
-        flashDuration.value = 24;
-        updateFinalPrice();
-        flashModal.showModal();
-    }
+        // Botón Eliminar Usuario
+        const deleteUserBtn = e.target.closest('.btn-delete-user');
+        if (deleteUserBtn) {
+            const id = deleteUserBtn.getAttribute('data-id');
+            if (!id) return;
 
-    async function deactivateFlashSale(id) {
-        const confirmed = await window.showConfirm(
-            '¿Detener la oferta y restaurar el precio original?',
-            'Detener'
-        );
-        if (!confirmed) return;
+            const confirmed = confirm('¿Estás seguro de que deseas eliminar este usuario?');
+            if (!confirmed) return;
 
-        try {
-            const res = await fetch(`/admin/products/${id}/flash-sale`, {
-                method: 'DELETE'
-            });
+            try {
+                const res = await fetch(`/admin/users/${id}`, { method: 'DELETE' });
+                const data = await res.json();
 
-            const data = await res.json();
-
-            if (data.success) {
-                window.showToast(data.message, 'success');
-                fetchProducts();
-            } else {
-                window.showToast(data.error || 'Error al detener la oferta', 'error');
+                if (data.success) {
+                    const tr = deleteUserBtn.closest('tr');
+                    if (tr) tr.remove();
+                    if (window.showToast) window.showToast('Usuario eliminado correctamente', 'success');
+                } else {
+                    if (window.showToast) window.showToast(data.error || 'Error al eliminar el usuario', 'error');
+                }
+            } catch (err) {
+                console.error('Error al eliminar usuario:', err);
+                if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
             }
-        } catch (err) {
-            console.error('Error al detener flash sale:', err);
-            window.showToast('Error de conexión con el servidor.', 'error');
+            return;
         }
-    }
+    });
 
     // ==========================================
     // ACTUALIZACIÓN DEL ESTADO DE ÓRDENES (ADMIN)
@@ -411,6 +335,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const orderId = statusSelect.getAttribute('data-order-id');
         const newStatus = statusSelect.value;
 
+        if (!orderId || !newStatus) return;
+
+        statusSelect.disabled = true;
+
         try {
             const res = await fetch(`/admin/orders/${orderId}/status`, {
                 method: 'PUT',
@@ -418,109 +346,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ status: newStatus })
             });
 
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                if (window.showToast) window.showToast(errorData.error || `Error HTTP ${res.status}`, 'error');
+                return;
+            }
+
             const data = await res.json();
 
-            if (data.success) {
+            if (data.success && window.showToast) {
                 window.showToast('Estado de la orden actualizado', 'success');
-            } else {
-                window.showToast(data.error || 'Error al actualizar estado', 'error');
             }
         } catch (err) {
             console.error('Error al actualizar estado de orden:', err);
-            window.showToast('Error de conexión con el servidor.', 'error');
-        }
-    });
-
-    // ==========================================
-    // ELIMINAR MENSAJES, SUSCRIPTORES, USUARIOS
-    // ==========================================
-
-    document.addEventListener('click', async (e) => {
-        const deleteMsgBtn = e.target.closest('.btn-delete-message');
-        if (deleteMsgBtn) {
-            const id = deleteMsgBtn.getAttribute('data-id');
-            if (!id) return;
-
-            const confirmed = await window.showConfirm(
-                '¿Estás seguro de que deseas eliminar este mensaje?',
-                'Eliminar'
-            );
-            if (!confirmed) return;
-
-            try {
-                const res = await fetch(`/admin/messages/${id}`, { method: 'DELETE' });
-                const data = await res.json();
-
-                if (data.success) {
-                    const tr = deleteMsgBtn.closest('tr');
-                    if (tr) tr.remove();
-                    window.showToast('Mensaje eliminado correctamente', 'success');
-                } else {
-                    window.showToast(data.error || 'Error al eliminar el mensaje', 'error');
-                }
-            } catch (err) {
-                console.error('Error al eliminar mensaje:', err);
-                window.showToast('Error de conexión con el servidor.', 'error');
-            }
-            return;
-        }
-
-        const deleteSubBtn = e.target.closest('.btn-delete-subscriber');
-        if (deleteSubBtn) {
-            const id = deleteSubBtn.getAttribute('data-id');
-            if (!id) return;
-
-            const confirmed = await window.showConfirm(
-                '¿Estás seguro de que deseas eliminar este suscriptor?',
-                'Eliminar'
-            );
-            if (!confirmed) return;
-
-            try {
-                const res = await fetch(`/admin/subscribers/${id}`, { method: 'DELETE' });
-                const data = await res.json();
-
-                if (data.success) {
-                    const tr = deleteSubBtn.closest('tr');
-                    if (tr) tr.remove();
-                    window.showToast('Suscriptor eliminado correctamente', 'success');
-                } else {
-                    window.showToast(data.error || 'Error al eliminar el suscriptor', 'error');
-                }
-            } catch (err) {
-                console.error('Error al eliminar suscriptor:', err);
-                window.showToast('Error de conexión con el servidor.', 'error');
-            }
-            return;
-        }
-
-        const deleteUserBtn = e.target.closest('.btn-delete-user');
-        if (deleteUserBtn) {
-            const id = deleteUserBtn.getAttribute('data-id');
-            if (!id) return;
-
-            const confirmed = await window.showConfirm(
-                '¿Estás seguro de que deseas eliminar este usuario?',
-                'Eliminar'
-            );
-            if (!confirmed) return;
-
-            try {
-                const res = await fetch(`/admin/users/${id}`, { method: 'DELETE' });
-                const data = await res.json();
-
-                if (data.success) {
-                    const tr = deleteUserBtn.closest('tr');
-                    if (tr) tr.remove();
-                    window.showToast('Usuario eliminado correctamente', 'success');
-                } else {
-                    window.showToast(data.error || 'Error al eliminar el usuario', 'error');
-                }
-            } catch (err) {
-                console.error('Error al eliminar usuario:', err);
-                window.showToast('Error de conexión con el servidor.', 'error');
-            }
-            return;
+            if (window.showToast) window.showToast('Error de conexión con el servidor.', 'error');
+        } finally {
+            statusSelect.disabled = false;
         }
     });
 });

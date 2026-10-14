@@ -1,11 +1,11 @@
-<main class="admin-container container">
+<section class="admin-container container admin-users-page" aria-labelledby="admin-users-heading">
 
   <!-- Header -->
   <header class="admin-header">
-    <h2>
+    <h1 id="admin-users-heading">
       <i class="ri-user-settings-line" aria-hidden="true"></i>
       Gestión de Usuarios
-    </h2>
+    </h1>
     <a href="/admin/dashboard" class="btn btn-outline btn-sm">
       <i class="ri-arrow-left-line" aria-hidden="true"></i>
       Volver al Dashboard
@@ -51,7 +51,7 @@
   </form>
 
   <!-- Tabla de usuarios -->
-  <section class="admin-table-wrapper">
+  <section class="admin-table-wrapper" aria-label="Resultados de usuarios">
     <table class="admin-table">
       <thead>
         <tr>
@@ -82,13 +82,13 @@
                 </span>
               </td>
               <td>
-                <time datetime="<%= u.createdAt %>">
+                <time datetime="<%= new Date(u.createdAt).toISOString() %>">
                   <%= new Date(u.createdAt).toLocaleDateString('es-EC') %>
                 </time>
               </td>
               <td>
                 <% if (u.lastLoginAt) { %>
-                  <time datetime="<%= u.lastLoginAt %>">
+                  <time datetime="<%= new Date(u.lastLoginAt).toISOString() %>">
                     <%= new Date(u.lastLoginAt).toLocaleDateString('es-EC') %>
                   </time>
                 <% } else { %>
@@ -165,6 +165,6 @@
     </nav>
   <% } %>
 
-</main>
+</section>
 
-<script src="/js/admin-crud.js?v=<%= cacheBust %>" defer></script>
+<script src="/js/admin-crud.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>" defer></script>

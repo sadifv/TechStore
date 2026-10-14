@@ -1,7 +1,7 @@
-<main class="auth-container container">
+<section class="auth-container container" aria-labelledby="register-heading">
     <article class="auth-card">
         <header class="auth-header">
-            <h1>Crear Cuenta</h1>
+            <h1 id="register-heading">Crear Cuenta</h1>
             <p>Regístrate para comenzar a comprar en TechStore</p>
         </header>
 
@@ -30,6 +30,6 @@
             <output id="register-status" class="form-status" for="register-form" aria-live="polite"></output>
         </form>
     </article>
-</main>
+</section>
 
 <script src="/js/register.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>

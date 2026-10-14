@@ -1,6 +1,6 @@
-<main class="admin-container container">
+<section class="admin-container container admin-orders-page" aria-labelledby="admin-orders-heading">
   <header class="admin-header">
-    <h2><i class="ri-shopping-bag-line" aria-hidden="true"></i> Gestión de Órdenes</h2>
+    <h1 id="admin-orders-heading"><i class="ri-shopping-bag-line" aria-hidden="true"></i> Gestión de Órdenes</h1>
     <nav class="admin-filter-nav" aria-label="Filtro de estados">
       <a href="/admin/orders" class="btn btn-sm <%= !currentStatus ? 'btn-primary' : 'btn-outline' %>">Todas</a>
       <a href="/admin/orders?status=pending" class="btn btn-sm <%= currentStatus === 'pending' ? 'btn-primary' : 'btn-outline' %>">Pendientes</a>
@@ -11,17 +11,17 @@
     </nav>
   </header>
 
-  <section class="admin-table-wrapper">
+  <section class="admin-table-wrapper" aria-label="Listado de órdenes">
     <table class="admin-table">
       <thead>
         <tr>
-          <th>ID Orden</th>
-          <th>Cliente</th>
-          <th>Fecha</th>
-          <th>Total</th>
-          <th>Estado Pago</th>
-          <th>Estado Envío</th>
-          <th>Acciones</th>
+          <th scope="col">ID Orden</th>
+          <th scope="col">Cliente</th>
+          <th scope="col">Fecha</th>
+          <th scope="col">Total</th>
+          <th scope="col">Estado Pago</th>
+          <th scope="col">Estado Envío</th>
+          <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -40,7 +40,7 @@
                   <em>Cliente Desconocido</em>
                 <% } %>
               </td>
-              <td><time datetime="<%= order.createdAt %>"><%= new Date(order.createdAt).toLocaleDateString('es-EC') %></time></td>
+              <td><time datetime="<%= new Date(order.createdAt).toISOString() %>"><%= new Date(order.createdAt).toLocaleDateString('es-EC') %></time></td>
               <td><strong>$<%= order.totalAmount.toFixed(2) %></strong></td>
               <td>
                 <span class="badge badge-<%= order.paymentStatus === 'paid' ? 'success' : 'warning' %>">
@@ -48,7 +48,8 @@
                 </span>
               </td>
               <td>
-                <select class="form-control select-order-status" data-order-id="<%= order._id %>">
+                <label class="sr-only" for="order-status-<%= order._id %>">Estado de la orden #<%= order._id %></label>
+                <select id="order-status-<%= order._id %>" class="form-control select-order-status" data-order-id="<%= order._id %>">
                   <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pendiente</option>
                   <option value="processing" <%= order.status === 'processing' ? 'selected' : '' %>>En Proceso</option>
                   <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Enviado</option>
@@ -66,7 +67,7 @@
           <% }); %>
         <% } else { %>
           <tr>
-            <td colspan="7" style="text-align: center;">No se encontraron órdenes registradas.</td>
+            <td colspan="7" class="text-center">No se encontraron órdenes registradas.</td>
           </tr>
         <% } %>
       </tbody>
@@ -84,6 +85,6 @@
       <% } %>
     </nav>
   <% } %>
-</main>
+</section>
 
 <script src="/js/admin-crud.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>

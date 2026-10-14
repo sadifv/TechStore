@@ -60,36 +60,42 @@ async function loadProducts(page = 1) {
             const article = document.createElement('article');
             article.classList.add('product-card');
 
+            const productUrl = `/producto/${encodeURIComponent(product._id)}`;
+            const media = document.createElement('figure');
+            media.classList.add('product-card-media');
+
             const img = document.createElement('img');
             img.src = product.image || '/images/default-product.png';
             img.alt = product.name;
             img.loading = 'lazy';
+            media.appendChild(img);
 
             const header = document.createElement('header');
             const title = document.createElement('h3');
             title.textContent = product.name;
             header.appendChild(title);
 
+            const titleLink = document.createElement('a');
+            titleLink.href = productUrl;
+            titleLink.classList.add('product-card-link');
+            titleLink.setAttribute('aria-label', `Ver detalles de ${product.name}`);
+            titleLink.appendChild(media);
+            titleLink.appendChild(header);
+
             const pPrice = document.createElement('p');
-            pPrice.classList.add('price');
+            pPrice.classList.add('product-price');
             pPrice.textContent = `$${Number(product.price).toFixed(2)}`;
+            titleLink.appendChild(pPrice);
 
             const footer = document.createElement('footer');
             const addBtn = document.createElement('button');
-            addBtn.classList.add('btn', 'btn-primary');
+            addBtn.type = 'button';
+            addBtn.classList.add('btn', 'add-to-cart-btn');
             addBtn.textContent = 'Agregar al Carrito';
             addBtn.dataset.id = product._id;
-            
-            addBtn.addEventListener('click', () => {
-                if (typeof window.addToCart === 'function') {
-                    window.addToCart(product._id);
-                }
-            });
             footer.appendChild(addBtn);
 
-            article.appendChild(img);
-            article.appendChild(header);
-            article.appendChild(pPrice);
+            article.appendChild(titleLink);
             article.appendChild(footer);
 
             li.appendChild(article);

@@ -79,6 +79,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ==========================================
+    // VALIDACIÓN EN TIEMPO REAL DEL INPUT #quantity
+    // ==========================================
+    const quantityInput = document.getElementById('quantity');
+    if (quantityInput) {
+        quantityInput.addEventListener('input', () => {
+            const max = parseInt(quantityInput.max, 10) || 999;
+            let val = parseInt(quantityInput.value, 10);
+            if (isNaN(val) || val < 1) {
+                quantityInput.value = 1;
+                return;
+            }
+            if (val > max) {
+                quantityInput.value = max;
+                if (window.showToast) window.showToast(`Máximo ${max} disponibles`, 'warning');
+            }
+        });
+    }
+
     // Cargar carrito desde MongoDB o LocalStorage
     async function fetchCart() {
         if (typeof window.IS_AUTHENTICATED !== 'undefined' && !window.IS_AUTHENTICATED) {
@@ -352,8 +371,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Eventos Globales Delegados
     document.addEventListener('click', async (e) => {
+        // Ignorar clics dentro del dashboard de administración
+        if (e.target.closest('.admin-dashboard')) {
+            return;
+        }
+
+        // Ignorar botones específicos del dashboard admin
+        if (e.target.closest('.btn-edit-product') ||
+            e.target.closest('.btn-delete-product') ||
+            e.target.closest('.btn-flash-product') ||
+            e.target.closest('.btn-delete-user') ||
+            e.target.closest('.btn-delete-message') ||
+            e.target.closest('.btn-delete-subscriber')) {
+            return;
+        }
+
         const addBtn = e.target.closest('button[data-id]');
         if (addBtn && !addBtn.classList.contains('cart-item-remove') && !addBtn.classList.contains('btn-qty-minus') && !addBtn.classList.contains('btn-qty-plus')) {
+            e.preventDefault(); // Evitar submit del formulario
             const productId = addBtn.getAttribute('data-id');
             const card = addBtn.closest('.product-card');
 
@@ -364,7 +399,19 @@ document.addEventListener('DOMContentLoaded', () => {
             } : null;
 
             if (productId) {
-                await addToCart(productId, 1, productData);
+                // Leer cantidad del input #quantity (si existe)
+                const quantityInput = document.getElementById('quantity');
+                let requestedQty = quantityInput ? parseInt(quantityInput.value, 10) : 1;
+                if (isNaN(requestedQty) || requestedQty < 1) requestedQty = 1;
+
+                // Validar stock desde el atributo max del input (más robusto que textContent)
+                const availableStock = quantityInput && quantityInput.max ? parseInt(quantityInput.max, 10) : 999;
+                if (requestedQty > availableStock) {
+                    if (window.showToast) window.showToast(`Solo hay ${availableStock} disponibles`, 'error');
+                    return;
+                }
+
+                await addToCart(productId, requestedQty, productData);
 
                 const icon = document.createElement('i');
                 icon.classList.add('ri-check-line');

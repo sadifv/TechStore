@@ -1,6 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
 
 // ==========================================
@@ -12,7 +13,7 @@ const logger = require('../config/logger');
 // @access  Public (soporta invitados)
 const createOrder = async (req, res, next) => {
     try {
-        const { items, guestInfo, shippingAddress, paymentMethod } = req.body;
+        const { items, guestInfo, shippingAddress } = req.body;
 
         // ✅ FIX: Validar items
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -106,6 +107,19 @@ const createOrder = async (req, res, next) => {
 
         // Crear la orden en MongoDB
         const newOrder = await Order.create(orderData);
+
+        // ✅ Confirmar reservas y descontar stock
+        for (const item of orderItems) {
+            const product = await Product.findById(item.product);
+            if (product) {
+                product.stock = Math.max(0, product.stock - item.quantity);
+                await product.save();
+            }
+            await Reservation.updateMany(
+                { user: orderData.user, product: item.product, status: 'active' },
+                { $set: { status: 'completed' } }
+            );
+        }
 
         // Construir line items para Stripe
         const lineItems = orderItems.map(oi => ({

@@ -40,17 +40,10 @@
     </section>
 
     <section class="product-detail-stock" aria-label="Disponibilidad">
-      <% if (product.stock > 0) { %>
-        <p class="stock-in">
-          <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
-          En stock · <%= product.stock %> unidades disponibles
-        </p>
-      <% } else { %>
-        <p class="stock-out">
-          <i class="ri-close-circle-line" aria-hidden="true"></i>
-          Agotado temporalmente
-        </p>
-      <% } %>
+      <p id="stock-indicator" class="stock-in">
+        <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+        En stock · <span id="stock-count"><%= product.stock %></span> unidades disponibles
+      </p>
     </section>
 
     <form class="product-detail-actions" id="add-to-cart-form">
@@ -68,8 +61,9 @@
       />
 
       <button 
-        type="submit" 
+        type="button"
         class="btn btn-primary btn-block" 
+        data-id="<%= product._id %>"
         <%= product.stock === 0 ? 'disabled' : '' %>
       >
         <i class="ri-shopping-cart-line" aria-hidden="true"></i>

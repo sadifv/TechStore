@@ -1,19 +1,19 @@
-<main class="admin-container container">
+<section class="admin-container container order-detail-page" aria-labelledby="order-detail-heading">
   <header class="admin-header">
-    <div>
+    <div class="admin-header-main">
       <a href="/admin/orders" class="btn btn-outline btn-sm">&larr; Volver a Órdenes</a>
-      <h2>Detalle de Orden #<%= order._id %></h2>
+      <h1 id="order-detail-heading">Detalle de Orden #<%= order._id %></h1>
     </div>
-    <div>
+    <div class="admin-header-actions">
       <a href="/admin/orders/<%= order._id %>/packing-slip" target="_blank" rel="noopener" class="btn btn-secondary">
         <i class="ri-printer-line" aria-hidden="true"></i> Imprimir Packing Slip
       </a>
     </div>
   </header>
 
-  <section class="order-detail-grid">
+  <div class="order-detail-grid">
     <article class="order-card">
-      <h3>Información del Cliente</h3>
+      <h2>Información del Cliente</h2>
       <% if (order.user) { %>
         <p><strong>Nombre:</strong> <%= order.user.name %></p>
         <p><strong>Email:</strong> <%= order.user.email %></p>
@@ -27,7 +27,7 @@
     </article>
 
     <article class="order-card">
-      <h3>Estado del Pedido</h3>
+      <h2>Estado del Pedido</h2>
       <fieldset class="form-group">
         <label for="order-detail-status">Estado Actual:</label>
         <select id="order-detail-status" class="form-control select-order-status" data-order-id="<%= order._id %>">
@@ -40,17 +40,17 @@
         </select>
       </fieldset>
     </article>
-  </section>
+  </div>
 
-  <section class="order-items-section" style="margin-top: 2rem;">
-    <h3>Productos Comprados</h3>
+  <section class="order-items-section">
+    <h2>Productos Comprados</h2>
     <table class="admin-table">
       <thead>
         <tr>
-          <th>Producto</th>
-          <th>Precio Unitario</th>
-          <th>Cantidad</th>
-          <th>Subtotal</th>
+          <th scope="col">Producto</th>
+          <th scope="col">Precio Unitario</th>
+          <th scope="col">Cantidad</th>
+          <th scope="col">Subtotal</th>
         </tr>
       </thead>
       <tbody>
@@ -71,12 +71,12 @@
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="3" style="text-align: right;"><strong>Total General:</strong></td>
+          <th scope="row" colspan="3" class="text-right">Total General:</th>
           <td><strong>$<%= order.totalAmount.toFixed(2) %></strong></td>
         </tr>
       </tfoot>
     </table>
   </section>
-</main>
+</section>
 
 <script src="/js/admin-crud.js?v=<%= process.env.NODE_ENV === 'development' ? Date.now() : '1.0.0' %>"></script>

@@ -1,7 +1,7 @@
 <!-- Sección Principal del Catálogo -->
 <section id="catalogo" class="products-section" aria-labelledby="catalog-heading">
     <header class="section-header">
-        <h2 id="catalog-heading">Nuestro Catálogo</h2>
+        <h1 id="catalog-heading">Nuestro Catálogo</h1>
     </header>
 
     <!-- Barra de Filtros Semántica -->
@@ -49,13 +49,18 @@
             <% products.forEach(product => { %>
                 <li>
                     <article class="product-card">
-                        <img src="<%= product.image || '/images/default-product.png' %>" alt="<%= product.name %>" loading="lazy" />
-                        <header>
-                            <h3><%= product.name %></h3>
-                        </header>
-                        <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
+                        <a href="/producto/<%= product._id %>" class="product-card-link" aria-label="Ver detalles de <%= product.name %>">
+                            <figure class="product-card-media">
+                                <img src="<%= product.image || '/images/default-product.png' %>" alt="<%= product.name %>" loading="lazy" />
+                            </figure>
+                            <header>
+                                <h3><%= product.name %></h3>
+                            </header>
+                            <p class="product-price">$<%= Number(product.price).toFixed(2) %></p>
+                        </a>
                         <footer>
-                            <button type="button" class="btn btn-secondary btn-add-cart" data-id="<%= product._id %>">
+                            <button type="button" class="btn add-to-cart-btn" data-id="<%= product._id %>">
+                                <i class="ri-shopping-cart-line" aria-hidden="true"></i>
                                 Añadir al carrito
                             </button>
                         </footer>

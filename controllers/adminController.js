@@ -3,11 +3,9 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
+const Cart = require('../models/Cart');
 const logger = require('../config/logger');
 
-// ==========================================
-// DASHBOARD
-// ==========================================
 const getAdminDashboard = async (req, res, next) => {
     try {
         const [
@@ -16,6 +14,9 @@ const getAdminDashboard = async (req, res, next) => {
             usersCount,
             messagesCount,
             subscribersCount,
+            activeCartCount,
+            paidOrderStats,
+            topProducts,
             orders,
             users,
             messages,
@@ -26,15 +27,72 @@ const getAdminDashboard = async (req, res, next) => {
             User.countDocuments(),
             Contact.countDocuments(),
             Newsletter.countDocuments(),
+            Cart.countDocuments({ 'items.0': { $exists: true } }),
+            Order.aggregate([
+                { $match: { paymentStatus: 'paid' } },
+                {
+                    $group: {
+                        _id: null,
+                        totalRevenue: { $sum: '$totalAmount' },
+                        totalProductsSold: {
+                            $sum: {
+                                $reduce: {
+                                    input: '$items',
+                                    initialValue: 0,
+                                    in: { $add: ['$$value', '$$this.quantity'] }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]),
+            Order.aggregate([
+                { $match: { paymentStatus: 'paid' } },
+                { $unwind: '$items' },
+                {
+                    $group: {
+                        _id: '$items.product',
+                        unitsSold: { $sum: '$items.quantity' }
+                    }
+                },
+                { $sort: { unitsSold: -1 } },
+                { $limit: 6 },
+                {
+                    $lookup: {
+                        from: Product.collection.name,
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'product'
+                    }
+                },
+                { $unwind: '$product' },
+                {
+                    $project: {
+                        _id: '$product._id',
+                        name: '$product.name',
+                        price: '$product.price',
+                        image: '$product.image',
+                        unitsSold: 1
+                    }
+                }
+            ]),
             Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(10).lean(),
             User.find().sort({ createdAt: -1 }).limit(10).lean(),
             Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
             Newsletter.find().sort({ createdAt: -1 }).lean()
         ]);
 
+        const { totalRevenue = 0, totalProductsSold = 0 } = paidOrderStats[0] || {};
+
         res.render('admin/dashboard', {
             title: 'Panel de Administración | TechStore',
             stats: { productsCount, ordersCount, usersCount, messagesCount, subscribersCount },
+            totalOrders: ordersCount,
+            totalRevenue,
+            totalProductsSold,
+            activeCartCount,
+            products: topProducts,
+            topProducts,
             orders,
             users,
             messages,
@@ -46,13 +104,6 @@ const getAdminDashboard = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// GESTIÓN DE ÓRDENES
-// ==========================================
-
-// @desc    Lista de órdenes con paginación y filtro
-// @route   GET /admin/orders
-// @access  Private/Admin
 const getAdminOrders = async (req, res, next) => {
     try {
         const { page = 1, status } = req.query;
@@ -60,7 +111,6 @@ const getAdminOrders = async (req, res, next) => {
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
         const skip = (pageNum - 1) * limit;
 
-        // ✅ Validar status contra lista permitida
         const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
         const filter = {};
         if (status && validStatuses.includes(status)) {
@@ -68,12 +118,7 @@ const getAdminOrders = async (req, res, next) => {
         }
 
         const [orders, totalOrders] = await Promise.all([
-            Order.find(filter)
-                .populate('user', 'name email')
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .lean(),
+            Order.find(filter).populate('user', 'name email').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
             Order.countDocuments(filter)
         ]);
 
@@ -83,11 +128,7 @@ const getAdminOrders = async (req, res, next) => {
             title: 'Gestión de Órdenes | Admin TechStore',
             orders,
             currentStatus: status || '',
-            pagination: {
-                currentPage: pageNum,
-                totalPages,
-                totalOrders
-            }
+            pagination: { currentPage: pageNum, totalPages, totalOrders }
         });
     } catch (error) {
         logger.error(`Error al obtener órdenes: ${error.message}`, { stack: error.stack });
@@ -95,9 +136,6 @@ const getAdminOrders = async (req, res, next) => {
     }
 };
 
-// @desc    Detalle individual de una orden
-// @route   GET /admin/orders/:id
-// @access  Private/Admin
 const getAdminOrderDetail = async (req, res, next) => {
     try {
         const order = await Order.findById(req.params.id)
@@ -106,32 +144,19 @@ const getAdminOrderDetail = async (req, res, next) => {
             .lean();
 
         if (!order) {
-            return res.status(404).render('404', {
-                title: 'Orden no encontrada | TechStore',
-                message: 'La orden que buscas no existe o ha sido eliminada.'
-            });
+            return res.status(404).render('404', { title: 'Orden no encontrada | TechStore', message: 'La orden no existe.' });
         }
 
-        res.render('admin/order-detail', {
-            title: `Detalle de Orden #${order._id} | Admin`,
-            order
-        });
+        res.render('admin/order-detail', { title: `Detalle de Orden #${order._id} | Admin`, order });
     } catch (error) {
-        // CastError = ID inválido → 404
         if (error.name === 'CastError') {
-            return res.status(404).render('404', {
-                title: 'Orden no encontrada | TechStore',
-                message: 'La orden que buscas no existe o ha sido eliminada.'
-            });
+            return res.status(404).render('404', { title: 'Orden no encontrada | TechStore', message: 'La orden no existe.' });
         }
         logger.error(`Error al obtener detalle de orden: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
 
-// @desc    Vista e impresión de Packing Slip
-// @route   GET /admin/orders/:id/packing-slip
-// @access  Private/Admin
 const getPackingSlip = async (req, res, next) => {
     try {
         const order = await Order.findById(req.params.id)
@@ -140,32 +165,19 @@ const getPackingSlip = async (req, res, next) => {
             .lean();
 
         if (!order) {
-            return res.status(404).render('404', {
-                title: 'Orden no encontrada | TechStore',
-                message: 'La orden que buscas no existe o ha sido eliminada.'
-            });
+            return res.status(404).render('404', { title: 'Orden no encontrada | TechStore', message: 'La orden no existe.' });
         }
 
-        res.render('admin/packing-slip', {
-            title: `Packing Slip - #${order._id}`,
-            order,
-            layout: false
-        });
+        res.render('admin/packing-slip', { title: `Packing Slip - #${order._id}`, order, layout: false });
     } catch (error) {
         if (error.name === 'CastError') {
-            return res.status(404).render('404', {
-                title: 'Orden no encontrada | TechStore',
-                message: 'La orden que buscas no existe o ha sido eliminada.'
-            });
+            return res.status(404).render('404', { title: 'Orden no encontrada | TechStore', message: 'La orden no existe.' });
         }
         logger.error(`Error al generar Packing Slip: ${error.message}`, { stack: error.stack });
         next(error);
     }
 };
 
-// ==========================================
-// GESTIÓN DE USUARIOS
-// ==========================================
 const getAdminUsers = async (req, res, next) => {
     try {
         const { page = 1, search, role } = req.query;
@@ -176,8 +188,8 @@ const getAdminUsers = async (req, res, next) => {
         const filter = {};
         if (search) {
             filter.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } }
+                { name: { $regex: search,$options: 'i' } },
+                { email: { $regex: search,$options: 'i' } }
             ];
         }
         if (role && ['user', 'admin'].includes(role)) {
@@ -204,9 +216,6 @@ const getAdminUsers = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// EXPORTS
-// ==========================================
 module.exports = {
     getAdminDashboard,
     getAdminOrders,
