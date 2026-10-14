@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
     try {
         const now = new Date();
         const [featuredProducts, flashSaleProduct] = await Promise.all([
-            Product.find().sort({ createdAt: -1 }).limit(6).lean(),
+            Product.find().sort({ createdAt: -1 }).limit(8).lean(),
             Product.findOne({ flashSale: true, flashSaleEndsAt: { $gt: now } })
                 .sort({ flashSaleEndsAt: 1 })
                 .lean()
