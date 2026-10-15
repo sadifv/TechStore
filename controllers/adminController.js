@@ -9,6 +9,11 @@ const logger = require('../config/logger');
 
 const getAdminDashboard = async (req, res, next) => {
     try {
+        const subscriberLimit = 20;
+        const parsedSubscriberPage = Number.parseInt(req.query.subscribersPage, 10);
+        const requestedSubscriberPage = Number.isSafeInteger(parsedSubscriberPage) && parsedSubscriberPage > 0
+            ? parsedSubscriberPage
+            : 1;
         const [
             productsCount,
             ordersCount,
@@ -23,8 +28,7 @@ const getAdminDashboard = async (req, res, next) => {
             products,
             orders,
             users,
-            messages,
-            subscribers
+            messages
         ] = await Promise.all([
             Product.countDocuments(),
             Order.countDocuments(),
@@ -97,9 +101,16 @@ const getAdminDashboard = async (req, res, next) => {
             Product.find().sort({ createdAt: -1 }).limit(100).lean(),
             Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(10).lean(),
             User.find().sort({ createdAt: -1 }).limit(10).lean(),
-            Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
-            Newsletter.find().sort({ createdAt: -1 }).limit(100).lean()
+            Contact.find().sort({ createdAt: -1 }).limit(5).lean()
         ]);
+
+        const subscriberTotalPages = Math.max(1, Math.ceil(subscribersCount / subscriberLimit));
+        const subscriberPage = Math.min(requestedSubscriberPage, subscriberTotalPages);
+        const currentSubscribers = await Newsletter.find()
+            .sort({ createdAt: -1, _id: -1 })
+            .skip((subscriberPage - 1) * subscriberLimit)
+            .limit(subscriberLimit)
+            .lean();
 
         const { totalRevenue = 0, totalProductsSold = 0 } = paidOrderStats[0] || {};
 
@@ -117,7 +128,12 @@ const getAdminDashboard = async (req, res, next) => {
             orders,
             users,
             messages,
-            subscribers
+            subscribers: currentSubscribers,
+            subscriberPagination: {
+                currentPage: subscriberPage,
+                totalPages: subscriberTotalPages,
+                totalSubscribers: subscribersCount
+            }
         });
     } catch (error) {
         logger.error(`Error al cargar dashboard: ${error.message}`, { stack: error.stack });

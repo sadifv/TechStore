@@ -193,7 +193,9 @@
 
   <section class="dashboard-newsletter" aria-labelledby="admin-newsletter-heading">
     <h2 id="admin-newsletter-heading" class="section-title">Suscriptores al boletín</h2>
-    <p class="membership-dashboard-note">Mostrando hasta los 100 suscriptores más recientes.</p>
+    <p class="membership-dashboard-note">
+      <%= subscriberPagination.totalSubscribers %> suscriptores registrados; se muestran hasta 20 por página.
+    </p>
     <div class="admin-table-wrapper">
       <table class="admin-table">
         <thead>
@@ -227,6 +229,21 @@
         </tbody>
       </table>
     </div>
+    <% if (subscriberPagination.totalPages > 1) { %>
+      <nav class="pagination-nav" aria-label="Paginación de suscriptores">
+        <% if (subscriberPagination.currentPage > 1) { %>
+          <a href="/admin/dashboard?subscribersPage=<%= subscriberPagination.currentPage - 1 %>#admin-newsletter-heading"
+             class="btn btn-sm btn-outline">« Anterior</a>
+        <% } %>
+        <span class="pagination-info" aria-current="page">
+          Página <%= subscriberPagination.currentPage %> de <%= subscriberPagination.totalPages %>
+        </span>
+        <% if (subscriberPagination.currentPage < subscriberPagination.totalPages) { %>
+          <a href="/admin/dashboard?subscribersPage=<%= subscriberPagination.currentPage + 1 %>#admin-newsletter-heading"
+             class="btn btn-sm btn-outline">Siguiente »</a>
+        <% } %>
+      </nav>
+    <% } %>
   </section>
 
   <section class="dashboard-products" aria-label="Productos más vendidos">
