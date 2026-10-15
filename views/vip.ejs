@@ -12,7 +12,7 @@
         <p>Accede a cupones VIP y recibe avisos anticipados de campañas y lanzamientos.</p>
         <p class="membership-price"><strong>$<%= monthlyPrice.toFixed(2) %></strong><span> / mes</span></p>
         <p class="membership-payment-note">
-            La renovación automática se habilitará cuando integremos un proveedor de pago compatible con Ecuador.
+            La suscripción se renueva automáticamente cada mes. Puedes cancelarla cuando quieras y conservarás el acceso hasta el final del período pagado.
         </p>
     </header>
 
@@ -25,7 +25,7 @@
         <article class="membership-card">
             <i class="ri-calendar-check-line" aria-hidden="true"></i>
             <h2>Cupón VIP mensual</h2>
-            <p><%= monthlyDiscountPercent %>% de descuento, hasta $<%= monthlyMaxDiscount.toFixed(2) %>, en compras desde $<%= couponMinOrder.toFixed(2) %> durante tu período activo. Un uso.</p>
+            <p><%= monthlyDiscountPercent %>% de descuento, hasta $<%= monthlyMaxDiscount.toFixed(2) %>, en compras desde $<%= couponMinOrder.toFixed(2) %>. Un uso durante cada período VIP pagado.</p>
         </article>
         <article class="membership-card">
             <i class="ri-notification-3-line" aria-hidden="true"></i>
@@ -39,21 +39,26 @@
         <p id="membership-status" class="membership-status" aria-live="polite">Cargando estado...</p>
         <div id="membership-coupons" class="membership-coupons" aria-live="polite"></div>
         <button type="button" id="membership-cancel" class="btn btn-secondary" hidden>Cancelar al final del período</button>
+        <button type="button" id="membership-portal" class="btn btn-secondary" hidden>Administrar método de pago</button>
 
         <% if (!user) { %>
             <p>Inicia sesión para suscribirte y consultar tus cupones.</p>
             <a href="/login?redirect=/vip" class="btn btn-primary">Iniciar sesión</a>
-        <% } else if (paymentMode === 'mock') { %>
+        <% } else if (paymentMode === 'mock' || paymentMode === 'stripe') { %>
             <form id="membership-subscribe-form" class="membership-form">
                 <label class="membership-consent">
                     <input type="checkbox" name="marketingOptIn" value="true">
                     Quiero recibir campañas y avisos VIP por correo. Puedo darme de baja cuando quiera.
                 </label>
-                <button type="submit" id="membership-subscribe" class="btn btn-primary">Activar membresía de prueba</button>
-                <p class="membership-payment-note">Simulación disponible solo en desarrollo: no se realizará ningún cobro.</p>
+                <button type="submit" id="membership-subscribe" class="btn btn-primary"><%= paymentMode === 'stripe' ? 'Suscribirme con Stripe' : 'Activar membresía de prueba' %></button>
+                <% if (paymentMode === 'mock') { %>
+                    <p class="membership-payment-note">Simulación disponible solo en desarrollo: no se realizará ningún cobro.</p>
+                <% } else { %>
+                    <p class="membership-payment-note">El primer pago y las renovaciones mensuales se procesan de forma segura con Stripe.</p>
+                <% } %>
             </form>
         <% } else { %>
-            <p class="membership-unavailable" role="status">El pago de membresías todavía no está disponible. No se activará ninguna suscripción hasta integrar un proveedor compatible.</p>
+            <p class="membership-unavailable" role="status">El pago de membresías no está disponible por ahora. Verifica la configuración de Stripe y la elegibilidad de la cuenta para cobrar y recibir payouts.</p>
             <button type="button" class="btn btn-primary" disabled>Pago no disponible</button>
         <% } %>
     </article>

@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('membership-status');
     const coupons = document.getElementById('membership-coupons');
     const cancelButton = document.getElementById('membership-cancel');
+    const portalButton = document.getElementById('membership-portal');
     const subscribeForm = document.getElementById('membership-subscribe-form');
     const authenticated = panel.dataset.authenticated === 'true';
     const setStatus = (message, isError = false) => {
@@ -13,8 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         status.className = isError ? 'membership-status error' : 'membership-status';
     };
 
-    if (authenticated && !document.getElementById('mock-payment-form')) {
-        fetch('/api/membership')
+    const loadMembership = () => fetch('/api/membership')
             .then(async response => {
                 const data = await response.json();
                 if (!response.ok || !data.success) throw new Error(data.error || 'No se pudo cargar la membresía.');
@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ? `Activa hasta el ${endDate}. La cancelación ya está programada.`
                         : `Activa hasta el ${endDate}.`);
                     if (cancelButton && !membership.cancelAtPeriodEnd) cancelButton.hidden = false;
+                    if (portalButton && membership.provider === 'stripe') portalButton.hidden = false;
                     if (subscribeForm) subscribeForm.hidden = true;
                     if (coupons) {
                         [
@@ -47,12 +48,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                 } else if (membership.status === 'pending') {
-                    setStatus('Tienes una activación de prueba pendiente. Puedes iniciar un nuevo proceso para reemplazarla.');
+                    setStatus(membership.provider === 'stripe'
+                        ? 'Tu pago está pendiente de confirmación. Si ya completaste Checkout, espera unos segundos y vuelve a cargar esta página.'
+                        : 'Tienes una activación de prueba pendiente. Puedes iniciar un nuevo proceso para reemplazarla.');
+                } else if (membership.status === 'past_due') {
+                    setStatus('No se pudo completar el último cobro. Actualiza tu método de pago para conservar la membresía.');
+                    if (cancelButton && !membership.cancelAtPeriodEnd) cancelButton.hidden = false;
+                    if (portalButton && membership.provider === 'stripe') portalButton.hidden = false;
+                    if (subscribeForm) subscribeForm.hidden = true;
                 } else {
                     setStatus('Tu membresía no está activa. Puedes volver a suscribirte cuando el pago esté disponible.');
                 }
             })
             .catch(error => setStatus(error.message, true));
+
+    if (authenticated && !document.getElementById('mock-payment-form')) {
+        const params = new URLSearchParams(window.location.search);
+        const checkoutSessionId = params.get('session_id');
+        const confirmation = params.get('membership') === 'processing' && checkoutSessionId
+            ? fetch(`/api/membership/confirm?session_id=${encodeURIComponent(checkoutSessionId)}`)
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw new Error(data.error || 'No se pudo confirmar el pago.');
+                })
+            : Promise.resolve();
+        confirmation.then(loadMembership).catch(error => setStatus(error.message, true));
     }
 
     if (subscribeForm) {
@@ -60,7 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             const button = subscribeForm.querySelector('button[type="submit"]');
             button.disabled = true;
-            setStatus('Preparando la pantalla de pago de prueba...');
+            setStatus(panel.dataset.paymentMode === 'stripe'
+                ? 'Conectando con Stripe...'
+                : 'Preparando la pantalla de pago de prueba...');
             try {
                 const response = await fetch('/api/membership/checkout', {
                     method: 'POST',
@@ -96,6 +118,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     if (cancelButton) cancelButton.addEventListener('click', cancel);
+
+    if (portalButton) {
+        portalButton.addEventListener('click', async () => {
+            portalButton.disabled = true;
+            try {
+                const response = await fetch('/api/membership/portal', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'No se pudo abrir el portal de pagos.');
+                window.location.assign(data.url);
+            } catch (error) {
+                setStatus(error.message, true);
+                portalButton.disabled = false;
+            }
+        });
+    }
 
     const paymentForm = document.getElementById('mock-payment-form');
     if (paymentForm) {

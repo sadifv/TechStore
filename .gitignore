@@ -1,4 +1,8 @@
 .env
+.env.*
+!.env.example
 node_modules
 stripe.exe
 logs
+*.pem
+*.key

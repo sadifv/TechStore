@@ -2,13 +2,7 @@
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 const logger = require('../config/logger');
-
-// Helper: detectar si la petición es API/JSON
-const isApiRequest = (req) =>
-  req.xhr ||
-  req.path.startsWith('/api') ||
-  req.headers.accept?.includes('json') ||
-  req.headers['content-type']?.includes('json');
+const isApiRequest = require('./isApiRequest');
 
 /**
  * Limitador estricto para el login.

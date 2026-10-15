@@ -67,3 +67,18 @@ test('non-admin API requests receive a JSON forbidden response', () => {
     assert.equal(res.body.success, false);
     assert.equal(res.redirectPath, null);
 });
+
+test('browser fetch requests with wildcard Accept are treated as API requests', () => {
+    const req = {
+        originalUrl: '/admin/products/123',
+        baseUrl: '/admin',
+        path: '/products/123',
+        headers: { accept: '*/*' }
+    };
+    const res = createResponse();
+
+    requireAdmin(req, res, () => assert.fail('next should not be called'));
+
+    assert.equal(res.statusCode, 403);
+    assert.equal(res.body.success, false);
+});

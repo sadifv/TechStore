@@ -9,7 +9,7 @@ const membershipSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'active', 'expired', 'cancelled'],
+        enum: ['pending', 'active', 'past_due', 'expired', 'cancelled'],
         default: 'pending',
         index: true
     },
@@ -34,6 +34,13 @@ const membershipSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    stripeCustomerId: String,
+    stripeSubscriptionId: {
+        type: String,
+        index: true
+    },
+    stripeCheckoutSessionId: String,
+    stripeCheckoutAttemptId: String,
     mockCheckoutTokenHash: String,
     mockCheckoutExpiresAt: Date,
     marketingOptIn: {

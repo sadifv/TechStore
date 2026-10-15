@@ -12,7 +12,9 @@ const {
     getMembershipStatus,
     startMembershipCheckout,
     confirmMockMembership,
+    confirmStripeMembership,
     cancelMembership,
+    createMembershipPortalSession,
     unsubscribeVipMarketing
 } = require('../controllers/membershipController');
 const {
@@ -41,7 +43,9 @@ router.route('/marketing/unsubscribe')
 router.get('/membership', requireAuth, getMembershipStatus);
 router.post('/membership/checkout', requireAuth, sensitiveLimiter, startMembershipCheckout);
 router.post('/membership/mock-confirm', requireAuth, sensitiveLimiter, confirmMockMembership);
+router.get('/membership/confirm', requireAuth, confirmStripeMembership);
 router.post('/membership/cancel', requireAuth, sensitiveLimiter, cancelMembership);
+router.post('/membership/portal', requireAuth, sensitiveLimiter, createMembershipPortalSession);
 router.get('/membership/unsubscribe/:token', unsubscribeVipMarketing);
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById); 

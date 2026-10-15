@@ -78,7 +78,7 @@ cron.schedule('*/10 * * * *', async () => {
     }
 });
 
-// Expirar membresías de prueba al completar sus 30 días; no se renuevan sin cobro.
+// Expirar membresías cuyo período terminó; una renovación Stripe confirmada las mantiene activas.
 cron.schedule('15 0 * * *', async () => {
     try {
         const Membership = require('./models/Membership');

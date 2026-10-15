@@ -1,14 +1,24 @@
 const crypto = require('crypto');
 const { getMembershipConfig } = require('../config/membershipConfig');
+const { validateStripeSecretKey } = require('../config/stripeSecretKey');
 
 const getPaymentMode = () => {
-    if (process.env.NODE_ENV === 'production') return 'unavailable';
     const configuredMode = process.env.MEMBERSHIP_PAYMENT_MODE || (
         process.env.NODE_ENV === 'development' ? 'mock' : 'unavailable'
     );
-    return process.env.NODE_ENV === 'development' && configuredMode === 'mock'
-        ? 'mock'
-        : 'unavailable';
+    if (configuredMode === 'mock') {
+        return process.env.NODE_ENV === 'development' ? 'mock' : 'unavailable';
+    }
+    if (configuredMode !== 'stripe' || !process.env.STRIPE_WEBHOOK_SECRET) return 'unavailable';
+
+    validateStripeSecretKey(process.env.STRIPE_SECRET_KEY, process.env.NODE_ENV);
+    if (
+        process.env.NODE_ENV === 'production' &&
+        (!process.env.APP_URL || !process.env.APP_URL.startsWith('https://'))
+    ) {
+        return 'unavailable';
+    }
+    return 'stripe';
 };
 
 const getMembershipPrice = () => {
@@ -38,9 +48,18 @@ const verifyMockCheckout = (token, storedHash) => {
         crypto.timingSafeEqual(tokenHash, expectedHash);
 };
 
+const getMembershipBaseUrl = (req) => {
+    if (process.env.APP_URL) return process.env.APP_URL.replace(/\/+$/, '');
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('APP_URL HTTPS es obligatorio para Checkout VIP en producción.');
+    }
+    return `${req.protocol}://${req.get('host')}`;
+};
+
 module.exports = {
     getPaymentMode,
     getMembershipPrice,
     createMockCheckout,
-    verifyMockCheckout
+    verifyMockCheckout,
+    getMembershipBaseUrl
 };

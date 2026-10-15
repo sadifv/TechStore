@@ -1,10 +1,11 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('../config/stripe');
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const Cart = require('../models/Cart');
 const logger = require('../config/logger');
+const { handleMembershipStripeEvent } = require('../services/membershipStripeService');
 const {
     getCouponDiscount,
     reserveCoupon,
@@ -757,7 +758,8 @@ const handleStripeWebhook = async (req, res) => {
 
     // Stripe debe reintentar eventos cuando la restitución no se haya completado.
     try {
-        switch (event.type) {
+        const membershipEventHandled = await handleMembershipStripeEvent(event);
+        if (!membershipEventHandled) switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
                 const orderId = session.metadata?.orderId;

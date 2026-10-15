@@ -1,19 +1,10 @@
 // middleware/authMiddleware.js
+const isApiRequest = require('./isApiRequest');
 
 // Añade el usuario actual a `res.locals`
 const setUserLocals = (req, res, next) => {
     res.locals.user = req.user || req.session?.user || null;
     next();
-};
-
-const isApiRequest = (req) => {
-    const requestPaths = [req.originalUrl, req.baseUrl, req.path];
-    return req.xhr ||
-        requestPaths.some(requestPath =>
-            requestPath === '/api' || requestPath?.startsWith('/api/')
-        ) ||
-        req.headers.accept?.includes('json') ||
-        req.headers['content-type']?.includes('json');
 };
 
 // Requiere rol admin

@@ -245,9 +245,10 @@ const sendWebhook = async (type, object) => {
 };
 
 process.env.STRIPE_WEBHOOK_SECRET = 'test-webhook-secret';
+process.env.STRIPE_SECRET_KEY = 'sk_test_unit_test_key';
 Module._load = function (request, parent, isMain) {
     if (parent?.filename === controllerPath) {
-        if (request === 'stripe') return () => stripeInstance;
+        if (request === '../config/stripe') return stripeInstance;
         if (request === '../models/Order') return Order;
         if (request === '../models/Product') return Product;
         if (request === '../models/Reservation') return {};

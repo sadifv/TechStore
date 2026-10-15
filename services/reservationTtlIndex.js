@@ -12,7 +12,14 @@ const ensureReservationTtlIndex = async (collection) => {
     }
 
     if (expiresAtIndex) {
-        await collection.dropIndex(expiresAtIndex.name);
+        await collection.conn.db.command({
+            collMod: collection.collectionName,
+            index: {
+                keyPattern: { expiresAt: 1 },
+                expireAfterSeconds: 0
+            }
+        });
+        return expiresAtIndex.name;
     }
 
     return collection.createIndex(
