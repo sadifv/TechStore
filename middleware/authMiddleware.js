@@ -6,6 +6,16 @@ const setUserLocals = (req, res, next) => {
     next();
 };
 
+const isApiRequest = (req) => {
+    const requestPaths = [req.originalUrl, req.baseUrl, req.path];
+    return req.xhr ||
+        requestPaths.some(requestPath =>
+            requestPath === '/api' || requestPath?.startsWith('/api/')
+        ) ||
+        req.headers.accept?.includes('json') ||
+        req.headers['content-type']?.includes('json');
+};
+
 // Requiere rol admin
 const requireAdmin = (req, res, next) => {
     const currentUser = req.user || req.session?.user;
@@ -14,14 +24,7 @@ const requireAdmin = (req, res, next) => {
         return next();
     }
 
-    // Detección robusta de petición API/JSON
-    const isApiRequest =
-        req.xhr ||
-        req.path.startsWith('/api') ||
-        req.headers.accept?.includes('json') ||
-        req.headers['content-type']?.includes('json');
-
-    if (isApiRequest) {
+    if (isApiRequest(req)) {
         return res.status(403).json({
             success: false,
             error: 'Acceso denegado. Se requieren permisos de administrador.'
@@ -39,14 +42,7 @@ const requireAuth = (req, res, next) => {
         return next();
     }
 
-    // Detección robusta de petición API/JSON
-    const isApiRequest =
-        req.xhr ||
-        req.path.startsWith('/api') ||
-        req.headers.accept?.includes('json') ||
-        req.headers['content-type']?.includes('json');
-
-    if (isApiRequest) {
+    if (isApiRequest(req)) {
         return res.status(401).json({
             success: false,
             error: 'Debes iniciar sesión para realizar esta acción.'
