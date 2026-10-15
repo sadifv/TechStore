@@ -89,7 +89,7 @@ const startMembershipCheckout = async (req, res, next) => {
         const membership = await Membership.findOneAndUpdate(
             { user: userId },
             membershipUpdate,
-            { new: true, upsert: true, runValidators: true }
+            { returnDocument: 'after', upsert: true, runValidators: true }
         );
 
         res.status(201).json({
@@ -203,7 +203,7 @@ const confirmMockMembership = async (req, res, next) => {
                     mockCheckoutExpiresAt: 1
                 }
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!membership) {
@@ -254,7 +254,7 @@ const cancelMembership = async (req, res, next) => {
                 currentPeriodEnd: { $gt: new Date() }
             },
             { $set: { cancelAtPeriodEnd: true } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!membership) {

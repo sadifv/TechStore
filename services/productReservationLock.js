@@ -29,7 +29,7 @@ const acquireLock = async productId => {
                     reservationLockExpiresAt: new Date(now.getTime() + LOCK_LEASE_MS)
                 }
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
         acquired = Boolean(lock);
         if (!acquired) await delay(LOCK_RETRY_MS);

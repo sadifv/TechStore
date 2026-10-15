@@ -35,6 +35,13 @@ Asegúrate de tener instalado en tu sistema:
 
    Para enviar correos, configura `SMTP_USER` y `SMTP_PASS` con credenciales válidas de Gmail y una contraseña de aplicación. Si aparece `getaddrinfo ENOTFOUND smtp.gmail.com`, revisa la conexión DNS/red del servidor o utiliza un proveedor SMTP accesible desde ese entorno.
 
+## Pruebas
+
+- `npm test` ejecuta las pruebas automatizadas unitarias con dependencias simuladas.
+- `npm run test:integration` ejecuta un flujo real de checkout contra MongoDB y Stripe en modo test. Requiere MongoDB accesible, `MONGO_TEST_URI` apuntando a una base aislada cuyo nombre termine en `_test`, y `STRIPE_SECRET_KEY` con una clave `sk_test_`. El test crea una sesión de Checkout sin cobrar, la expira y comprueba que la orden y el stock se hayan actualizado; al finalizar elimina únicamente el producto y la orden creados por esa prueba.
+- Nunca configures `MONGO_TEST_URI` con la base de desarrollo/producción ni uses una clave Stripe `sk_live_` para esta prueba.
+- `npm run db:ensure-reservation-ttl` repara/verifica el índice TTL de `reservations` en la base de `MONGO_URI`, sin borrar datos manualmente. En una base ya existente, ejecútalo solo cuando desees que MongoDB empiece a borrar automáticamente las reservas cuya fecha `expiresAt` venció.
+
 ## Membresía VIP y campañas
 
 - La página `/vip` explica la membresía mensual de **$4.99**. En desarrollo, `MEMBERSHIP_PAYMENT_MODE=mock` habilita una pantalla de confirmación de prueba que activa el acceso por 30 días sin pedir tarjeta. El simulador se rechaza fuera de `NODE_ENV=development`; en producción el sitio informa que los pagos VIP aún no están disponibles.

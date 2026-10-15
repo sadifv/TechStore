@@ -85,7 +85,7 @@ const reserveCoupon = async (coupon, orderId) => {
             $inc: { redemptionCount: 1 },
             $addToSet: { reservationOrderIds: orderId }
         },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!reserved) {

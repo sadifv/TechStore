@@ -17,7 +17,7 @@ const restoreOrderInventory = async (orderId, items) => {
     let order = await Order.findOneAndUpdate(
         { _id: orderId, paymentStatus: 'pending', inventoryRestored: { $ne: true } },
         { $set: { paymentStatus: 'failed', status: 'cancelled' } },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!order) {
@@ -210,7 +210,7 @@ const markOrderAsPaid = async (orderId) => {
     let order = await Order.findOneAndUpdate(
         { _id: orderId, paymentStatus: 'pending' },
         { $set: { paymentStatus: 'paid', status: 'processing' } },
-        { new: true }
+        { returnDocument: 'after' }
     );
 
     if (!order) {
@@ -513,7 +513,6 @@ const createOrder = async (req, res, next) => {
 
         // Crear sesión de Stripe Checkout
         const stripeSessionOptions = {
-            payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment',
             success_url: `${req.protocol}://${req.get('host')}/api/orders/confirm?session_id={CHECKOUT_SESSION_ID}`,
@@ -842,7 +841,7 @@ const updateOrderStatus = async (req, res, next) => {
         const order = await Order.findOneAndUpdate(
             { _id: req.params.id, paymentStatus: 'paid', status: currentOrder.status },
             { $set: { status } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!order) {
