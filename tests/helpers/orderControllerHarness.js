@@ -20,6 +20,15 @@ const matches = (document, filter) => {
     return true;
 };
 
+const addCoupon = (couponId, redemptionCount = 1) => {
+    const coupon = {
+        redemptionCount,
+        reservationOrderIds: new Set()
+    };
+    state.coupons.set(couponId, coupon);
+    return coupon;
+};
+
 const Order = {
     async findOneAndUpdate(filter, update) {
         const order = state.orders.find(candidate => matches(candidate, filter));
@@ -28,11 +37,22 @@ const Order = {
         return order;
     },
     async findOne(filter) {
-        return state.orders.find(candidate => matches(candidate, filter)) || null;
+        const order = state.orders.find(candidate => matches(candidate, filter)) || null;
+        if (order && typeof order.lean !== 'function') {
+            Object.defineProperty(order, 'lean', { value: async () => order, configurable: true });
+        }
+        return order;
+    },
+    async exists(filter) {
+        return state.orders.some(candidate => matches(candidate, filter));
     },
     async updateOne(filter, update) {
         const order = state.orders.find(candidate => matches(candidate, filter));
         if (!order) return { modifiedCount: 0 };
+        if (update.$set?.couponReservationStatus && state.failCouponStatusUpdateOnce > 0) {
+            state.failCouponStatusUpdateOnce -= 1;
+            throw new Error('Simulated order coupon status write failure');
+        }
         Object.assign(order, update.$set || {});
         return { modifiedCount: 1 };
     },
@@ -41,7 +61,7 @@ const Order = {
             sort() {
                 return this;
             },
-            limit: async () => state.expiredOrders
+            limit: async () => state.expiredOrders.length ? state.expiredOrders : state.unprunedOrders
         };
     }
 };
@@ -55,6 +75,10 @@ const Product = {
             state.failProductUpdates.set(productId, failuresRemaining - 1);
             throw new Error(`Simulated inventory write failure for ${productId}`);
         }
+        if (update.$pull?.inventoryRestorationKeys && state.failMarkerCleanup > 0) {
+            state.failMarkerCleanup -= 1;
+            throw new Error(`Simulated marker cleanup failure for ${productId}`);
+        }
 
         const markers = state.restorationKeys.get(productId);
         if (!markers) return { modifiedCount: 0 };
@@ -64,6 +88,10 @@ const Product = {
 
         const product = state.products.get(productId);
         if (!product) return { modifiedCount: 0 };
+        if (update.$pull?.inventoryRestorationKeys) {
+            markers.delete(update.$pull.inventoryRestorationKeys);
+            return { modifiedCount: 1 };
+        }
         product.stock += update.$inc?.stock || 0;
         if (restorationKey) markers.add(restorationKey);
         return { modifiedCount: 1 };
@@ -122,6 +150,41 @@ const logger = {
     error() {}
 };
 
+const productLockTails = new Map();
+const acquireFakeProductLock = async productId => {
+    const key = String(productId);
+    const previous = productLockTails.get(key) || Promise.resolve();
+    let releaseCurrent;
+    const current = new Promise(resolve => {
+        releaseCurrent = resolve;
+    });
+    productLockTails.set(key, current);
+    await previous;
+    return () => {
+        releaseCurrent();
+        if (productLockTails.get(key) === current) productLockTails.delete(key);
+    };
+};
+
+const acquireFakeProductLocks = async productIds => {
+    const unavailableProductId = productIds.find(productId => state.failProductLocks.has(String(productId)));
+    if (unavailableProductId) {
+        throw new Error(`Simulated product lock failure for ${unavailableProductId}`);
+    }
+    const releases = [];
+    try {
+        for (const productId of [...new Set(productIds.map(String))].sort()) {
+            releases.push(await acquireFakeProductLock(productId));
+        }
+    } catch (error) {
+        for (const release of releases.reverse()) release();
+        throw error;
+    }
+    return () => {
+        for (const release of releases.reverse()) release();
+    };
+};
+
 const reset = () => {
     state.orders = [];
     state.products = new Map();
@@ -131,6 +194,12 @@ const reset = () => {
     state.stripeSessions = new Map();
     state.cart = null;
     state.webhookEvent = null;
+    state.coupons = new Map();
+    state.failCouponStatusUpdateOnce = 0;
+    state.failMarkerCleanup = 0;
+    state.failProductLocks = new Set();
+    state.unprunedOrders = [];
+    productLockTails.clear();
 };
 
 const addOrder = (overrides = {}) => {
@@ -139,8 +208,10 @@ const addOrder = (overrides = {}) => {
         paymentStatus: 'pending',
         status: 'pending',
         inventoryRestored: false,
+        inventoryRestorationKeysPruned: false,
         couponReservationStatus: 'none',
         items: [],
+        couponReservationManaged: true,
         ...overrides
     };
     state.orders.push(order);
@@ -181,12 +252,38 @@ Module._load = function (request, parent, isMain) {
         if (request === '../models/Product') return Product;
         if (request === '../models/Reservation') return {};
         if (request === '../models/Cart') return Cart;
+        if (request === '../services/productReservationLock') {
+            return {
+                withProductReservationLock: async (productId, operation) => {
+                    const release = await acquireFakeProductLock(productId);
+                    try {
+                        return await operation();
+                    } finally {
+                        release();
+                    }
+                },
+                acquireProductReservationLocks: acquireFakeProductLocks
+            };
+        }
         if (request === '../config/logger') return logger;
         if (request === '../services/couponService') {
             return {
                 getCouponDiscount() {},
-                reserveCoupon() {},
-                releaseCouponReservation: async () => {}
+                reserveCoupon: async (coupon, orderId) => {
+                    const record = state.coupons.get(String(coupon._id));
+                    if (record.reservationOrderIds.has(String(orderId))) return;
+                    record.redemptionCount += 1;
+                    record.reservationOrderIds.add(String(orderId));
+                },
+                releaseCouponReservation: async (couponId, orderId) => {
+                    const record = state.coupons.get(String(couponId));
+                    if (record.reservationOrderIds.delete(String(orderId))) {
+                        record.redemptionCount -= 1;
+                    }
+                },
+                consumeCouponReservation: async (couponId, orderId) => {
+                    state.coupons.get(String(couponId))?.reservationOrderIds.delete(String(orderId));
+                }
             };
         }
     }
@@ -204,6 +301,7 @@ reset();
 
 module.exports = {
     addOrder,
+    addCoupon,
     addProduct,
     reset,
     sendWebhook,

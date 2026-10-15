@@ -1,8 +1,26 @@
 <section class="container membership-page" aria-labelledby="unsubscribe-heading">
     <article class="membership-card">
-        <h1 id="unsubscribe-heading">Preferencias actualizadas</h1>
-        <p>Si el enlace correspondía a una suscripción activa, ya no recibirás correos promocionales de esa lista.</p>
-        <p>Esto no afecta los correos transaccionales de tus pedidos ni tu membresía.</p>
+        <% if (unsubscribeCompleted) { %>
+            <h1 id="unsubscribe-heading">Preferencias actualizadas</h1>
+            <p>Si el enlace correspondía a una suscripción activa, ya no recibirás correos promocionales de esa lista.</p>
+            <p>Esto no afecta los correos transaccionales de tus pedidos ni tu membresía.</p>
+        <% } else if (unsubscribeAction) { %>
+            <h1 id="unsubscribe-heading">Confirmar baja</h1>
+            <p>Confirma si deseas dejar de recibir correos promocionales de TechStore.</p>
+            <p>Esto no afecta los correos transaccionales de tus pedidos.</p>
+            <form method="post" action="<%= unsubscribeAction %>">
+                <% if (newsletterToken) { %>
+                    <input type="hidden" name="newsletter" value="<%= newsletterToken %>">
+                <% } %>
+                <% if (vipToken) { %>
+                    <input type="hidden" name="vip" value="<%= vipToken %>">
+                <% } %>
+                <button class="btn btn-primary" type="submit">Confirmar baja</button>
+            </form>
+        <% } else { %>
+            <h1 id="unsubscribe-heading">Enlace de baja inválido</h1>
+            <p>El enlace no es válido. Si necesitas ayuda, ponte en contacto con TechStore.</p>
+        <% } %>
         <a class="btn btn-primary" href="/">Volver a TechStore</a>
     </article>
 </section>

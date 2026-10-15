@@ -45,11 +45,33 @@ const subscribeNewsletter = async (req, res, next) => {
 
 const unsubscribeNewsletter = async (req, res, next) => {
     try {
+        const { token } = req.params;
+        const validToken = typeof token === 'string' && /^[a-f0-9]{48}$/i.test(token);
+        if (req.method === 'GET') {
+            return res.render('newsletter-unsubscribed', {
+                title: 'Confirmar baja | TechStore',
+                unsubscribeAction: validToken ? `/api/newsletter/unsubscribe/${token}` : null,
+                unsubscribeCompleted: false,
+                newsletterToken: null,
+                vipToken: null
+            });
+        }
+        if (!validToken) {
+            return res.status(400).render('newsletter-unsubscribed', {
+                title: 'Enlace de baja inválido | TechStore',
+                unsubscribeAction: null,
+                unsubscribeCompleted: false
+            });
+        }
+
         await Newsletter.updateOne(
-            { unsubscribeToken: req.params.token, isSubscribed: { $ne: false } },
+            { unsubscribeToken: token, isSubscribed: { $ne: false } },
             { $set: { isSubscribed: false }, $unset: { unsubscribeToken: 1 } }
         );
-        res.render('newsletter-unsubscribed', { title: 'Preferencias actualizadas | TechStore' });
+        res.render('newsletter-unsubscribed', {
+            title: 'Preferencias actualizadas | TechStore',
+            unsubscribeCompleted: true
+        });
     } catch (error) {
         next(error);
     }
@@ -57,21 +79,48 @@ const unsubscribeNewsletter = async (req, res, next) => {
 
 const unsubscribeCampaignMarketing = async (req, res, next) => {
     try {
+        const source = (req.method === 'POST' ? req.body : req.query) || {};
+        const newsletterToken = typeof source.newsletter === 'string' &&
+            /^[a-f0-9]{48}$/i.test(source.newsletter) ? source.newsletter : null;
+        const vipToken = typeof source.vip === 'string' &&
+            /^[a-f0-9]{48}$/i.test(source.vip) ? source.vip : null;
+
+        if (req.method === 'GET') {
+            return res.render('newsletter-unsubscribed', {
+                title: 'Confirmar baja | TechStore',
+                newsletterToken,
+                vipToken,
+                unsubscribeAction: newsletterToken || vipToken ? '/api/marketing/unsubscribe' : null,
+                unsubscribeCompleted: false
+            });
+        }
+
+        if (!newsletterToken && !vipToken) {
+            return res.status(400).render('newsletter-unsubscribed', {
+                title: 'Enlace de baja inválido | TechStore',
+                unsubscribeAction: null,
+                unsubscribeCompleted: false
+            });
+        }
+
         const updates = [];
-        if (req.query.newsletter) {
+        if (newsletterToken) {
             updates.push(Newsletter.updateOne(
-                { unsubscribeToken: req.query.newsletter, isSubscribed: { $ne: false } },
+                { unsubscribeToken: newsletterToken, isSubscribed: { $ne: false } },
                 { $set: { isSubscribed: false }, $unset: { unsubscribeToken: 1 } }
             ));
         }
-        if (req.query.vip) {
+        if (vipToken) {
             updates.push(Membership.updateOne(
-                { marketingToken: req.query.vip, marketingOptIn: true },
+                { marketingToken: vipToken, marketingOptIn: true },
                 { $set: { marketingOptIn: false }, $unset: { marketingToken: 1 } }
             ));
         }
         await Promise.all(updates);
-        res.render('newsletter-unsubscribed', { title: 'Preferencias actualizadas | TechStore' });
+        res.render('newsletter-unsubscribed', {
+            title: 'Preferencias actualizadas | TechStore',
+            unsubscribeCompleted: true
+        });
     } catch (error) {
         next(error);
     }

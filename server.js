@@ -61,10 +61,17 @@ cron.schedule('*/10 * * * *', async () => {
 // Reintentar la conciliación de inventario de sesiones Stripe expiradas cada 10 minutos.
 cron.schedule('*/10 * * * *', async () => {
     try {
-        const { reconcileExpiredOrders } = require('./controllers/orderController');
+        const {
+            reconcileExpiredOrders,
+            pruneCompletedInventoryRestorationKeys
+        } = require('./controllers/orderController');
         const reconciledOrders = await reconcileExpiredOrders();
         if (reconciledOrders > 0) {
             logger.info(`Órdenes de Stripe vencidas reconciliadas: ${reconciledOrders}`);
+        }
+        const prunedOrders = await pruneCompletedInventoryRestorationKeys();
+        if (prunedOrders > 0) {
+            logger.info(`Claves de restitución de inventario limpiadas: ${prunedOrders}`);
         }
     } catch (cronError) {
         logger.error(`Error en cron job de conciliación de checkout: ${cronError.message}`, { stack: cronError.stack });

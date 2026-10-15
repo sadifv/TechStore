@@ -60,6 +60,10 @@ const orderSchema = new mongoose.Schema({
         enum: ['none', 'reserved', 'redeemed', 'released'],
         default: 'none'
     },
+    couponReservationManaged: {
+        type: Boolean,
+        default: undefined
+    },
     cartSnapshotUpdatedAt: Date,
     paymentMethod: {
         type: String,
@@ -73,6 +77,10 @@ const orderSchema = new mongoose.Schema({
         index: true
     },
     inventoryRestored: {
+        type: Boolean,
+        default: false
+    },
+    inventoryRestorationKeysPruned: {
         type: Boolean,
         default: false
     },

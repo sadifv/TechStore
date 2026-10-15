@@ -35,6 +35,14 @@ const productSchema = new mongoose.Schema({
         default: [],
         select: false
     },
+    reservationLockToken: {
+        type: String,
+        select: false
+    },
+    reservationLockExpiresAt: {
+        type: Date,
+        select: false
+    },
     // FLASH SALE (Oferta Relámpago)
     flashSale: {
         type: Boolean,

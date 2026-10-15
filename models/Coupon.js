@@ -52,6 +52,11 @@ const couponSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
+    reservationOrderIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        default: [],
+        select: false
+    },
     active: {
         type: Boolean,
         default: true,

@@ -8,8 +8,10 @@ const logger = require('../config/logger');
 const {
     getCouponDiscount,
     reserveCoupon,
-    releaseCouponReservation
+    releaseCouponReservation,
+    consumeCouponReservation
 } = require('../services/couponService');
+const { acquireProductReservationLocks } = require('../services/productReservationLock');
 
 const restoreOrderInventory = async (orderId, items) => {
     let order = await Order.findOneAndUpdate(
@@ -28,47 +30,123 @@ const restoreOrderInventory = async (orderId, items) => {
     if (!order) return false;
 
     const itemsToRestore = items || order.items.filter(item => item.inventoryReserved);
-    for (const item of itemsToRestore) {
-        // The marker and stock increment share one product update, making Stripe retries idempotent.
-        const restorationKey = `${order._id}:${item.product}`;
-        const result = await Product.updateOne(
-            { _id: item.product, inventoryRestorationKeys: { $ne: restorationKey } },
-            {
-                $inc: { stock: item.quantity },
-                $addToSet: { inventoryRestorationKeys: restorationKey }
-            }
-        );
-
-        if (result.modifiedCount !== 1) {
-            const alreadyRestored = await Product.exists({
-                _id: item.product,
-                inventoryRestorationKeys: restorationKey
-            });
-            if (!alreadyRestored) {
-                throw new Error(`No se pudo restituir el inventario del producto ${item.product} para la orden ${order._id}.`);
-            }
-        }
-    }
-
-    const finalized = await Order.updateOne(
-        { _id: order._id, paymentStatus: 'failed', inventoryRestored: { $ne: true } },
-        { $set: { inventoryRestored: true } }
+    const releaseProductLocks = await acquireProductReservationLocks(
+        itemsToRestore.map(item => item.product)
     );
-    if (finalized.modifiedCount !== 1) {
-        const currentOrder = await Order.findOne({ _id: order._id, paymentStatus: 'failed', inventoryRestored: true }).lean();
-        if (!currentOrder) {
-            throw new Error(`No se pudo confirmar la restitución de inventario para la orden ${order._id}.`);
+    try {
+        const completedOrder = await Order.exists({
+            _id: order._id,
+            paymentStatus: 'failed',
+            inventoryRestored: true
+        });
+        if (completedOrder) return false;
+
+        for (const item of itemsToRestore) {
+            // The marker and stock increment share one product update, making Stripe retries idempotent.
+            const restorationKey = `${order._id}:${item.product}`;
+            const result = await Product.updateOne(
+                { _id: item.product, inventoryRestorationKeys: { $ne: restorationKey } },
+                {
+                    $inc: { stock: item.quantity },
+                    $addToSet: { inventoryRestorationKeys: restorationKey }
+                }
+            );
+
+            if (result.modifiedCount !== 1) {
+                const alreadyRestored = await Product.exists({
+                    _id: item.product,
+                    inventoryRestorationKeys: restorationKey
+                });
+                if (!alreadyRestored) {
+                    throw new Error(`No se pudo restituir el inventario del producto ${item.product} para la orden ${order._id}.`);
+                }
+            }
+        }
+
+        if (order.couponReservationStatus === 'reserved' && order.coupon) {
+            await releaseCouponReservation(
+                order.coupon,
+                order._id,
+                order.couponReservationManaged === undefined
+            );
+            await Order.updateOne(
+                { _id: orderId, couponReservationStatus: 'reserved' },
+                { $set: { couponReservationStatus: 'released' } }
+            );
+        }
+
+        const finalized = await Order.updateOne(
+            { _id: order._id, paymentStatus: 'failed', inventoryRestored: { $ne: true } },
+            { $set: { inventoryRestored: true } }
+        );
+        if (finalized.modifiedCount !== 1) {
+            const currentOrder = await Order.findOne({
+                _id: order._id,
+                paymentStatus: 'failed',
+                inventoryRestored: true
+            }).lean();
+            if (!currentOrder) {
+                throw new Error(`No se pudo confirmar la restitución de inventario para la orden ${order._id}.`);
+            }
+        }
+
+        try {
+            for (const item of itemsToRestore) {
+                await Product.updateOne(
+                    { _id: item.product },
+                    { $pull: { inventoryRestorationKeys: `${order._id}:${item.product}` } }
+                );
+            }
+            await Order.updateOne(
+                { _id: order._id, paymentStatus: 'failed', inventoryRestored: true },
+                { $set: { inventoryRestorationKeysPruned: true } }
+            );
+        } catch (cleanupError) {
+            logger.error(`La orden ${order._id} fue restituida, pero no se pudieron limpiar sus claves de idempotencia: ${cleanupError.message}`, {
+                stack: cleanupError.stack
+            });
+        }
+        return true;
+    } finally {
+        await releaseProductLocks();
+    }
+};
+
+const pruneCompletedInventoryRestorationKeys = async () => {
+    const orders = await Order.find({
+        paymentStatus: 'failed',
+        inventoryRestored: true,
+        inventoryRestorationKeysPruned: { $ne: true }
+    }).sort({ createdAt: 1 }).limit(100);
+
+    let prunedCount = 0;
+    for (const order of orders) {
+        const productIds = order.items
+            .filter(item => item.inventoryReserved)
+            .map(item => item.product);
+        let releaseLocks;
+        try {
+            releaseLocks = await acquireProductReservationLocks(productIds);
+            for (const productId of productIds) {
+                await Product.updateOne(
+                    { _id: productId },
+                    { $pull: { inventoryRestorationKeys: `${order._id}:${productId}` } }
+                );
+            }
+            const result = await Order.updateOne(
+                { _id: order._id, paymentStatus: 'failed', inventoryRestored: true },
+                { $set: { inventoryRestorationKeysPruned: true } }
+            );
+            if (result.modifiedCount === 1) prunedCount += 1;
+        } catch (error) {
+            logger.error(`No se pudieron limpiar las claves de idempotencia de la orden ${order._id}: ${error.message}`, {
+                stack: error.stack
+            });
+        } finally {
+            if (releaseLocks) await releaseLocks();
         }
     }
-
-    if (order.couponReservationStatus === 'reserved' && order.coupon) {
-        await Order.updateOne(
-            { _id: orderId, couponReservationStatus: 'reserved' },
-            { $set: { couponReservationStatus: 'released' } }
-        );
-        await releaseCouponReservation(order.coupon);
-    }
-    return true;
+    return prunedCount;
 };
 
 const reconcileExpiredOrders = async () => {
@@ -144,6 +222,11 @@ const markOrderAsPaid = async (orderId) => {
     await reconcilePaidOrderCart(order);
 
     if (order?.couponReservationStatus === 'reserved') {
+        await consumeCouponReservation(
+            order.coupon,
+            order._id,
+            order.couponReservationManaged === undefined
+        );
         await Order.updateOne(
             { _id: order._id, couponReservationStatus: 'reserved' },
             { $set: { couponReservationStatus: 'redeemed' } }
@@ -191,9 +274,8 @@ const createOrder = async (req, res, next) => {
     let newOrder;
     let reservedItems = [];
     let stripeSessionId;
-    let couponReservationHeld = false;
-    let reservedCouponId;
     let couponDiscount;
+    let releaseStockLocks;
     try {
         const { items, guestInfo, shippingAddress, paymentMethod = 'card', couponCode } = req.body;
 
@@ -248,6 +330,8 @@ const createOrder = async (req, res, next) => {
             }
             normalizedItems.set(productId, combinedQuantity);
         }
+
+        releaseStockLocks = await acquireProductReservationLocks([...normalizedItems.keys()]);
 
         // Calcular totalAmount desde los productos en DB
         let totalAmount = 0;
@@ -339,6 +423,7 @@ const createOrder = async (req, res, next) => {
             coupon: couponDiscount?.coupon._id,
             couponCode: couponDiscount?.coupon.code,
             couponReservationStatus: couponDiscount ? 'reserved' : 'none',
+            couponReservationManaged: couponDiscount ? false : undefined,
             paymentStatus: 'pending',
             status: 'pending',
             paymentMethod,
@@ -362,14 +447,14 @@ const createOrder = async (req, res, next) => {
             orderData.shippingAddress = shippingAddress;
         }
 
-        if (couponDiscount) {
-            await reserveCoupon(couponDiscount.coupon);
-            couponReservationHeld = true;
-            reservedCouponId = couponDiscount.coupon._id;
-        }
-
         // Crear la orden en MongoDB
         newOrder = await Order.create(orderData);
+
+        if (couponDiscount) {
+            await reserveCoupon(couponDiscount.coupon, newOrder._id);
+            newOrder.couponReservationManaged = true;
+            await newOrder.save();
+        }
 
         // Descontar inventario con una operación condicional para evitar stock negativo.
         for (const [index, item] of orderItems.entries()) {
@@ -381,6 +466,8 @@ const createOrder = async (req, res, next) => {
                 { $inc: { stock: -item.quantity } }
             );
             if (result.modifiedCount !== 1) {
+                await releaseStockLocks();
+                releaseStockLocks = null;
                 await restoreOrderInventory(newOrder._id, reservedItems);
                 return res.status(409).json({
                     success: false,
@@ -391,6 +478,15 @@ const createOrder = async (req, res, next) => {
             newOrder.items[index].inventoryReserved = true;
             await newOrder.save();
         }
+
+        if (userId) {
+            await Reservation.updateMany(
+                { user: userId, product: { $in: orderItems.map(item => item.product) }, status: 'active' },
+                { $set: { status: 'completed' } }
+            );
+        }
+        await releaseStockLocks();
+        releaseStockLocks = null;
 
         // Construir line items para Stripe
         const lineItems = orderItems.map(oi => ({
@@ -438,14 +534,6 @@ const createOrder = async (req, res, next) => {
         }
         await newOrder.save();
 
-        if (userId) {
-            await Reservation.updateMany(
-                { user: userId, product: { $in: orderItems.map(item => item.product) }, status: 'active' },
-                { $set: { status: 'completed' } }
-            );
-        }
-
-        couponReservationHeld = false;
         logger.info(`Orden creada: ${newOrder._id} - Stripe Session: ${session.id} - Total: $${finalAmount.toFixed(2)}`);
 
         res.status(201).json({
@@ -464,18 +552,15 @@ const createOrder = async (req, res, next) => {
                 }
             }
             try {
+                if (releaseStockLocks) {
+                    await releaseStockLocks();
+                    releaseStockLocks = null;
+                }
                 await restoreOrderInventory(newOrder._id, reservedItems);
-                couponReservationHeld = false;
             } catch (restoreError) {
                 logger.error(`No se pudo restituir el inventario de la orden ${newOrder._id}: ${restoreError.message}`, {
                     stack: restoreError.stack
                 });
-            }
-        } else if (couponReservationHeld) {
-            try {
-                await releaseCouponReservation(reservedCouponId);
-            } catch (releaseError) {
-                logger.error(`No se pudo liberar la reserva del cupón: ${releaseError.message}`, { stack: releaseError.stack });
             }
         }
         logger.error(`Error al crear orden: ${error.message}`, { stack: error.stack });
@@ -483,6 +568,10 @@ const createOrder = async (req, res, next) => {
             return res.status(error.statusCode).json({ success: false, error: error.message });
         }
         next(error);
+    } finally {
+        if (releaseStockLocks) {
+            await releaseStockLocks();
+        }
     }
 };
 
@@ -781,6 +870,7 @@ module.exports = {
     cancelOrderCheckout,
     confirmOrderPayment,
     reconcileExpiredOrders,
+    pruneCompletedInventoryRestorationKeys,
     getUserOrders,
     handleStripeWebhook,
     updateOrderStatus

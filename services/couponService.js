@@ -67,11 +67,13 @@ const getCouponDiscount = async ({ code, userId, subtotal }) => {
     return { coupon, discountAmount };
 };
 
-const reserveCoupon = async (coupon) => {
+const reserveCoupon = async (coupon, orderId) => {
+    if (!orderId) throw new Error('Se requiere el ID de la orden para reservar el cupón.');
     const filter = {
         _id: coupon._id,
         active: true,
-        startsAt: { $lte: new Date() }
+        startsAt: { $lte: new Date() },
+        reservationOrderIds: { $ne: orderId }
     };
 
     if (coupon.expiresAt) filter.expiresAt = { $gt: new Date() };
@@ -79,26 +81,70 @@ const reserveCoupon = async (coupon) => {
 
     const reserved = await Coupon.findOneAndUpdate(
         filter,
-        { $inc: { redemptionCount: 1 } },
+        {
+            $inc: { redemptionCount: 1 },
+            $addToSet: { reservationOrderIds: orderId }
+        },
         { new: true }
     );
 
     if (!reserved) {
+        const existingReservation = await Coupon.exists({
+            _id: coupon._id,
+            reservationOrderIds: orderId
+        });
+        if (existingReservation) return;
         const error = new Error('El cupón acaba de alcanzar su límite de usos. Intenta con otro código.');
         error.statusCode = 409;
         throw error;
     }
 };
 
-const releaseCouponReservation = async (couponId) => {
+const ensureLegacyCouponReservation = async (couponId, orderId) => {
     await Coupon.updateOne(
-        { _id: couponId, redemptionCount: { $gt: 0 } },
-        { $inc: { redemptionCount: -1 } }
+        { _id: couponId, reservationOrderIds: { $ne: orderId } },
+        { $addToSet: { reservationOrderIds: orderId } }
+    );
+};
+
+const releaseCouponReservation = async (couponId, orderId, legacyReservation = false) => {
+    if (!couponId || !orderId) throw new Error('Se requieren el cupón y la orden para liberar la reserva.');
+    if (legacyReservation) await ensureLegacyCouponReservation(couponId, orderId);
+    const result = await Coupon.updateOne(
+        {
+            _id: couponId,
+            reservationOrderIds: orderId,
+            redemptionCount: { $gt: 0 }
+        },
+        {
+            $inc: { redemptionCount: -1 },
+            $pull: { reservationOrderIds: orderId }
+        }
+    );
+
+    if (result.modifiedCount === 0) {
+        const inconsistentReservation = await Coupon.exists({
+            _id: couponId,
+            reservationOrderIds: orderId
+        });
+        if (inconsistentReservation) {
+            throw new Error(`La reserva del cupón ${couponId} para la orden ${orderId} no pudo liberarse.`);
+        }
+    }
+};
+
+const consumeCouponReservation = async (couponId, orderId, legacyReservation = false) => {
+    if (!couponId || !orderId) throw new Error('Se requieren el cupón y la orden para confirmar la reserva.');
+    if (legacyReservation) await ensureLegacyCouponReservation(couponId, orderId);
+    await Coupon.updateOne(
+        { _id: couponId, reservationOrderIds: orderId },
+        { $pull: { reservationOrderIds: orderId } }
     );
 };
 
 module.exports = {
     getCouponDiscount,
     reserveCoupon,
-    releaseCouponReservation
+    releaseCouponReservation,
+    consumeCouponReservation
 };

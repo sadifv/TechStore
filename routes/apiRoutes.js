@@ -32,8 +32,12 @@ const { validate } = require('../middleware/validate');
 
 router.post('/contact', sensitiveLimiter, validate, sendContactMessage);
 router.post('/newsletter', sensitiveLimiter, validate, subscribeNewsletter);
-router.get('/newsletter/unsubscribe/:token', unsubscribeNewsletter);
-router.get('/marketing/unsubscribe', unsubscribeCampaignMarketing);
+router.route('/newsletter/unsubscribe/:token')
+    .get(unsubscribeNewsletter)
+    .post(unsubscribeNewsletter);
+router.route('/marketing/unsubscribe')
+    .get(unsubscribeCampaignMarketing)
+    .post(unsubscribeCampaignMarketing);
 router.get('/membership', requireAuth, getMembershipStatus);
 router.post('/membership/checkout', requireAuth, sensitiveLimiter, startMembershipCheckout);
 router.post('/membership/mock-confirm', requireAuth, sensitiveLimiter, confirmMockMembership);
