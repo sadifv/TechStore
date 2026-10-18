@@ -121,7 +121,7 @@ app.use(
 
 // Habilitar CORS (Permisivo en desarrollo local, estricto en producción)
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+  ? (process.env.ALLOWED_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean)
   : [];
 
 app.use(cors({

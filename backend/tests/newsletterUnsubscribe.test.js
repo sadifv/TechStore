@@ -67,7 +67,7 @@ test('GET newsletter unsubscribe only displays an explicit confirmation form', a
 
     assert.equal(calls.length, 0);
     assert.equal(res.redirectStatus, 302);
-    assert.equal(res.location, `http://localhost:5173/api/newsletter/unsubscribe/${'a'.repeat(48)}`);
+    assert.equal(res.location, `http://localhost:5173/newsletter/unsubscribe/${'a'.repeat(48)}`);
 });
 
 test('POST confirms newsletter unsubscribe', async () => {
@@ -96,7 +96,7 @@ test('GET campaign unsubscribe shows confirmation without changing preferences',
     }, res, error => { throw error; });
 
     assert.equal(calls.length, 0);
-    assert.equal(res.location, `http://localhost:5173${`/api/marketing/unsubscribe?newsletter=${'c'.repeat(48)}&vip=${'d'.repeat(48)}`}`);
+    assert.equal(res.location, `http://localhost:5173${`/marketing/unsubscribe?newsletter=${'c'.repeat(48)}&vip=${'d'.repeat(48)}`}`);
 });
 
 test('POST campaign unsubscribe applies only the confirmed token updates', async () => {

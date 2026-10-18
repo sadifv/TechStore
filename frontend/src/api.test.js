@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import { requestJson, safeReturnTo } from './api.js'
+import { apiUrl, backendAssetUrl, requestJson, safeReturnTo } from './api.js'
 
 const originalFetch = globalThis.fetch
 const originalWindow = globalThis.window
@@ -17,6 +17,13 @@ test('safeReturnTo only permits same-origin paths', () => {
   assert.equal(safeReturnTo('//example.com/steal-session'), '/')
   assert.equal(safeReturnTo('/\\\\example.com'), '/')
   assert.equal(safeReturnTo('https://example.com'), '/')
+})
+
+test('API and uploaded-image URLs keep the same-origin default', () => {
+  assert.equal(apiUrl('/api/products'), '/api/products')
+  assert.equal(apiUrl('https://payments.example.test/checkout'), 'https://payments.example.test/checkout')
+  assert.equal(backendAssetUrl('/uploads/products/photo.webp'), '/uploads/products/photo.webp')
+  assert.equal(backendAssetUrl('/images/products/product-placeholder.svg'), '/images/products/product-placeholder.svg')
 })
 
 test('requestJson includes the session cookie and JSON accept header', async () => {

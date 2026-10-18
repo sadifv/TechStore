@@ -144,7 +144,7 @@ const getCampaignRecipients = async (audience) => {
         if (recipient.vipToken) params.set('vip', recipient.vipToken);
         return {
             ...recipient,
-            unsubscribeUrl: `${appUrl}/api/marketing/unsubscribe?${params.toString()}`
+            unsubscribeUrl: `${appUrl}/marketing/unsubscribe?${params.toString()}`
         };
     });
 };

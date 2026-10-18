@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { backendAssetUrl } from '../api.js'
 
 const countdown = (end, now) => {
   const difference = new Date(end).getTime() - now
@@ -22,7 +23,7 @@ export default function FlashSaleSection({ product }) {
   const time = now ? countdown(product.flashSaleEndsAt, now) : null
   const expired = time?.expired || false
   return <section className="flash-sale-section" aria-labelledby="flash-sale-title"><article className="flash-sale-card">
-    <figure className="flash-sale-media"><img src={product.image} alt={product.name} /><span className="flash-sale-discount-badge">-{product.flashSaleDiscount}%</span></figure>
+    <figure className="flash-sale-media"><img src={backendAssetUrl(product.image)} alt={product.name} /><span className="flash-sale-discount-badge">-{product.flashSaleDiscount}%</span></figure>
     <header className="flash-sale-info"><span className="badge flash-sale-badge">🔥 ¡Oferta por Tiempo Limitado!</span><h2 id="flash-sale-title">{product.name}</h2><p className="flash-sale-description">{product.description || 'Aprovecha esta oferta exclusiva por tiempo limitado.'}</p>
       <p className="flash-sale-prices">{product.originalPrice != null && <del>${Number(product.originalPrice).toFixed(2)}</del>}<strong>${Number(product.price).toFixed(2)}</strong></p>
       <section className={`flash-sale-timer${expired ? ' is-expired' : ''}`} aria-label="Tiempo restante"><p className="flash-sale-timer-label">⏰ Termina en:</p><output className="flash-sale-countdown" aria-live="off">{[['days','Días'],['hours','Horas'],['minutes','Min'],['seconds','Seg']].map(([key,label]) => <span className="countdown-block" key={key}><strong>{String(time?.[key] ?? 0).padStart(2,'0')}</strong><small>{label}</small></span>)}</output></section>

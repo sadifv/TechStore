@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { requestJson } from './api.js'
+import { backendAssetUrl, requestJson } from './api.js'
 import AiAssistant from './components/AiAssistant.jsx'
 import {
   ForgotPasswordPage,
@@ -135,7 +135,7 @@ function ProductPage({ productId }) {
   if (!product) return <section className="products-section"><p className="empty-msg" role="status">Cargando producto...</p></section>
   const available = product.availableStock ?? 0
   const onSale = product.flashSale && product.flashSaleEndsAt && new Date(product.flashSaleEndsAt) > new Date()
-  return <article className="product-detail-page"><figure className="product-detail-media"><img src={product.image || '/images/products/product-placeholder.svg'} alt={product.name} />{onSale && <span className="product-detail-discount">-{product.flashSaleDiscount}%</span>}</figure>
+  return <article className="product-detail-page"><figure className="product-detail-media"><img src={backendAssetUrl(product.image || '/images/products/product-placeholder.svg')} alt={product.name} />{onSale && <span className="product-detail-discount">-{product.flashSaleDiscount}%</span>}</figure>
     <section className="product-detail-info"><nav aria-label="Navegación"><a href="/catalogo" className="product-detail-back">← Volver al catálogo</a></nav><p className="product-detail-category"><i className="ri-price-tag-3-line" aria-hidden="true" /> {product.category}</p><h1 className="product-detail-title">{product.name}</h1>{product.description && <p className="product-detail-description">{product.description}</p>}<section className="product-detail-price-section" aria-label="Precio">{onSale && product.originalPrice != null && <p className="product-detail-price-original"><del>${Number(product.originalPrice).toFixed(2)}</del></p>}<p className="product-detail-price">${Number(product.price).toFixed(2)}</p></section><section className="product-detail-stock" aria-label="Disponibilidad"><p id="stock-indicator" className={available > 0 ? 'stock-in' : 'stock-out'} aria-live="polite"><i className="ri-checkbox-circle-line" aria-hidden="true" /><span id="stock-label">{available > 0 ? 'En stock' : 'Agotado temporalmente'}</span><span id="stock-separator" aria-hidden="true">·</span><span id="stock-count">{available}</span><span id="stock-unit-label">unidades disponibles</span></p></section><form className="product-detail-actions" id="add-to-cart-form" onSubmit={addProduct}><input type="hidden" name="productId" value={product._id} /><label htmlFor="quantity" className="sr-only">Cantidad</label><input type="number" id="quantity" name="quantity" value={quantity} onChange={(event) => setQuantity(Math.max(1, Math.min(available || 1, Number(event.target.value) || 1)))} min="1" max={available} disabled={available === 0} /><button type="submit" className="btn btn-primary btn-block" disabled={available === 0}><i className="ri-shopping-cart-line" aria-hidden="true" />{available === 0 ? 'Producto agotado' : 'Añadir al carrito'}</button>{cartError && <output className="form-status error" role="alert">{cartError}</output>}</form></section></article>
 }
 
@@ -157,7 +157,7 @@ export default function App() {
 
   const productMatch = pathname.match(/^\/producto\/([^/]+)$/)
   const resetMatch = pathname.match(/^\/reset-password\/([^/]+)$/)
-  const unsubscribeMatch = pathname.match(/^\/api\/(?:newsletter\/unsubscribe\/([^/]+)|membership\/unsubscribe\/([^/]+))$/)
+  const unsubscribeMatch = pathname.match(/^\/(?:api\/)?(?:newsletter|membership)\/unsubscribe\/([^/]+)$/)
   const orderDetailMatch = pathname.match(/^\/admin\/orders\/([^/]+)$/)
   const packingSlipMatch = pathname.match(/^\/admin\/orders\/([^/]+)\/packing-slip$/)
   let page
@@ -172,7 +172,7 @@ export default function App() {
   else if (pathname === '/legal') page = <LegalPage />
   else if (pathname === '/forgot-password') page = <ForgotPasswordPage />
   else if (resetMatch) page = <ResetPasswordPage token={decodeURIComponent(resetMatch[1])} />
-  else if (unsubscribeMatch || pathname === '/api/marketing/unsubscribe') page = <NewsletterUnsubscribePage />
+  else if (unsubscribeMatch || pathname === '/api/marketing/unsubscribe' || pathname === '/marketing/unsubscribe') page = <NewsletterUnsubscribePage />
   else if (pathname === '/checkout-success' || pathname === '/api/orders/success') page = <CheckoutSuccessPage />
   else if (pathname === '/error') page = <ErrorPage />
   else if (pathname === '/admin' || pathname === '/admin/dashboard') page = <AdminDashboardPage />

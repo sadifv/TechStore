@@ -1,3 +1,16 @@
+const configuredApiBase = import.meta.env?.VITE_API_BASE_URL?.trim() || ''
+const apiBase = configuredApiBase.replace(/\/+$/, '')
+
+export function apiUrl(path) {
+  if (/^(?:[a-z][a-z\d+.-]*:)?\/\//i.test(path)) return path
+  return `${apiBase}${path.startsWith('/') ? path : `/${path}`}`
+}
+
+export function backendAssetUrl(path) {
+  if (typeof path !== 'string' || !path.startsWith('/uploads/')) return path
+  return apiUrl(path)
+}
+
 export async function requestJson(url, options = {}) {
   const headers = new Headers(options.headers || {})
   headers.set('Accept', 'application/json')
@@ -5,7 +18,7 @@ export async function requestJson(url, options = {}) {
 
   let response
   try {
-    response = await fetch(url, { credentials: 'include', ...options, headers })
+    response = await fetch(apiUrl(url), { credentials: 'include', ...options, headers })
   } catch {
     throw new Error('No se pudo conectar con el servidor. Comprueba que el backend esté activo.')
   }

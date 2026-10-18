@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { backendAssetUrl } from '../api.js'
 import { useCart } from './CartContext.js'
 
 export default function ProductCard({ product }) {
@@ -15,7 +16,7 @@ export default function ProductCard({ product }) {
   }
   return <li><article className="product-card">
     <a href={`/producto/${product._id}`} className="product-card-link" aria-label={`Ver detalles de ${product.name}`}>
-      <figure className="product-card-media"><img src={product.image || '/images/products/product-placeholder.svg'} alt={product.name} loading="lazy" /></figure>
+      <figure className="product-card-media"><img src={backendAssetUrl(product.image || '/images/products/product-placeholder.svg')} alt={product.name} loading="lazy" /></figure>
       <header><h3>{product.name}</h3></header>
       <p className="product-price">${Number(product.price).toFixed(2)}</p>
     </a>

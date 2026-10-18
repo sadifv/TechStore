@@ -31,13 +31,23 @@ Asegúrate de tener instalado en tu sistema:
    cd TechStore
    ```
 
-2. **Configurar el backend:** copia `backend/.env.example` a `backend/.env` y completa las credenciales necesarias. En producción, define `ALLOWED_ORIGINS` con los dominios exactos de la tienda, separados por comas y sin espacios; si queda vacío, el navegador bloqueará las solicitudes de esos orígenes.
+2. **Configurar el backend:** copia `backend/.env.example` a `backend/.env` y completa las credenciales necesarias. En producción, `APP_URL` y `FRONTEND_URL` deben ser la URL pública de React y `ALLOWED_ORIGINS` debe incluir su origen exacto (por ejemplo, `https://tienda.tu-dominio.com`).
 
    Para enviar correos, configura `SMTP_USER` y `SMTP_PASS` con credenciales válidas de Gmail y una contraseña de aplicación. Si aparece `getaddrinfo ENOTFOUND smtp.gmail.com`, revisa la conexión DNS/red del servidor o utiliza un proveedor SMTP accesible desde ese entorno.
 
 3. **Instalar dependencias:** ejecuta `npm ci` dentro de `backend/` y dentro de `frontend/`.
 
 4. **Iniciar en desarrollo:** abre dos terminales. En una ejecuta `npm run dev` desde `backend/`; en la otra ejecuta `npm run dev` desde `frontend/`. React corre en `http://localhost:5173` y Express en `http://localhost:3001`.
+
+## Despliegue frontend/backend
+
+- Compila React con `npm run build` desde `frontend/` y publica `frontend/dist/` en un hosting estático. Express se despliega como servicio Node.js independiente desde `backend/`.
+- La opción recomendada es publicar ambos bajo el mismo dominio mediante un proxy inverso: `/` sirve `frontend/dist/`, mientras `/api/` y `/uploads/` se envían a Express. Así las sesiones usan cookies propias del sitio y no dependen de cookies de terceros.
+- `deploy/nginx.conf.example` contiene una base para Nginx. Termina TLS/HTTPS en el proxy y conserva las cabeceras `X-Forwarded-*`; Express ya confía en un proxy.
+- En ese esquema deja `VITE_API_BASE_URL` vacío en el entorno de build del frontend; configura `APP_URL` y `FRONTEND_URL` con la URL pública de la tienda, y añade ese origen a `ALLOWED_ORIGINS`. Usa HTTPS en producción.
+- Si React y Express usan subdominios separados del mismo dominio (por ejemplo, `tienda.tu-dominio.com` y `api.tu-dominio.com`), define `VITE_API_BASE_URL=https://api.tu-dominio.com` **antes de compilar**. En Express, `ALLOWED_ORIGINS` debe contener `https://tienda.tu-dominio.com`; `APP_URL` y `FRONTEND_URL` apuntan a React. Mantén HTTPS y ambos subdominios bajo el mismo sitio para que las cookies de sesión `SameSite=Lax` funcionen.
+- No despliegues React y API en dominios de sitios distintos sin cambiar y validar la política de cookies: los navegadores pueden bloquear esas cookies en solicitudes entre sitios.
+- `BACKEND_PROXY_TARGET` solo configura el proxy de desarrollo de Vite. No cambia la URL del backend en el bundle de producción.
 
 ## Pruebas
 

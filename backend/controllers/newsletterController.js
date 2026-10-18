@@ -49,7 +49,7 @@ const unsubscribeNewsletter = async (req, res, next) => {
         const { token } = req.params;
         const validToken = typeof token === 'string' && /^[a-f0-9]{48}$/i.test(token);
         if (req.method === 'GET') {
-            return redirectToFrontend(req, res);
+            return redirectToFrontend(req, res, `/newsletter/unsubscribe/${encodeURIComponent(token || '')}`);
         }
         if (!validToken) {
             return res.status(400).json({ success: false, error: 'El enlace de baja no es válido.' });
@@ -74,7 +74,9 @@ const unsubscribeCampaignMarketing = async (req, res, next) => {
             /^[a-f0-9]{48}$/i.test(source.vip) ? source.vip : null;
 
         if (req.method === 'GET') {
-            return redirectToFrontend(req, res);
+            const queryStart = req.originalUrl.indexOf('?');
+            const queryString = queryStart === -1 ? '' : req.originalUrl.slice(queryStart);
+            return redirectToFrontend(req, res, `/marketing/unsubscribe${queryString}`);
         }
 
         if (!newsletterToken && !vipToken) {

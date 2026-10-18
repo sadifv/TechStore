@@ -4,9 +4,11 @@ import { requestJson } from '../api.js'
 export default function NewsletterUnsubscribePage() {
   const path = location.pathname
   const query = new URLSearchParams(location.search)
-  const newsletterToken = path.startsWith('/api/newsletter/unsubscribe/') ? decodeURIComponent(path.split('/').at(-1) || '') : query.get('newsletter') || ''
-  const vipToken = path.startsWith('/api/membership/unsubscribe/') ? decodeURIComponent(path.split('/').at(-1) || '') : query.get('vip') || ''
-  const campaign = path.startsWith('/api/marketing/unsubscribe')
+  const newsletterPath = path.startsWith('/api/newsletter/unsubscribe/') || path.startsWith('/newsletter/unsubscribe/')
+  const membershipPath = path.startsWith('/api/membership/unsubscribe/') || path.startsWith('/membership/unsubscribe/')
+  const newsletterToken = newsletterPath ? decodeURIComponent(path.split('/').at(-1) || '') : query.get('newsletter') || ''
+  const vipToken = membershipPath ? decodeURIComponent(path.split('/').at(-1) || '') : query.get('vip') || ''
+  const campaign = path.startsWith('/api/marketing/unsubscribe') || path.startsWith('/marketing/unsubscribe')
   const validToken = (token) => /^[a-f0-9]{48}$/i.test(token)
   const valid = campaign ? validToken(newsletterToken) || validToken(vipToken) : validToken(newsletterToken || vipToken)
   const [done, setDone] = useState(false)
@@ -17,7 +19,7 @@ export default function NewsletterUnsubscribePage() {
     setBusy(true); setError('')
     try {
       if (campaign) await requestJson('/api/marketing/unsubscribe', { method: 'POST', body: JSON.stringify({ newsletter: newsletterToken, vip: vipToken }) })
-      else if (path.startsWith('/api/membership/unsubscribe/')) await requestJson(`/api/membership/unsubscribe/${encodeURIComponent(vipToken)}`, { method: 'POST', body: JSON.stringify({}) })
+      else if (membershipPath) await requestJson(`/api/membership/unsubscribe/${encodeURIComponent(vipToken)}`, { method: 'POST', body: JSON.stringify({}) })
       else await requestJson(`/api/newsletter/unsubscribe/${encodeURIComponent(newsletterToken)}`, { method: 'POST', body: JSON.stringify({}) })
       setDone(true)
     } catch (cause) { setError(cause.message) } finally { setBusy(false) }

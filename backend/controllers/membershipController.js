@@ -316,7 +316,7 @@ const confirmMockMembership = async (req, res, next) => {
                 welcomeCouponCode: membership.welcomeCouponCode,
                 monthlyCouponCode: membership.monthlyCouponCode,
                 unsubscribeUrl: membership.marketingToken
-                    ? `${getFrontendBaseUrl() || process.env.APP_URL || 'http://localhost:3001'}/api/membership/unsubscribe/${membership.marketingToken}`
+                    ? `${getFrontendBaseUrl() || process.env.APP_URL || 'http://localhost:3001'}/membership/unsubscribe/${membership.marketingToken}`
                     : undefined
             });
         } catch (emailError) {
@@ -459,7 +459,7 @@ const unsubscribeVipMarketing = async (req, res) => {
         );
         return res.json({ success: true, message: 'Tus preferencias de marketing VIP se actualizaron.' });
     }
-    return redirectToFrontend(req, res);
+    return redirectToFrontend(req, res, `/membership/unsubscribe/${encodeURIComponent(req.params.token || '')}`);
 };
 
 module.exports = {
