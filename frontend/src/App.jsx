@@ -26,6 +26,7 @@ import NewsletterUnsubscribePage from './components/NewsletterUnsubscribePage.js
 import HomePage from './pages/HomePage.jsx'
 import CatalogPage from './pages/CatalogPage.jsx'
 import ProductPage from './pages/ProductPage.jsx'
+import usePresenceHeartbeat from './hooks/usePresenceHeartbeat.js'
 
 function NotFoundPage() {
   return <section className="products-section"><h1>Página no encontrada</h1><a className="btn btn-primary" href="/">Volver al inicio</a></section>
@@ -39,6 +40,7 @@ export default function App() {
   const pathname = location.pathname.replace(/\/+$/, '') || '/'
   const [user, setUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
+  usePresenceHeartbeat(authReady ? user : null)
   useEffect(() => {
     requestJson('/api/auth/me').then((result) => setUser(result.user)).catch(() => setUser(null)).finally(() => setAuthReady(true))
   }, [])

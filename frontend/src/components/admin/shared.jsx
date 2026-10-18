@@ -3,20 +3,28 @@ import { useEffect, useState } from 'react'
 import { apiUrl, requestJson } from '../../api.js'
 
 export const money = (value) => `$${Number(value || 0).toFixed(2)}`
-export const date = (value, options = { year: 'numeric', month: 'short', day: 'numeric' }) => value ? new Date(value).toLocaleDateString('es-EC', options) : 'N/A'
+export const date = (value, options = { year: 'numeric', month: 'short', day: 'numeric' }) => value ? new Intl.DateTimeFormat('es-EC', options).format(new Date(value)) : 'N/A'
 export const statuses = { pending: 'Pendiente', processing: 'En proceso', shipped: 'Enviado', delivered: 'Entregado', completed: 'Completado', cancelled: 'Cancelado' }
 export const categories = ['Laptops', 'Smartphones', 'Audio', 'Accesorios', 'Periféricos', 'Monitores', 'Almacenamiento', 'Componentes', 'Gaming', 'Redes']
 export const placeholder = '/images/products/product-placeholder.svg'
 
-export function useAdminData(url) {
+export function useAdminData(url, { refreshIntervalMs = 0 } = {}) {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
   useEffect(() => {
     let active = true
     requestJson(url).then((result) => { if (active) { setData(result.data); setError('') } }).catch((cause) => { if (active) setError(cause.message) })
-    return () => { active = false }
-  }, [url, reload])
+    const intervalId = refreshIntervalMs > 0
+      ? window.setInterval(() => {
+          if (document.visibilityState === 'visible') setReload((value) => value + 1)
+        }, refreshIntervalMs)
+      : null
+    return () => {
+      active = false
+      if (intervalId) window.clearInterval(intervalId)
+    }
+  }, [url, reload, refreshIntervalMs])
   return { data, error, refresh: () => setReload((value) => value + 1) }
 }
 

@@ -37,6 +37,7 @@ const {
     getAdminUsers
 } = require('../controllers/adminController');
 const { getAdminMarketing } = require('../controllers/marketingController');
+const { recordHeartbeat } = require('../controllers/presenceController');
 
 // ==========================================
 // RUTAS PÚBLICAS
@@ -51,6 +52,7 @@ router.route('/marketing/unsubscribe')
     .get(unsubscribeCampaignMarketing)
     .post(unsubscribeCampaignMarketing);
 router.get('/membership', requireAuth, getMembershipStatus);
+router.post('/presence/heartbeat', requireAuth, recordHeartbeat);
 router.post('/membership/checkout', requireAuth, sensitiveLimiter, startMembershipCheckout);
 router.post('/membership/mock-confirm', requireAuth, sensitiveLimiter, confirmMockMembership);
 router.get('/membership/confirm', requireAuth, confirmStripeMembership);

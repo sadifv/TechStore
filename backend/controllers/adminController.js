@@ -5,6 +5,8 @@ const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const Cart = require('../models/Cart');
 const Membership = require('../models/Membership');
+const Presence = require('../models/Presence');
+const { isOnline } = require('../services/presenceService');
 const logger = require('../config/logger');
 
 const respondWithAdminData = (res, data) => {
@@ -239,15 +241,29 @@ const getAdminUsers = async (req, res, next) => {
         }
 
         const [users, totalUsers] = await Promise.all([
-            User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+            User.find(filter)
+                .select('-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
             User.countDocuments(filter)
         ]);
+
+        const presences = users.length
+            ? await Presence.find({ user: { $in: users.map(user => user._id) } }).select('user lastSeenAt').lean()
+            : [];
+        const presenceByUser = new Map(presences.map(presence => [String(presence.user), presence.lastSeenAt]));
+        const usersWithPresence = users.map(user => {
+            const lastSeenAt = presenceByUser.get(String(user._id)) || null;
+            return { ...user, isOnline: isOnline(lastSeenAt), lastSeenAt };
+        });
 
         const totalPages = Math.ceil(totalUsers / limit) || 1;
 
         respondWithAdminData(res, {
             title: 'Gestión de Usuarios | Admin',
-            users,
+            users: usersWithPresence,
             currentSearch: search || '',
             currentRole: role || '',
             pagination: { currentPage: pageNum, totalPages, totalUsers }

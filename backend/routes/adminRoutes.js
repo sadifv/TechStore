@@ -17,6 +17,7 @@ const { validate } = require('../middleware/validate');
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
 const User = require('../models/User');
+const Presence = require('../models/Presence');
 const logger = require('../config/logger');
 const {
     createAdminCoupon,
@@ -94,6 +95,7 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
         }
 
         await User.findByIdAndDelete(id);
+        await Presence.deleteOne({ user: id });
         res.json({ success: true, message: 'Usuario eliminado correctamente.' });
     } catch (error) {
         logger.error(`Error al eliminar usuario: ${error.message}`, { stack: error.stack });
