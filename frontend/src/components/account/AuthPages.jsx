@@ -46,7 +46,7 @@ function AuthPage({ register = false }) {
     buttonText={register ? 'Crear Cuenta' : 'Ingresar'}
     busy={busy}
   >
-    {register && <fieldset className="form-group"><label htmlFor="auth-name">Nombre Completo</label><input id="auth-name" name="name" required minLength="2" autoComplete="name" placeholder="Tu nombre" /></fieldset>}
+    {register && <fieldset className="form-group"><label htmlFor="auth-name">Nombre Completo</label><input id="auth-name" name="name" type="text" required minLength="2" autoComplete="name" placeholder="Tu nombre" /></fieldset>}
     <fieldset className="form-group"><label htmlFor="auth-email">Correo Electrónico</label><input id="auth-email" name="email" type="email" required autoComplete="email" placeholder="correo@ejemplo.com" /></fieldset>
     <fieldset className="form-group"><label htmlFor="auth-password">Contraseña</label><input id="auth-password" name="password" type="password" minLength="6" required autoComplete={register ? 'new-password' : 'current-password'} placeholder="••••••••" /></fieldset>
     {!register && <p className="auth-forgot-link"><a className="link-secondary" href="/forgot-password">¿Olvidaste tu contraseña?</a></p>}
