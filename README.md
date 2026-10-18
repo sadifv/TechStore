@@ -6,11 +6,11 @@ TechStore es una plataforma e-commerce full-stack moderna y accesible orientada 
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Backend:** Node.js, Express.js, EJS (Motor de plantillas con `express-ejs-layouts`).
+- **Backend:** Node.js y Express.js (las plantillas EJS se conservan para correos).
 - **Base de Datos:** MongoDB con Mongoose y sesiones persistentes vía `connect-mongo`.
 - **Seguridad & Middleware:** Helmet, CORS, Express Rate Limit, Express Slow Down, Express Validator, Bcryptjs.
 - **Integraciones:** Stripe API (Checkout y Webhooks), OpenAI API (Asistente TechBot), Winston (Logging estructurado).
-- **Frontend:** Semantic HTML5, CSS Variables, JavaScript vanilla asíncrono (`fetch`), Remix Icon.
+- **Frontend:** React, Vite, CSS y Remix Icon.
 
 ---
 
@@ -31,24 +31,29 @@ Asegúrate de tener instalado en tu sistema:
    cd TechStore
    ```
 
-2. **Configurar el entorno:** copia `.env.example` a `.env` y completa las credenciales necesarias. En producción, define `ALLOWED_ORIGINS` con los dominios exactos de la tienda, separados por comas y sin espacios; si queda vacío, el navegador bloqueará las solicitudes de esos orígenes.
+2. **Configurar el backend:** copia `backend/.env.example` a `backend/.env` y completa las credenciales necesarias. En producción, define `ALLOWED_ORIGINS` con los dominios exactos de la tienda, separados por comas y sin espacios; si queda vacío, el navegador bloqueará las solicitudes de esos orígenes.
 
    Para enviar correos, configura `SMTP_USER` y `SMTP_PASS` con credenciales válidas de Gmail y una contraseña de aplicación. Si aparece `getaddrinfo ENOTFOUND smtp.gmail.com`, revisa la conexión DNS/red del servidor o utiliza un proveedor SMTP accesible desde ese entorno.
 
+3. **Instalar dependencias:** ejecuta `npm ci` dentro de `backend/` y dentro de `frontend/`.
+
+4. **Iniciar en desarrollo:** abre dos terminales. En una ejecuta `npm run dev` desde `backend/`; en la otra ejecuta `npm run dev` desde `frontend/`. React corre en `http://localhost:5173` y Express en `http://localhost:3001`.
+
 ## Pruebas
 
-- `npm test` ejecuta las pruebas automatizadas unitarias con dependencias simuladas.
-- `npm run test:integration` ejecuta un flujo real de checkout contra MongoDB y Stripe en modo test. Requiere MongoDB accesible, `MONGO_TEST_URI` apuntando a una base aislada cuyo nombre termine en `_test`, y `STRIPE_SECRET_KEY` con una clave `sk_test_`. El test crea una sesión de Checkout sin cobrar, la expira y comprueba que la orden y el stock se hayan actualizado; al finalizar elimina únicamente el producto y la orden creados por esa prueba.
+- Ejecuta `npm test` desde `backend/` para las pruebas automatizadas del servidor.
+- Ejecuta `npm test`, `npm run lint` y `npm run build` desde `frontend/` para comprobar React.
+- `npm run test:integration` desde `backend/` ejecuta un flujo real de checkout contra MongoDB y Stripe en modo test. Requiere MongoDB accesible, `MONGO_TEST_URI` apuntando a una base aislada cuyo nombre termine en `_test`, y `STRIPE_SECRET_KEY` con una clave `sk_test_`. El test crea una sesión de Checkout sin cobrar, la expira y comprueba que la orden y el stock se hayan actualizado; al finalizar elimina únicamente el producto y la orden creados por esa prueba.
 - La integración también comprueba la creación de la suscripción VIP mensual en Stripe test y el estado de una sesión VIP expirada; nunca confirma ni cobra una suscripción.
 - Nunca configures `MONGO_TEST_URI` con la base de desarrollo/producción ni uses una clave Stripe `sk_live_` para esta prueba.
-- `npm run db:ensure-reservation-ttl` muestra una vista previa del índice TTL de `reservations`; no cambia nada por defecto. Para aplicarlo explícitamente, ejecuta `npm run db:ensure-reservation-ttl -- --apply`. MongoDB eliminará automáticamente documentos con `expiresAt` vencido; revisa el conteo antes de aplicar.
+- `npm run db:ensure-reservation-ttl` desde `backend/` muestra una vista previa del índice TTL de `reservations`; no cambia nada por defecto. Para aplicarlo explícitamente, ejecuta `npm run db:ensure-reservation-ttl -- --apply`. MongoDB eliminará automáticamente documentos con `expiresAt` vencido; revisa el conteo antes de aplicar.
 
 ## Seguridad y despliegue
 
-- `.env` y las variantes `.env.*` (excepto `.env.example`) se excluyen de Git. Si una captura, log o commit revela una contraseña o clave, revócala o rótala desde el proveedor correspondiente; cambiar el archivo local no invalida la credencial expuesta.
+- `backend/.env` y las variantes `.env.*` (excepto `backend/.env.example`) se excluyen de Git. Si una captura, log o commit revela una contraseña o clave, revócala o rótala desde el proveedor correspondiente; cambiar el archivo local no invalida la credencial expuesta.
 - La aplicación rechaza claves Stripe `sk_test_` en producción y claves `sk_live_` fuera de producción para evitar pruebas accidentales con dinero real o un checkout de producción que no cobre.
 - Para habilitar cobros VIP, establece `MEMBERSHIP_PAYMENT_MODE=stripe`, configura `STRIPE_WEBHOOK_SECRET` y `APP_URL` HTTPS, y usa una clave `sk_test_` en desarrollo o `sk_live_` en producción. Configura el endpoint `/api/orders/webhook` para recibir `checkout.session.completed`, `checkout.session.expired`, `customer.subscription.*`, `invoice.paid` e `invoice.payment_failed`. Activa el Customer Portal en Stripe para que los clientes puedan actualizar su tarjeta. En producción el checkout consulta a Stripe y se bloquea si la cuenta no tiene `charges_enabled` y `payouts_enabled`; esto debe comprobarse antes de anunciar la membresía.
-- GitHub Actions ejecuta `npm test` en Node.js 22 y 24 y audita dependencias de producción en cada push y pull request.
+- GitHub Actions comprueba backend y frontend en Node.js 22 y 24 y audita las dependencias de producción del backend en cada push y pull request.
 
 ## Membresía VIP y campañas
 
