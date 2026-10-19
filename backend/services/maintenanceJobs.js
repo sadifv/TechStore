@@ -3,10 +3,11 @@ const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const Membership = require('../models/Membership');
 const logger = require('../config/logger');
+const { runWithDistributedMaintenanceLock } = require('./distributedMaintenanceLock');
 
 const scheduleMaintenanceJobs = () => {
-  cron.schedule('*/5 * * * *', async () => {
-    try {
+  cron.schedule('*/5 * * * *', () =>
+    runWithDistributedMaintenanceLock('restore-expired-flash-sales', async () => {
       const expiredSales = await Product.find({
         flashSale: true,
         flashSaleEndsAt: { $lt: new Date() },
@@ -23,26 +24,18 @@ const scheduleMaintenanceJobs = () => {
         await product.save();
         logger.info(`Flash sale expirada restaurada (cron): ${product.name} (ID: ${product._id})`);
       }
-    } catch (error) {
-      logger.error('Error en cron job de restauración de ofertas.', {
-        errorCode: error.code || error.name,
-      });
-    }
-  });
+    }),
+  );
 
-  cron.schedule('*/10 * * * *', async () => {
-    try {
+  cron.schedule('*/10 * * * *', () =>
+    runWithDistributedMaintenanceLock('cleanup-expired-reservations', async () => {
       const cleaned = await Reservation.cleanupExpired();
       if (cleaned > 0) logger.info(`Reservas expiradas limpiadas (cron): ${cleaned}`);
-    } catch (error) {
-      logger.error('Error en cron job de limpieza de reservas.', {
-        errorCode: error.code || error.name,
-      });
-    }
-  });
+    }),
+  );
 
-  cron.schedule('*/10 * * * *', async () => {
-    try {
+  cron.schedule('*/10 * * * *', () =>
+    runWithDistributedMaintenanceLock('reconcile-expired-checkouts', async () => {
       const {
         reconcileExpiredOrders,
         pruneCompletedInventoryRestorationKeys,
@@ -51,26 +44,18 @@ const scheduleMaintenanceJobs = () => {
       if (reconciledOrders > 0) logger.info(`Órdenes de Stripe vencidas reconciliadas: ${reconciledOrders}`);
       const prunedOrders = await pruneCompletedInventoryRestorationKeys();
       if (prunedOrders > 0) logger.info(`Claves de restitución de inventario limpiadas: ${prunedOrders}`);
-    } catch (error) {
-      logger.error('Error en cron job de conciliación de checkout.', {
-        errorCode: error.code || error.name,
-      });
-    }
-  });
+    }),
+  );
 
-  cron.schedule('15 0 * * *', async () => {
-    try {
+  cron.schedule('15 0 * * *', () =>
+    runWithDistributedMaintenanceLock('expire-memberships', async () => {
       const result = await Membership.updateMany(
         { status: 'active', currentPeriodEnd: { $lte: new Date() } },
         { $set: { status: 'expired' } },
       );
       if (result.modifiedCount > 0) logger.info(`Membresías VIP expiradas: ${result.modifiedCount}`);
-    } catch (error) {
-      logger.error('Error al expirar membresías VIP.', {
-        errorCode: error.code || error.name,
-      });
-    }
-  });
+    }),
+  );
 };
 
 module.exports = { scheduleMaintenanceJobs };
