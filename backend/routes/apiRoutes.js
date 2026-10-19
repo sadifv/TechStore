@@ -16,6 +16,7 @@ const {
   cancelMembership,
   createMembershipPortalSession,
   unsubscribeVipMarketing,
+  getPublicMembershipConfig,
 } = require('../controllers/membershipController');
 const {
   registerUser,
@@ -59,6 +60,7 @@ router
   .route('/marketing/unsubscribe')
   .get(unsubscribeCampaignMarketing)
   .post(unsubscribeCampaignMarketing);
+router.get('/membership/config', getPublicMembershipConfig);
 router.get('/membership', requireAuth, getMembershipStatus);
 router.post('/presence/heartbeat', requireAuth, recordHeartbeat);
 router.post('/membership/checkout', requireAuth, sensitiveLimiter, startMembershipCheckout);

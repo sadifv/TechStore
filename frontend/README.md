@@ -22,7 +22,7 @@ Vite serves the existing shared stylesheet and public assets from the project `p
 
 ## Membership display settings
 
-The backend remains authoritative for membership checkout amounts and coupon rules. The public React display uses the matching defaults below. If the backend `.env` overrides these values, set the corresponding `VITE_` values in a local `frontend/.env` so the displayed terms stay in sync:
+The backend remains authoritative for membership checkout amounts and coupon rules. The storefront fetches the current public terms from `/api/membership/config`; the `VITE_` values below are only fallback display values if the API is unavailable:
 
 ```env
 VITE_VIP_MONTHLY_PRICE=4.99

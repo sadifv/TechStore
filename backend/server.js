@@ -15,7 +15,6 @@ const session = require('express-session');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const cron = require('node-cron');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const { getBackendBaseUrl } = require('./config/backendUrl');
@@ -23,95 +22,9 @@ const errorHandler = require('./middleware/errorMiddleware');
 const logger = require('./config/logger');
 const httpLogger = require('./middleware/loggerMiddleware');
 const { adminLimiter } = require('./middleware/rateLimiter');
-const Product = require('./models/Product');
+const { scheduleMaintenanceJobs } = require('./services/maintenanceJobs');
 
 const app = express();
-
-// 1. Conectar a MongoDB
-connectDB();
-
-// CRON JOB: Restaurar flash sales expiradas cada 5 minutos
-cron.schedule('*/5 * * * *', async () => {
-  const now = new Date();
-  try {
-    const expiredSales = await Product.find({
-      flashSale: true,
-      flashSaleEndsAt: { $lt: now },
-    });
-
-    for (const product of expiredSales) {
-      if (product.originalPrice !== null && product.originalPrice !== undefined) {
-        product.price = product.originalPrice;
-      }
-      product.flashSale = false;
-      product.flashSaleDiscount = 0;
-      product.flashSaleEndsAt = null;
-      product.originalPrice = null;
-      await product.save();
-
-      logger.info(`Flash sale expirada restaurada (cron): ${product.name} (ID: ${product._id})`);
-    }
-  } catch (cronError) {
-    logger.error('Error en cron job de restauración de ofertas.', {
-      errorCode: cronError.code || cronError.name,
-    });
-  }
-});
-
-// CRON JOB: Limpiar reservas expiradas cada 10 minutos
-cron.schedule('*/10 * * * *', async () => {
-  try {
-    const Reservation = require('./models/Reservation');
-    const cleaned = await Reservation.cleanupExpired();
-    if (cleaned > 0) {
-      logger.info(`Reservas expiradas limpiadas (cron): ${cleaned}`);
-    }
-  } catch (cronError) {
-    logger.error('Error en cron job de limpieza de reservas.', {
-      errorCode: cronError.code || cronError.name,
-    });
-  }
-});
-
-// Reintentar la conciliación de inventario de sesiones Stripe expiradas cada 10 minutos.
-cron.schedule('*/10 * * * *', async () => {
-  try {
-    const {
-      reconcileExpiredOrders,
-      pruneCompletedInventoryRestorationKeys,
-    } = require('./controllers/orderController');
-    const reconciledOrders = await reconcileExpiredOrders();
-    if (reconciledOrders > 0) {
-      logger.info(`Órdenes de Stripe vencidas reconciliadas: ${reconciledOrders}`);
-    }
-    const prunedOrders = await pruneCompletedInventoryRestorationKeys();
-    if (prunedOrders > 0) {
-      logger.info(`Claves de restitución de inventario limpiadas: ${prunedOrders}`);
-    }
-  } catch (cronError) {
-    logger.error('Error en cron job de conciliación de checkout.', {
-      errorCode: cronError.code || cronError.name,
-    });
-  }
-});
-
-// Expirar membresías cuyo período terminó; una renovación Stripe confirmada las mantiene activas.
-cron.schedule('15 0 * * *', async () => {
-  try {
-    const Membership = require('./models/Membership');
-    const result = await Membership.updateMany(
-      { status: 'active', currentPeriodEnd: { $lte: new Date() } },
-      { $set: { status: 'expired' } },
-    );
-    if (result.modifiedCount > 0) {
-      logger.info(`Membresías VIP expiradas: ${result.modifiedCount}`);
-    }
-  } catch (cronError) {
-    logger.error('Error al expirar membresías VIP.', {
-      errorCode: cronError.code || cronError.name,
-    });
-  }
-});
 
 // Solo confiar en los saltos de proxy declarados por el entorno de despliegue.
 const trustProxyHops =
@@ -271,6 +184,9 @@ if (require.main === module) {
     startupErrors.push('Define NODE_ENV como development o production.');
   }
   if (process.env.NODE_ENV === 'production') {
+    if (!process.env.MONGO_URI) {
+      startupErrors.push('MONGO_URI es obligatorio en producción.');
+    }
     if (Buffer.byteLength(process.env.SESSION_SECRET || '', 'utf8') < 32) {
       startupErrors.push('SESSION_SECRET debe contener al menos 32 bytes en producción.');
     }
@@ -302,10 +218,22 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const PORT = process.env.PORT || 3001;
-  const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
-  app.listen(PORT, HOST, () => {
-    logger.info(`Servidor ejecutándose en http://${HOST}:${PORT}`);
+  const start = async () => {
+    await connectDB();
+    scheduleMaintenanceJobs();
+
+    const PORT = process.env.PORT || 3001;
+    const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+    app.listen(PORT, HOST, () => {
+      logger.info(`Servidor ejecutándose en http://${HOST}:${PORT}`);
+    });
+  };
+
+  start().catch((error) => {
+    logger.error('No se pudo iniciar el servidor.', {
+      errorCode: error.code || error.name,
+    });
+    process.exit(1);
   });
 }
 

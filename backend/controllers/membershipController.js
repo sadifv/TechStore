@@ -19,6 +19,9 @@ const {
 const { redirectToFrontend, getFrontendBaseUrl } = require('../config/frontendUrl');
 
 const getCurrentUserId = (req) => req.session?.user?.id || req.session?.user?._id || req.user?._id;
+const getPublicMembershipConfig = (req, res) => {
+  res.json({ success: true, ...getMembershipConfig() });
+};
 const getPublicMembership = (membership) =>
   membership
     ? {
@@ -503,6 +506,7 @@ const unsubscribeVipMarketing = async (req, res) => {
 };
 
 module.exports = {
+  getPublicMembershipConfig,
   getMembershipStatus,
   startMembershipCheckout,
   confirmMockMembership,

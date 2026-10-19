@@ -11,12 +11,19 @@ import { defaultMembershipConfig } from '../config/membership.js';
 export default function HomePage({ user }) {
   const [products, setProducts] = useState([]);
   const [flashSale, setFlashSale] = useState(null);
-  const monthlyPrice = defaultMembershipConfig.monthlyPrice;
+  const [monthlyPrice, setMonthlyPrice] = useState(defaultMembershipConfig.monthlyPrice);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
+    requestJson('/api/membership/config')
+      .then((result) => {
+        if (active && Number.isFinite(Number(result.monthlyPrice))) {
+          setMonthlyPrice(Number(result.monthlyPrice));
+        }
+      })
+      .catch(() => undefined);
     requestJson('/api/products?limit=100&sort=recent')
       .then((result) => {
         if (!active) return;
