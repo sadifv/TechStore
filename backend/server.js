@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const cron = require('node-cron');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const { getBackendBaseUrl } = require('./config/backendUrl');
 const errorHandler = require('./middleware/errorMiddleware');
@@ -156,6 +157,14 @@ app.use(
   }),
 );
 
+// Endpoint de salud para comprobar que Express y MongoDB pueden atender tráfico.
+app.get('/health', (req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+  return res.status(databaseReady ? 200 : 503).json({
+    status: databaseReady ? 'ok' : 'unavailable',
+  });
+});
+
 // Limitador de tasa de peticiones para la API
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -285,8 +294,9 @@ if (require.main === module) {
   }
 
   const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => {
-    logger.info(`Servidor ejecutándose en http://localhost:${PORT}`);
+  const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+  app.listen(PORT, HOST, () => {
+    logger.info(`Servidor ejecutándose en http://${HOST}:${PORT}`);
   });
 }
 
