@@ -1,71 +1,74 @@
 const mongoose = require('mongoose');
 
-const productSchema = new mongoose.Schema({
+const productSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        required: [true, 'El nombre del producto es obligatorio'],
-        trim: true
+      type: String,
+      required: [true, 'El nombre del producto es obligatorio'],
+      trim: true,
     },
     description: {
-        type: String,
-        trim: true
+      type: String,
+      trim: true,
     },
     price: {
-        type: Number,
-        required: [true, 'El precio es obligatorio'],
-        min: 0
+      type: Number,
+      required: [true, 'El precio es obligatorio'],
+      min: 0,
     },
     image: {
-        type: String,
-        default: '/images/products/product-placeholder.svg',
-        trim: true
+      type: String,
+      default: '/images/products/product-placeholder.svg',
+      trim: true,
     },
     category: {
-        type: String,
-        default: 'General',
-        index: true
+      type: String,
+      default: 'General',
+      index: true,
     },
     stock: {
-        type: Number,
-        default: 10,
-        min: 0
+      type: Number,
+      default: 10,
+      min: 0,
     },
     inventoryRestorationKeys: {
-        type: [String],
-        default: [],
-        select: false
+      type: [String],
+      default: [],
+      select: false,
     },
     reservationLockToken: {
-        type: String,
-        select: false
+      type: String,
+      select: false,
     },
     reservationLockExpiresAt: {
-        type: Date,
-        select: false
+      type: Date,
+      select: false,
     },
     // FLASH SALE (Oferta Relámpago)
     flashSale: {
-        type: Boolean,
-        default: false,
-        index: true
+      type: Boolean,
+      default: false,
+      index: true,
     },
     flashSaleDiscount: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 90
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 90,
     },
     flashSaleEndsAt: {
-        type: Date,
-        default: null
+      type: Date,
+      default: null,
     },
     originalPrice: {
-        type: Number,
-        default: null,
-        min: 0
-    }
-}, {
-    timestamps: true
-});
+      type: Number,
+      default: null,
+      min: 0,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
 module.exports = mongoose.model('Product', productSchema);

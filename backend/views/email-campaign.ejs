@@ -1,23 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= subject %> | TechStore</title>
-</head>
-<body style="margin:0;background:#f4f6fb;color:#172033;font-family:Arial,sans-serif;">
-    <main style="max-width:600px;margin:32px auto;padding:32px;background:#fff;border-radius:16px;">
-        <p style="color:#2563eb;font-weight:bold;">TECHSTORE</p>
-        <h1 style="font-size:24px;"><%= subject %></h1>
-        <p>Hola<%= name ? ` ${name}` : '' %>,</p>
-        <p style="white-space:pre-line;line-height:1.7;"><%= content %></p>
-        <% if (couponCode) { %>
-            <p>Tu código: <strong style="font-size:20px;"><%= couponCode %></strong></p>
-        <% } %>
-        <p style="margin-top:32px;font-size:12px;color:#64748b;">
-            Recibes este mensaje porque aceptaste recibir novedades de TechStore.
-            <a href="<%= unsubscribeUrl %>">Darme de baja</a>
-        </p>
+  </head>
+  <body style="margin: 0; background: #f4f6fb; color: #172033; font-family: Arial, sans-serif">
+    <main
+      style="
+        max-width: 600px;
+        margin: 32px auto;
+        padding: 32px;
+        background: #fff;
+        border-radius: 16px;
+      "
+    >
+      <p style="color: #2563eb; font-weight: bold">TECHSTORE</p>
+      <h1 style="font-size: 24px"><%= subject %></h1>
+      <p>Hola<%= name ? ` ${name}` : '' %>,</p>
+      <p style="white-space: pre-line; line-height: 1.7"><%= content %></p>
+      <% if (couponCode) { %>
+      <p>Tu código: <strong style="font-size: 20px"><%= couponCode %></strong></p>
+      <% } %>
+      <p style="margin-top: 32px; font-size: 12px; color: #64748b">
+        Recibes este mensaje porque aceptaste recibir novedades de TechStore.
+        <a href="<%= unsubscribeUrl %>">Darme de baja</a>
+      </p>
     </main>
-</body>
+  </body>
 </html>

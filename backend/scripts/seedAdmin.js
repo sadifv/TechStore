@@ -30,7 +30,7 @@ const seedAdmin = async () => {
       name: 'Admin Sadi',
       email: adminEmail,
       password: rawPassword,
-      role: 'admin'
+      role: 'admin',
     });
 
     await adminUser.save();
@@ -41,7 +41,9 @@ const seedAdmin = async () => {
     await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
-    logger.error(`Error al crear el usuario administrador: ${error.message}`, { stack: error.stack });
+    logger.error(`Error al crear el usuario administrador: ${error.message}`, {
+      stack: error.stack,
+    });
     process.exit(1);
   }
 };

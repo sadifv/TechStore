@@ -16,18 +16,23 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.'
+    error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.',
   },
   handler: (req, res, next) => {
     logger.warn(`Rate limit excedido en login desde IP: ${req.ip}`);
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
-        error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.'
+        error:
+          'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.',
       });
     }
-    return res.status(429).send('Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.');
-  }
+    return res
+      .status(429)
+      .send(
+        'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.',
+      );
+  },
 });
 
 /**
@@ -41,18 +46,20 @@ const adminLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     success: false,
-    error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.'
+    error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.',
   },
   handler: (req, res, next) => {
-    logger.warn(`Rate limit excedido en /admin desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`);
+    logger.warn(
+      `Rate limit excedido en /admin desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`,
+    );
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
-        error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.'
+        error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.',
       });
     }
     return res.status(429).send('Demasiadas solicitudes. Inténtalo de nuevo más tarde.');
-  }
+  },
 });
 
 /**
@@ -69,11 +76,16 @@ const aiLimiter = rateLimit({
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
-        error: 'Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.'
+        error:
+          'Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.',
       });
     }
-    return res.status(429).send('Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.');
-  }
+    return res
+      .status(429)
+      .send(
+        'Has alcanzado el límite de consultas al asistente. Por favor, espera unos minutos antes de continuar.',
+      );
+  },
 });
 
 /**
@@ -83,7 +95,7 @@ const aiSlowDown = slowDown({
   windowMs: 15 * 60 * 1000,
   delayAfter: 10,
   delayMs: (hits) => (hits - 10) * 500,
-  maxDelayMs: 5000
+  maxDelayMs: 5000,
 });
 
 /**
@@ -100,11 +112,14 @@ const registerLimiter = rateLimit({
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
-        error: 'Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.'
+        error:
+          'Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.',
       });
     }
-    return res.status(429).send('Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.');
-  }
+    return res
+      .status(429)
+      .send('Se han realizado demasiados registros desde esta IP. Inténtalo de nuevo en una hora.');
+  },
 });
 
 /**
@@ -117,15 +132,17 @@ const sensitiveLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {
-    logger.warn(`Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`);
+    logger.warn(
+      `Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`,
+    );
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
-        error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.'
+        error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.',
       });
     }
     return res.status(429).send('Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.');
-  }
+  },
 });
 
 module.exports = {
@@ -134,5 +151,5 @@ module.exports = {
   aiLimiter,
   aiSlowDown,
   registerLimiter,
-  sensitiveLimiter
+  sensitiveLimiter,
 };

@@ -4,37 +4,43 @@ const { sendContactMessage } = require('../controllers/contactController');
 const { getProducts, getProductById } = require('../controllers/productController');
 const { processAiChat, getChatHistory, clearChatHistory } = require('../controllers/aiController');
 const {
-    subscribeNewsletter,
-    unsubscribeNewsletter,
-    unsubscribeCampaignMarketing
+  subscribeNewsletter,
+  unsubscribeNewsletter,
+  unsubscribeCampaignMarketing,
 } = require('../controllers/newsletterController');
 const {
-    getMembershipStatus,
-    startMembershipCheckout,
-    confirmMockMembership,
-    confirmStripeMembership,
-    cancelMembership,
-    createMembershipPortalSession,
-    unsubscribeVipMarketing
+  getMembershipStatus,
+  startMembershipCheckout,
+  confirmMockMembership,
+  confirmStripeMembership,
+  cancelMembership,
+  createMembershipPortalSession,
+  unsubscribeVipMarketing,
 } = require('../controllers/membershipController');
 const {
-    registerUser,
-    loginUser,
-    logoutUser,
-    getMe,
-    forgotPassword,
-    resetPassword
+  registerUser,
+  loginUser,
+  logoutUser,
+  getMe,
+  forgotPassword,
+  resetPassword,
 } = require('../controllers/authController');
 const { requireAuth } = require('../middleware/authMiddleware');
-const { aiLimiter, aiSlowDown, registerLimiter, sensitiveLimiter, loginLimiter } = require('../middleware/rateLimiter');
+const {
+  aiLimiter,
+  aiSlowDown,
+  registerLimiter,
+  sensitiveLimiter,
+  loginLimiter,
+} = require('../middleware/rateLimiter');
 const { validate } = require('../middleware/validate');
 const { requireAdmin } = require('../middleware/authMiddleware');
 const {
-    getAdminDashboard,
-    getAdminOrders,
-    getAdminOrderDetail,
-    getPackingSlip,
-    getAdminUsers
+  getAdminDashboard,
+  getAdminOrders,
+  getAdminOrderDetail,
+  getPackingSlip,
+  getAdminUsers,
 } = require('../controllers/adminController');
 const { getAdminMarketing } = require('../controllers/marketingController');
 const { recordHeartbeat } = require('../controllers/presenceController');
@@ -45,12 +51,14 @@ const { recordHeartbeat } = require('../controllers/presenceController');
 
 router.post('/contact', sensitiveLimiter, validate, sendContactMessage);
 router.post('/newsletter', sensitiveLimiter, validate, subscribeNewsletter);
-router.route('/newsletter/unsubscribe/:token')
-    .get(unsubscribeNewsletter)
-    .post(unsubscribeNewsletter);
-router.route('/marketing/unsubscribe')
-    .get(unsubscribeCampaignMarketing)
-    .post(unsubscribeCampaignMarketing);
+router
+  .route('/newsletter/unsubscribe/:token')
+  .get(unsubscribeNewsletter)
+  .post(unsubscribeNewsletter);
+router
+  .route('/marketing/unsubscribe')
+  .get(unsubscribeCampaignMarketing)
+  .post(unsubscribeCampaignMarketing);
 router.get('/membership', requireAuth, getMembershipStatus);
 router.post('/presence/heartbeat', requireAuth, recordHeartbeat);
 router.post('/membership/checkout', requireAuth, sensitiveLimiter, startMembershipCheckout);
@@ -61,7 +69,7 @@ router.post('/membership/portal', requireAuth, sensitiveLimiter, createMembershi
 router.get('/membership/unsubscribe/:token', unsubscribeVipMarketing);
 router.post('/membership/unsubscribe/:token', unsubscribeVipMarketing);
 router.get('/products', getProducts);
-router.get('/products/:id', getProductById); 
+router.get('/products/:id', getProductById);
 
 // APIs JSON del panel administrativo React.
 router.get('/admin/dashboard', requireAdmin, getAdminDashboard);

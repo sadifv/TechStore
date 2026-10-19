@@ -10,7 +10,7 @@ const processAiChat = async (req, res) => {
       logger.warn('Intento de usar IA sin GEMINI_API_KEY configurada');
       return res.status(503).json({
         success: false,
-        error: 'El asistente de IA no está configurado. Contacta al administrador.'
+        error: 'El asistente de IA no está configurado. Contacta al administrador.',
       });
     }
 
@@ -19,7 +19,7 @@ const processAiChat = async (req, res) => {
     if (!message || message.trim() === '') {
       return res.status(400).json({
         success: false,
-        error: 'El mensaje no puede estar vacío.'
+        error: 'El mensaje no puede estar vacío.',
       });
     }
 
@@ -28,9 +28,14 @@ const processAiChat = async (req, res) => {
       .limit(30)
       .lean();
 
-    const catalogContext = products.length > 0
-      ? products.map(p => `- ${p.name} (${p.category}): $${p.price}${p.stock > 0 ? '' : ' [AGOTADO]'}`).join('\n')
-      : 'No hay productos disponibles actualmente.';
+    const catalogContext =
+      products.length > 0
+        ? products
+            .map(
+              (p) => `- ${p.name} (${p.category}): $${p.price}${p.stock > 0 ? '' : ' [AGOTADO]'}`,
+            )
+            .join('\n')
+        : 'No hay productos disponibles actualmente.';
 
     const systemPrompt = `Eres TechBot, el asistente virtual de TechStore, una tienda e-commerce de tecnología especializada en laptops, smartphones, auriculares y gadgets.
 
@@ -50,14 +55,14 @@ ${catalogContext}`;
     const messages = [
       { role: 'system', content: systemPrompt },
       ...sessionHistory,
-      { role: 'user', content: message }
+      { role: 'user', content: message },
     ];
 
     const completion = await aiClient.chat.completions.create({
       model: 'gemini-3.8-flash',
       messages,
       max_tokens: 500,
-      temperature: 0.7
+      temperature: 0.7,
     });
 
     const aiReply = completion.choices[0]?.message?.content?.trim();
@@ -66,24 +71,25 @@ ${catalogContext}`;
       logger.warn('La IA devolvió una respuesta vacía');
       return res.status(502).json({
         success: false,
-        error: 'El asistente no pudo generar una respuesta. Intenta de nuevo.'
+        error: 'El asistente no pudo generar una respuesta. Intenta de nuevo.',
       });
     }
 
     if (!req.session.chatHistory) req.session.chatHistory = [];
     req.session.chatHistory.push(
       { role: 'user', content: message },
-      { role: 'assistant', content: aiReply }
+      { role: 'assistant', content: aiReply },
     );
 
     if (req.session.chatHistory.length > 20) {
       req.session.chatHistory = req.session.chatHistory.slice(-20);
     }
 
-    logger.info(`IA respondió a "${message.substring(0, 50)}..." - Catálogo: ${products.length} productos`);
+    logger.info(
+      `IA respondió a "${message.substring(0, 50)}..." - Catálogo: ${products.length} productos`,
+    );
 
     res.status(200).json({ success: true, reply: aiReply });
-
   } catch (error) {
     logger.error(`Error en aiController: ${error.message}`, { stack: error.stack });
 
@@ -99,7 +105,7 @@ ${catalogContext}`;
 
     res.status(error.status || 500).json({
       success: false,
-      error: userMessage
+      error: userMessage,
     });
   }
 };
@@ -127,5 +133,5 @@ const clearChatHistory = async (req, res) => {
 module.exports = {
   processAiChat,
   getChatHistory,
-  clearChatHistory
+  clearChatHistory,
 };
