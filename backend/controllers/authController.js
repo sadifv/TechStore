@@ -5,6 +5,9 @@ const { sendPasswordResetEmail } = require('../config/mailer');
 const logger = require('../config/logger');
 const { getFrontendBaseUrl } = require('../config/frontendUrl');
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
+// The former registration flow allowed up to 100 characters. Keep that ceiling
+// for sign-in so existing accounts with bcrypt-truncated passwords remain usable.
+const MAX_LOGIN_PASSWORD_LENGTH = 100;
 
 const regenerateSession = (req) => new Promise((resolve, reject) => {
     req.session.regenerate((error) => error ? reject(error) : resolve());
@@ -75,8 +78,10 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res) => {
     try {
         const email = String(req.body?.email || '').trim().toLowerCase();
-        const password = String(req.body?.password || '');
-        if (!isAcceptablePassword(password)) return invalidCredentials(res);
+        const password = req.body?.password;
+        if (typeof password !== 'string' || password.length > MAX_LOGIN_PASSWORD_LENGTH) {
+            return invalidCredentials(res);
+        }
 
         const user = await User.findOne({ email }).select('+password +authVersion');
         if (!user) {
