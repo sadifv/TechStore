@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const stripe = require('../config/stripe');
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
@@ -13,11 +14,15 @@ const {
     consumeCouponReservation
 } = require('../services/couponService');
 const { acquireProductReservationLocks } = require('../services/productReservationLock');
+const { getBackendBaseUrl } = require('../config/backendUrl');
 
 const restoreOrderInventory = async (orderId, items) => {
     let order = await Order.findOneAndUpdate(
         { _id: orderId, paymentStatus: 'pending', inventoryRestored: { $ne: true } },
-        { $set: { paymentStatus: 'failed', status: 'cancelled' } },
+        {
+            $set: { paymentStatus: 'failed', status: 'cancelled' },
+            $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 }
+        },
         { returnDocument: 'after' }
     );
 
@@ -210,7 +215,10 @@ const reconcileExpiredOrders = async () => {
 const markOrderAsPaid = async (orderId) => {
     let order = await Order.findOneAndUpdate(
         { _id: orderId, paymentStatus: 'pending' },
-        { $set: { paymentStatus: 'paid', status: 'processing' } },
+        {
+            $set: { paymentStatus: 'paid', status: 'processing' },
+            $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 }
+        },
         { returnDocument: 'after' }
     );
 
@@ -416,6 +424,8 @@ const createOrder = async (req, res, next) => {
         }
 
         // Construir datos de la orden
+        const cancelToken = crypto.randomBytes(32).toString('hex');
+        const cancelTokenHash = crypto.createHash('sha256').update(cancelToken).digest('hex');
         const orderData = {
             items: orderItems,
             subtotalAmount: totalAmount,
@@ -429,7 +439,9 @@ const createOrder = async (req, res, next) => {
             status: 'pending',
             paymentMethod,
             cartSnapshotUpdatedAt,
-            inventoryRestored: false
+            inventoryRestored: false,
+            cancelTokenHash,
+            cancelTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
         };
 
         if (userId) {
@@ -513,13 +525,14 @@ const createOrder = async (req, res, next) => {
         }
 
         // Crear sesión de Stripe Checkout
+        const backendUrl = getBackendBaseUrl();
         const stripeSessionOptions = {
             line_items: lineItems,
             mode: 'payment',
             // Stripe must return to Express so it can verify and persist payment
             // before redirecting the customer to the React success page.
-            success_url: `${req.protocol}://${req.get('host')}/api/orders/confirm?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${req.protocol}://${req.get('host')}/api/orders/cancel?orderId=${newOrder._id}`,
+            success_url: `${backendUrl}/api/orders/confirm?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${backendUrl}/api/orders/cancel?orderId=${newOrder._id}&cancelToken=${cancelToken}`,
             metadata: {
                 orderId: newOrder._id.toString()
             },
@@ -533,6 +546,7 @@ const createOrder = async (req, res, next) => {
         newOrder.stripeSessionId = session.id;
         if (session.expires_at) {
             newOrder.stripeExpiresAt = new Date(session.expires_at * 1000);
+            newOrder.cancelTokenExpiresAt = new Date(session.expires_at * 1000);
         }
         await newOrder.save();
 
@@ -579,13 +593,23 @@ const createOrder = async (req, res, next) => {
 
 const cancelOrderCheckout = async (req, res, next) => {
     try {
-        const { orderId } = req.query;
-        if (!orderId || !mongoose.isObjectIdOrHexString(orderId)) {
+        const { orderId, cancelToken } = req.query;
+        if (
+            !orderId || !mongoose.isObjectIdOrHexString(orderId) ||
+            typeof cancelToken !== 'string' || !/^[a-f0-9]{64}$/i.test(cancelToken)
+        ) {
             return res.redirect('/');
         }
 
-        const order = await Order.findById(orderId);
-        if (!order || order.paymentStatus !== 'pending' || !order.stripeSessionId) {
+        const cancelTokenHash = crypto.createHash('sha256').update(cancelToken).digest('hex');
+        const order = await Order.findOne({
+            _id: orderId,
+            paymentStatus: 'pending',
+            stripeSessionId: { $exists: true, $ne: '' },
+            cancelTokenHash,
+            cancelTokenExpiresAt: { $gt: new Date() }
+        });
+        if (!order) {
             return res.redirect('/');
         }
 
@@ -596,6 +620,7 @@ const cancelOrderCheckout = async (req, res, next) => {
 
         if (session.payment_status === 'paid') {
             await markOrderAsPaid(order._id);
+            await Order.updateOne({ _id: order._id, cancelTokenHash }, { $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 } });
             return res.redirect(`/api/orders/success?orderId=${order._id}`);
         } else if (session.status === 'open') {
             await stripe.checkout.sessions.expire(session.id);
@@ -603,6 +628,8 @@ const cancelOrderCheckout = async (req, res, next) => {
         } else if (session.status === 'expired') {
             await restoreOrderInventory(order._id);
         }
+
+        await Order.updateOne({ _id: order._id, cancelTokenHash }, { $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 } });
 
         res.redirect('/?checkout=cancelled');
     } catch (error) {

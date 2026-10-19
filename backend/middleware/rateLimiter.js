@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 const logger = require('../config/logger');
 const isApiRequest = require('./isApiRequest');
+const getSafeRequestTarget = require('./safeRequestTarget');
 
 /**
  * Limitador estricto para el login.
@@ -43,7 +44,7 @@ const adminLimiter = rateLimit({
     error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.'
   },
   handler: (req, res, next) => {
-    logger.warn(`Rate limit excedido en /admin desde IP: ${req.ip} - Ruta: ${req.originalUrl}`);
+    logger.warn(`Rate limit excedido en /admin desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`);
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
@@ -116,7 +117,7 @@ const sensitiveLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {
-    logger.warn(`Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${req.originalUrl}`);
+    logger.warn(`Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`);
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,

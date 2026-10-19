@@ -1,5 +1,6 @@
 // middleware/loggerMiddleware.js
 const logger = require('../config/logger');
+const getSafeRequestTarget = require('./safeRequestTarget');
 
 const httpLogger = (req, res, next) => {
   const start = Date.now();
@@ -7,7 +8,7 @@ const httpLogger = (req, res, next) => {
   // Cuando la respuesta termina, calculamos el tiempo y logueamos
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const message = `${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`;
+    const message = `${req.method} ${getSafeRequestTarget(req)} ${res.statusCode} - ${duration}ms`;
     
     if (res.statusCode >= 500) {
       logger.error(message);

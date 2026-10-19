@@ -8,6 +8,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const cron = require('node-cron');
 const connectDB = require('./config/db');
+const { getBackendBaseUrl } = require('./config/backendUrl');
 const errorHandler = require('./middleware/errorMiddleware');
 const logger = require('./config/logger');
 const httpLogger = require('./middleware/loggerMiddleware');
@@ -94,8 +95,11 @@ cron.schedule('15 0 * * *', async () => {
     }
 });
 
-// 2. Confiar en el proxy (IMPORTANTE para producción / Nginx / Render)
-app.set('trust proxy', 1); 
+// Solo confiar en los saltos de proxy declarados por el entorno de despliegue.
+const trustProxyHops = process.env.TRUST_PROXY_HOPS === undefined
+  ? 0
+  : Number(process.env.TRUST_PROXY_HOPS);
+app.set('trust proxy', Number.isInteger(trustProxyHops) && trustProxyHops >= 0 ? trustProxyHops : false);
 
 // 3. Middlewares de Seguridad y Logging
 app.use(httpLogger);
@@ -106,8 +110,8 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
-        styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "https://cdn.jsdelivr.net"],
         imgSrc: ["'self'", "data:", "https:"],
         fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
         connectSrc: ["'self'"],
@@ -120,15 +124,14 @@ app.use(
 );
 
 // Habilitar CORS (Permisivo en desarrollo local, estricto en producción)
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? (process.env.ALLOWED_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean)
-  : [];
+const configuredOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',').map((origin) => origin.trim()).filter(Boolean);
+const allowedOrigins = configuredOrigins.length
+  ? configuredOrigins
+  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
@@ -154,8 +157,8 @@ app.use('/api', apiLimiter);
 
 // 4. Middlewares para parsear datos
 app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
 
 // 5. Configuración de Sesiones Persistentes en MongoDB
 const storeOptions = {
@@ -168,11 +171,6 @@ const sessionStore = typeof MongoStore.create === 'function'
   : (MongoStore.default && typeof MongoStore.default.create === 'function')
     ? MongoStore.default.create(storeOptions)
     : new MongoStore(storeOptions);
-
-if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
-  logger.error('SESSION_SECRET no está definido en producción. El servidor no puede iniciar.');
-  process.exit(1);
-}
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secreto_techstore',
@@ -229,6 +227,38 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 if (require.main === module) {
+  const startupErrors = [];
+  if (!['development', 'production'].includes(process.env.NODE_ENV)) {
+    startupErrors.push('Define NODE_ENV como development o production.');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    if (Buffer.byteLength(process.env.SESSION_SECRET || '', 'utf8') < 32) {
+      startupErrors.push('SESSION_SECRET debe contener al menos 32 bytes en producción.');
+    }
+    if (!process.env.ALLOWED_ORIGINS || !allowedOrigins.length || allowedOrigins.some((origin) => !origin.startsWith('https://'))) {
+      startupErrors.push('ALLOWED_ORIGINS debe contener los orígenes HTTPS públicos exactos.');
+    }
+    if (!Number.isInteger(trustProxyHops) || trustProxyHops < 1) {
+      startupErrors.push('Configura TRUST_PROXY_HOPS con el número exacto de proxies confiables.');
+    }
+    try {
+      getBackendBaseUrl();
+    } catch (error) {
+      startupErrors.push(error.message);
+    }
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || '';
+    if (!frontendUrl.startsWith('https://')) {
+      startupErrors.push('FRONTEND_URL o APP_URL debe usar HTTPS en producción.');
+    }
+  }
+  if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0) {
+    startupErrors.push('TRUST_PROXY_HOPS debe ser un entero no negativo.');
+  }
+  if (startupErrors.length) {
+    startupErrors.forEach((message) => logger.error(message));
+    process.exit(1);
+  }
+
   const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {
     logger.info(`Servidor ejecutándose en http://localhost:${PORT}`);

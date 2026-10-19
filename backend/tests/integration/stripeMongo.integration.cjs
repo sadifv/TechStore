@@ -45,10 +45,14 @@ after(async () => {
                     ? await Order.findOne({ 'guestInfo.email': testGuestEmail }).lean()
                     : null;
             if (order?.paymentStatus === 'pending' && order.stripeSessionId && appServer) {
-                await fetch(
-                    `http://127.0.0.1:${appServer.address().port}/cancel?orderId=${encodeURIComponent(order._id)}`,
-                    { redirect: 'manual' }
-                );
+                const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+                const cancelToken = new URL(session.cancel_url).searchParams.get('cancelToken');
+                if (cancelToken) {
+                    await fetch(
+                        `http://127.0.0.1:${appServer.address().port}/cancel?orderId=${encodeURIComponent(order._id)}&cancelToken=${encodeURIComponent(cancelToken)}`,
+                        { redirect: 'manual' }
+                    );
+                }
             }
             if (order?.stripeSessionId && stripe) {
                 const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
@@ -197,9 +201,11 @@ test('checkout Stripe test crea la orden en Mongo y al expirar restituye el inve
     assert.equal(stripeSession.status, 'open');
     assert.equal(stripeSession.payment_status, 'unpaid');
     assert.equal(stripeSession.metadata.orderId, String(storedOrder._id));
+    const cancelToken = new URL(stripeSession.cancel_url).searchParams.get('cancelToken');
+    assert.match(cancelToken || '', /^[a-f0-9]{64}$/i);
 
     const cancelResponse = await fetch(
-        `${baseUrl}/cancel?orderId=${encodeURIComponent(createdOrderId)}`,
+        `${baseUrl}/cancel?orderId=${encodeURIComponent(createdOrderId)}&cancelToken=${encodeURIComponent(cancelToken)}`,
         { redirect: 'manual' }
     );
     const cancelBody = await cancelResponse.text();

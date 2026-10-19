@@ -18,12 +18,18 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'La contraseña es obligatoria'],
-        minlength: [6, 'La contraseña debe tener al menos 6 caracteres']
+        minlength: [12, 'La contraseña debe tener al menos 12 caracteres']
     },
     role: {
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
+    },
+    // Incrementar al cambiar contraseña para revocar todas las sesiones anteriores.
+    authVersion: {
+        type: Number,
+        default: 0,
+        select: false
     },
     lastLoginAt: Date,
     // Campos para Verificación de Email y Reset de Contraseña

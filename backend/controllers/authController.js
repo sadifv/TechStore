@@ -4,6 +4,14 @@ const User = require('../models/User');
 const { sendPasswordResetEmail } = require('../config/mailer');
 const logger = require('../config/logger');
 const { getFrontendBaseUrl } = require('../config/frontendUrl');
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
+
+const regenerateSession = (req) => new Promise((resolve, reject) => {
+    req.session.regenerate((error) => error ? reject(error) : resolve());
+});
+
+const isAcceptablePassword = (password) =>
+    typeof password === 'string' && Buffer.byteLength(password, 'utf8') <= 72;
 
 // ==========================================
 // REGISTRO
@@ -11,6 +19,9 @@ const { getFrontendBaseUrl } = require('../config/frontendUrl');
 const registerUser = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
+        if (!isAcceptablePassword(password)) {
+            return res.status(400).json({ success: false, error: 'La contraseña no puede superar 72 bytes UTF-8.' });
+        }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -23,11 +34,13 @@ const registerUser = async (req, res, next) => {
         const newUser = new User({ name, email, password, role: 'user' });
         await newUser.save();
 
+        await regenerateSession(req);
         req.session.user = {
-            id: newUser._id,
+            id: String(newUser._id),
             name: newUser.name,
             email: newUser.email,
-            role: newUser.role
+            role: newUser.role,
+            authVersion: newUser.authVersion || 0
         };
 
         logger.info(`Nuevo usuario registrado: ${newUser.email}`);
@@ -63,38 +76,30 @@ const loginUser = async (req, res) => {
     try {
         const email = String(req.body?.email || '').trim().toLowerCase();
         const password = String(req.body?.password || '');
+        if (!isAcceptablePassword(password)) return invalidCredentials(res);
 
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email }).select('+password +authVersion');
         if (!user) {
-            const message = 'No encontramos una cuenta con ese correo. Puedes crear una cuenta para continuar.';
-            return res.status(401).json({
-                success: false,
-                code: 'ACCOUNT_NOT_FOUND',
-                error: message
-            });
+            await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+            return invalidCredentials(res);
         }
 
         const isMatch = typeof user.comparePassword === 'function'
             ? await user.comparePassword(password)
             : await bcrypt.compare(password, user.password);
 
-        if (!isMatch) {
-            const message = 'La contraseña no coincide. Revísala e inténtalo de nuevo.';
-            return res.status(401).json({
-                success: false,
-                code: 'INVALID_PASSWORD',
-                error: message
-            });
-        }
+        if (!isMatch) return invalidCredentials(res);
 
         user.lastLoginAt = new Date();
         await user.save();
 
+        await regenerateSession(req);
         req.session.user = {
-            id: user._id,
+            id: String(user._id),
             name: user.name,
             email: user.email,
-            role: user.role
+            role: user.role,
+            authVersion: user.authVersion || 0
         };
 
         logger.info(`Login exitoso: ${user.email}`);
@@ -112,6 +117,12 @@ const loginUser = async (req, res) => {
         });
     }
 };
+
+const invalidCredentials = (res) => res.status(401).json({
+    success: false,
+    code: 'INVALID_CREDENTIALS',
+    error: 'Correo o contraseña incorrectos.'
+});
 
 // ==========================================
 // LOGOUT
@@ -192,13 +203,16 @@ const resetPassword = async (req, res, next) => {
     try {
         const { token } = req.params;
         const { password } = req.body;
+        if (!isAcceptablePassword(password)) {
+            return res.status(400).json({ success: false, error: 'La contraseña no puede superar 72 bytes UTF-8.' });
+        }
 
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
         const user = await User.findOne({
             resetPasswordToken: hashedToken,
             resetPasswordExpires: { $gt: Date.now() }
-        });
+        }).select('+authVersion');
 
         if (!user) {
             return res.status(400).json({
@@ -208,6 +222,7 @@ const resetPassword = async (req, res, next) => {
         }
 
         user.password = password;
+        user.authVersion = (user.authVersion || 0) + 1;
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
 

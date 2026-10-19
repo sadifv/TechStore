@@ -2,21 +2,24 @@ const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const getProducts = async (req, res, next) => {
     try {
         const { category, search, limit = 50, page = 1, sort = 'recent' } = req.query;
         const query = {};
 
-        if (category && category !== 'all') {
+        if (typeof category === 'string' && category.length <= 80 && category !== 'all') {
             query.category = category;
         }
 
-        if (search) {
-            query.name = { $regex: search,$options: 'i' };
+        const normalizedSearch = typeof search === 'string' ? search.trim().slice(0, 100) : '';
+        if (normalizedSearch) {
+            query.name = { $regex: escapeRegex(normalizedSearch), $options: 'i' };
         }
 
         let sortOption = {};
-        switch (sort) {
+        switch (typeof sort === 'string' ? sort : 'recent') {
             case 'price_asc': sortOption = { price: 1 }; break;
             case 'price_desc': sortOption = { price: -1 }; break;
             case 'name_asc': sortOption = { name: 1 }; break;
@@ -24,7 +27,7 @@ const getProducts = async (req, res, next) => {
             default: sortOption = { createdAt: -1 }; break;
         }
 
-        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const pageNum = Math.max(1, Math.min(1000, parseInt(page, 10) || 1));
         const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 50));
         const skip = (pageNum - 1) * limitNum;
 

@@ -1,5 +1,6 @@
 // middleware/validate.js
 const logger = require('../config/logger');
+const getSafeRequestTarget = require('./safeRequestTarget');
 
 /**
  * Validación simple basada en reglas (sin dependencias externas).
@@ -21,7 +22,7 @@ const validationRules = {
     '/api/auth/register': {
         name: { required: true, min: 2, max: 80, label: 'El nombre' },
         email: { required: true, email: true, label: 'El correo' },
-        password: { required: true, min: 6, max: 100, label: 'La contraseña' }
+        password: { required: true, min: 12, max: 100, label: 'La contraseña' }
     },
     '/api/auth/login': {
         email: { required: true, email: true, label: 'El correo' },
@@ -39,7 +40,7 @@ const validationRules = {
         email: { required: true, email: true, label: 'El correo' }
     },
     '/api/auth/reset-password/:token': {
-        password: { required: true, min: 6, max: 100, label: 'La contraseña' }
+        password: { required: true, min: 12, max: 100, label: 'La contraseña' }
     },
     '/admin/products': productValidationRules,
     '/admin/products/:id': productValidationRules
@@ -137,7 +138,7 @@ const validate = (req, res, next) => {
         }
 
         if (errors.length > 0) {
-            logger.warn(`Validación fallida en ${req.method} ${currentUrl}: ${errors[0]}`);
+            logger.warn(`Validación fallida en ${req.method} ${getSafeRequestTarget(req)}: ${errors[0]}`);
             
             // ✅ Si la petición es hacia una ruta /api, SIEMPRE responde con JSON
             if (currentUrl.startsWith('/api') || req.path.startsWith('/api')) {
@@ -159,7 +160,7 @@ const validate = (req, res, next) => {
             return next();
         }
     } catch (valError) {
-        logger.error(`Excepción en middleware validate: ${valError.message}`, { stack: valError.stack });
+        logger.error(`Excepción en middleware validate en ${getSafeRequestTarget(req)}: ${valError.message}`, { stack: valError.stack });
         if (typeof next === 'function') {
             return next(valError);
         }

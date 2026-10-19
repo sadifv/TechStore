@@ -6,19 +6,11 @@ const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
 const { withProductReservationLock } = require('../services/productReservationLock');
+const { requireAuth } = require('../middleware/authMiddleware');
 
 const RESERVATION_EXPIRY_MINUTES = 60;
 
 const MAX_QUANTITY_PER_PRODUCT = 99;
-
-// Middleware para validar que haya sesión activa
-const requireAuth = (req, res, next) => {
-    const currentUser = req.session?.user || req.user;
-    if (!currentUser) {
-        return res.status(401).json({ success: false, error: 'Debes iniciar sesión para gestionar tu carrito.' });
-    }
-    next();
-};
 
 const getUserId = (req) => req.session?.user?._id || req.session?.user?.id || req.user?._id;
 

@@ -1,12 +1,13 @@
 const logger = require('../config/logger');
 const { getFrontendBaseUrl } = require('../config/frontendUrl');
+const getSafeRequestTarget = require('./safeRequestTarget');
 
 const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
     const statusCode = err.statusCode || err.status || 500;
-    const logMessage = `${err.message} - URL: ${req.originalUrl} - Method: ${req.method}`;
+    const logMessage = `${err.message} - URL: ${getSafeRequestTarget(req)} - Method: ${req.method}`;
     const logMetadata = { stack: err.stack, code: err.code };
     if (statusCode >= 500) {
         logger.error(logMessage, logMetadata);
@@ -45,7 +46,7 @@ const errorHandler = (err, req, res, next) => {
 
     return res.status(statusCode).json({
         success: false,
-        error: error.message || 'Error interno del servidor.'
+        error: statusCode >= 500 ? 'Error interno del servidor.' : (error.message || 'Error interno del servidor.')
     });
 };
 

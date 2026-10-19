@@ -93,6 +93,14 @@ const orderSchema = new mongoose.Schema({
     stripeSessionId: {
         type: String
     },
+    cancelTokenHash: {
+        type: String,
+        select: false
+    },
+    cancelTokenExpiresAt: {
+        type: Date,
+        select: false
+    },
     stripeExpiresAt: Date,
     shippingAddress: {
         street: { type: String, default: 'Dirección estándar' },

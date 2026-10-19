@@ -48,7 +48,7 @@ function AuthPage({ register = false }) {
   >
     {register && <fieldset className="form-group"><label htmlFor="auth-name">Nombre Completo</label><input id="auth-name" name="name" type="text" required minLength="2" autoComplete="name" placeholder="Tu nombre" /></fieldset>}
     <fieldset className="form-group"><label htmlFor="auth-email">Correo Electrónico</label><input id="auth-email" name="email" type="email" required autoComplete="email" placeholder="correo@ejemplo.com" /></fieldset>
-    <fieldset className="form-group"><label htmlFor="auth-password">Contraseña</label><input id="auth-password" name="password" type="password" minLength="6" required autoComplete={register ? 'new-password' : 'current-password'} placeholder="••••••••" /></fieldset>
+    <fieldset className="form-group"><label htmlFor="auth-password">Contraseña</label><input id="auth-password" name="password" type="password" minLength={register ? 12 : undefined} maxLength="100" required autoComplete={register ? 'new-password' : 'current-password'} placeholder="••••••••" />{register && <small>Usa al menos 12 caracteres.</small>}</fieldset>
     {!register && <p className="auth-forgot-link"><a className="link-secondary" href="/forgot-password">¿Olvidaste tu contraseña?</a></p>}
     <p className="auth-redirect">{register ? '¿Ya tienes una cuenta?' : '¿No tienes una cuenta?'} <a href={register ? `/login${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}` : `/register${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`}>{register ? 'Inicia sesión aquí' : 'Regístrate aquí'}</a></p>
   </AccountForm>
@@ -107,7 +107,7 @@ export function ResetPasswordPage({ token }) {
     } finally { setBusy(false) }
   }
   return <AccountForm title="Nueva Contraseña" description="Ingresa y confirma tu nueva contraseña." onSubmit={submit} status={status} statusType={statusType} buttonText="Guardar Contraseña" busy={busy}>
-    <fieldset className="form-group"><label htmlFor="new-password">Nueva Contraseña</label><input id="new-password" type="password" name="password" required minLength="6" autoComplete="new-password" /></fieldset>
-    <fieldset className="form-group"><label htmlFor="confirm-password">Confirmar Contraseña</label><input id="confirm-password" type="password" name="confirmPassword" required minLength="6" autoComplete="new-password" /></fieldset>
+    <fieldset className="form-group"><label htmlFor="new-password">Nueva Contraseña</label><input id="new-password" type="password" name="password" required minLength="12" maxLength="100" autoComplete="new-password" /></fieldset>
+    <fieldset className="form-group"><label htmlFor="confirm-password">Confirmar Contraseña</label><input id="confirm-password" type="password" name="confirmPassword" required minLength="12" maxLength="100" autoComplete="new-password" /></fieldset>
   </AccountForm>
 }
