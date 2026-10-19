@@ -23,7 +23,9 @@ if (hasSmtpCredentials) {
   // Verificar conexión SMTP al arrancar
   transporter.verify((error) => {
     if (error) {
-      logger.error(`[Mailer] ❌ Error al conectar con Gmail: ${error.message}`);
+      logger.error('[Mailer] Error al conectar con el servidor SMTP.', {
+        errorCode: error.code || error.name,
+      });
     } else {
       logger.info('[Mailer] ✅ Servidor SMTP listo para enviar correos.');
     }
@@ -41,7 +43,7 @@ const getAppUrl = () => {
 const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} }) => {
   // Modo simulado si no hay transporter
   if (!transporter) {
-    logger.warn(`[Mailer] 📧 [SIMULADO] Correo a ${to} (${templateName}) - NO ENVIADO`);
+    logger.warn(`[Mailer] Correo simulado (${templateName}); no fue enviado.`);
     return { simulated: true, to, subject, templateName };
   }
 
@@ -53,7 +55,7 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
 
     const emailRegex = /^\S+@\S+\.\S+$/;
     if (!emailRegex.test(to)) {
-      throw new Error(`Email inválido: ${to}`);
+      throw new Error('La dirección de correo no es válida.');
     }
 
     // Enriquecer datos con appUrl y año actual
@@ -74,12 +76,12 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
     };
 
     const info = await transporter.sendMail(mailOptions);
-    logger.info(`✅ Correo (${templateName}) enviado a ${to} (ID: ${info.messageId})`);
+    logger.info(`[Mailer] Correo (${templateName}) enviado correctamente.`);
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    logger.error(`❌ Error al enviar correo (${templateName}) a ${to}: ${error.message}`, {
-      stack: error.stack,
+    logger.error(`[Mailer] Error al enviar correo (${templateName}).`, {
+      errorCode: error.code || error.name,
     });
     throw error;
   }

@@ -262,9 +262,9 @@ const sendAdminCampaign = async (req, res, next) => {
           status: result.simulated ? 'simulated' : 'sent',
         });
       } catch (error) {
-        logger.error(
-          `Falló el envío de campaña ${campaign._id} a ${recipient.email}: ${error.message}`,
-        );
+        logger.error('Falló el envío de un correo de campaña.', {
+          errorCode: error.code || error.name,
+        });
         results.push({ email: recipient.email, status: 'failed' });
       }
     }

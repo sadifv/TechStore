@@ -23,10 +23,10 @@ const connectDB = async () => {
     });
 
     mongoose.connection.on('error', (err) => {
-      logger.error(`Error de conexión MongoDB: ${err.message}`);
+      logger.error('Error de conexión MongoDB.', { errorCode: err.code || err.name });
     });
   } catch (error) {
-    logger.error(`Error de conexión a MongoDB: ${error.message}`, { stack: error.stack });
+    logger.error('Error de conexión a MongoDB.', { errorCode: error.code || error.name });
     process.exit(1);
   }
 };

@@ -327,7 +327,7 @@ const confirmMockMembership = async (req, res, next) => {
       return res.status(409).json({ success: false, error: 'El pago ya no está pendiente.' });
     }
 
-    logger.info(`Membresía VIP de prueba activada para usuario ${userId}.`);
+    logger.info('Membresía VIP de prueba activada.');
     try {
       await sendMembershipWelcomeEmail({
         to: req.session?.user?.email || req.user?.email,

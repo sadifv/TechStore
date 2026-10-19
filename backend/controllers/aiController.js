@@ -85,9 +85,7 @@ ${catalogContext}`;
       req.session.chatHistory = req.session.chatHistory.slice(-20);
     }
 
-    logger.info(
-      `IA respondió a "${message.substring(0, 50)}..." - Catálogo: ${products.length} productos`,
-    );
+    logger.info(`El asistente respondió correctamente. Productos consultados: ${products.length}.`);
 
     res.status(200).json({ success: true, reply: aiReply });
   } catch (error) {

@@ -42,8 +42,8 @@ cron.schedule('*/5 * * * *', async () => {
       logger.info(`Flash sale expirada restaurada (cron): ${product.name} (ID: ${product._id})`);
     }
   } catch (cronError) {
-    logger.error(`Error en cron job flash sale restore: ${cronError.message}`, {
-      stack: cronError.stack,
+    logger.error('Error en cron job de restauración de ofertas.', {
+      errorCode: cronError.code || cronError.name,
     });
   }
 });
@@ -57,8 +57,8 @@ cron.schedule('*/10 * * * *', async () => {
       logger.info(`Reservas expiradas limpiadas (cron): ${cleaned}`);
     }
   } catch (cronError) {
-    logger.error(`Error en cron job reservation cleanup: ${cronError.message}`, {
-      stack: cronError.stack,
+    logger.error('Error en cron job de limpieza de reservas.', {
+      errorCode: cronError.code || cronError.name,
     });
   }
 });
@@ -79,8 +79,8 @@ cron.schedule('*/10 * * * *', async () => {
       logger.info(`Claves de restitución de inventario limpiadas: ${prunedOrders}`);
     }
   } catch (cronError) {
-    logger.error(`Error en cron job de conciliación de checkout: ${cronError.message}`, {
-      stack: cronError.stack,
+    logger.error('Error en cron job de conciliación de checkout.', {
+      errorCode: cronError.code || cronError.name,
     });
   }
 });
@@ -97,8 +97,8 @@ cron.schedule('15 0 * * *', async () => {
       logger.info(`Membresías VIP expiradas: ${result.modifiedCount}`);
     }
   } catch (cronError) {
-    logger.error(`Error al expirar membresías VIP: ${cronError.message}`, {
-      stack: cronError.stack,
+    logger.error('Error al expirar membresías VIP.', {
+      errorCode: cronError.code || cronError.name,
     });
   }
 });
@@ -235,12 +235,16 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
+  logger.error('Uncaught exception; proceso terminado.', {
+    errorCode: error.code || error.name,
+  });
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection.', {
+    errorCode: reason instanceof Error ? reason.code || reason.name : 'NonErrorRejection',
+  });
 });
 
 if (require.main === module) {

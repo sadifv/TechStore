@@ -36,7 +36,6 @@ const seedAdmin = async () => {
     await adminUser.save();
 
     logger.info('¡Usuario Administrador creado con éxito!');
-    logger.info(`Email: ${adminEmail}`);
 
     await mongoose.connection.close();
     process.exit(0);

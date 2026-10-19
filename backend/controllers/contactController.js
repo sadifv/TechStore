@@ -14,7 +14,7 @@ const sendContactMessage = async (req, res, next) => {
       message,
     });
 
-    logger.info(`Nuevo mensaje de contacto de: ${email}`);
+    logger.info('Nuevo mensaje de contacto recibido.');
 
     res.status(201).json({
       success: true,

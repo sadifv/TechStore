@@ -201,15 +201,13 @@ const reconcileExpiredOrders = async () => {
       }
       const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
       if (session.metadata?.orderId !== order._id.toString()) {
-        logger.error(
-          `La sesión de Stripe ${order.stripeSessionId} no coincide con la orden ${order._id}.`,
-        );
+        logger.error(`Una sesión de Stripe no coincide con la orden ${order._id}.`);
         continue;
       }
       if (session.payment_status === 'paid') {
         if (order.paymentStatus === 'failed') {
           logger.error(
-            `La sesión de Stripe ${session.id} figura pagada, pero la orden ${order._id} ya fue marcada como fallida.`,
+            `La orden ${order._id} figura pagada en Stripe, pero está marcada como fallida.`,
           );
           continue;
         }
@@ -574,9 +572,7 @@ const createOrder = async (req, res, next) => {
     }
     await newOrder.save();
 
-    logger.info(
-      `Orden creada: ${newOrder._id} - Stripe Session: ${session.id} - Total: $${finalAmount.toFixed(2)}`,
-    );
+    logger.info(`Orden creada: ${newOrder._id} - Total: $${finalAmount.toFixed(2)}.`);
 
     res.status(201).json({
       success: true,
@@ -590,9 +586,9 @@ const createOrder = async (req, res, next) => {
         try {
           await stripe.checkout.sessions.expire(stripeSessionId);
         } catch (expireError) {
-          logger.error(
-            `No se pudo expirar la sesión Stripe ${stripeSessionId}: ${expireError.message}`,
-          );
+          logger.error('No se pudo expirar la sesión de Stripe.', {
+            errorCode: expireError.code || expireError.name,
+          });
         }
       }
       try {

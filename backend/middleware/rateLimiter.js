@@ -19,7 +19,7 @@ const loginLimiter = rateLimit({
     error: 'Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo en 10 minutos.',
   },
   handler: (req, res, next) => {
-    logger.warn(`Rate limit excedido en login desde IP: ${req.ip}`);
+    logger.warn('Límite de solicitudes excedido en login.');
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
@@ -50,7 +50,7 @@ const adminLimiter = rateLimit({
   },
   handler: (req, res, next) => {
     logger.warn(
-      `Rate limit excedido en /admin desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`,
+      `Límite de solicitudes excedido en /admin - Ruta: ${getSafeRequestTarget(req)}.`,
     );
     if (isApiRequest(req)) {
       return res.status(429).json({
@@ -72,7 +72,7 @@ const aiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {
-    logger.warn(`Rate limit excedido en /api/ai/chat desde IP: ${req.ip}`);
+    logger.warn('Límite de solicitudes excedido en el asistente.');
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
@@ -108,7 +108,7 @@ const registerLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next) => {
-    logger.warn(`Rate limit excedido en /api/auth/register desde IP: ${req.ip}`);
+    logger.warn('Límite de solicitudes excedido en registro.');
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
@@ -133,7 +133,7 @@ const sensitiveLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res, next) => {
     logger.warn(
-      `Rate limit excedido en ruta sensible desde IP: ${req.ip} - Ruta: ${getSafeRequestTarget(req)}`,
+      `Límite de solicitudes excedido en ruta sensible - Ruta: ${getSafeRequestTarget(req)}.`,
     );
     if (isApiRequest(req)) {
       return res.status(429).json({

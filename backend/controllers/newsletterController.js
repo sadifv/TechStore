@@ -39,7 +39,7 @@ const subscribeNewsletter = async (req, res, next) => {
     } else {
       await Newsletter.create({ email });
     }
-    logger.info(`Nuevo suscriptor al boletín: ${email}`);
+    logger.info('Nuevo suscriptor al boletín.');
 
     res.status(201).json({
       success: true,

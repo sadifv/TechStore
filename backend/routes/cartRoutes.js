@@ -169,7 +169,7 @@ router.post('/add', requireAuth, async (req, res, next) => {
         },
         { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true },
       );
-      logger.info(`Carrito actualizado para usuario ${userId}: ${product.name} x${qtyNum}`);
+      logger.info('Carrito actualizado.');
 
       return {
         status: 200,

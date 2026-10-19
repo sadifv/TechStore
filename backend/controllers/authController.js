@@ -49,7 +49,7 @@ const registerUser = async (req, res, next) => {
       authVersion: newUser.authVersion || 0,
     };
 
-    logger.info(`Nuevo usuario registrado: ${newUser.email}`);
+    logger.info('Nuevo usuario registrado.');
 
     // ✅ Enviar email de bienvenida (no bloqueante)
     try {
@@ -58,7 +58,9 @@ const registerUser = async (req, res, next) => {
         await sendWelcomeEmail(newUser.email, newUser.name);
       }
     } catch (emailError) {
-      logger.warn(`No se pudo enviar email de bienvenida: ${emailError.message}`);
+      logger.warn('No se pudo enviar el correo de bienvenida.', {
+        errorCode: emailError.code || emailError.name,
+      });
     }
 
     res.status(201).json({
@@ -115,7 +117,7 @@ const loginUser = async (req, res) => {
       authVersion: user.authVersion || 0,
     };
 
-    logger.info(`Login exitoso: ${user.email}`);
+    logger.info('Inicio de sesión exitoso.');
 
     return res.status(200).json({
       success: true,
@@ -146,8 +148,6 @@ const logoutUser = (req, res, next) => {
     return res.status(200).json({ success: true, message: 'No había una sesión activa.' });
   }
 
-  const userEmail = req.session.user?.email || 'desconocido';
-
   req.session.destroy((err) => {
     if (err) {
       logger.error(`Error al destruir sesión: ${err.message}`, { stack: err.stack });
@@ -155,7 +155,7 @@ const logoutUser = (req, res, next) => {
     }
 
     res.clearCookie('connect.sid', { path: '/' });
-    logger.info(`Logout exitoso: ${userEmail}`);
+    logger.info('Sesión cerrada correctamente.');
 
     return res.status(200).json({ success: true, message: 'Sesión cerrada correctamente.' });
   });
@@ -181,7 +181,7 @@ const forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      logger.warn(`Intento de reset para email inexistente: ${email}`);
+      logger.warn('Solicitud de recuperación recibida para una cuenta inexistente.');
       return res.status(200).json({
         success: true,
         message:
@@ -200,7 +200,7 @@ const forgotPassword = async (req, res, next) => {
 
     await sendPasswordResetEmail(user.email, resetUrl);
 
-    logger.info(`Email de reset enviado a: ${user.email}`);
+    logger.info('Correo de recuperación enviado.');
 
     res.status(200).json({
       success: true,
@@ -246,7 +246,7 @@ const resetPassword = async (req, res, next) => {
 
     await user.save();
 
-    logger.info(`Contraseña restablecida para: ${user.email}`);
+    logger.info('Contraseña restablecida correctamente.');
 
     res.status(200).json({
       success: true,
