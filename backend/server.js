@@ -1,5 +1,14 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const mongoDnsServers = (process.env.MONGO_DNS_SERVERS || '')
+  .split(',')
+  .map((server) => server.trim())
+  .filter(Boolean);
+
+if (mongoDnsServers.length > 0) {
+  require('node:dns').setServers(mongoDnsServers);
+}
+
 const MongoStore = require('connect-mongo');
 const express = require('express');
 const session = require('express-session');
