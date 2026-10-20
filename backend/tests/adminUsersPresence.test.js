@@ -82,7 +82,5 @@ test('admin user list includes presence and last activity for each account', asy
       { id: 'user-offline', isOnline: false, lastSeenAt: null },
     ],
   );
-  assert.match(userProjection, /-password/);
-  assert.match(userProjection, /-verificationToken/);
-  assert.match(userProjection, /-resetPasswordToken/);
+  assert.equal(userProjection, 'name email role createdAt');
 });

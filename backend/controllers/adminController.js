@@ -91,7 +91,11 @@ const getAdminDashboard = async (req, res, next) => {
       ]),
       Product.find().sort({ createdAt: -1 }).limit(100).lean(),
       Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(10).lean(),
-      User.find().sort({ createdAt: -1 }).limit(10).lean(),
+      User.find()
+        .select('name email role createdAt')
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
       Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
     ]);
 
@@ -237,9 +241,7 @@ const getAdminUsers = async (req, res, next) => {
 
     const [users, totalUsers] = await Promise.all([
       User.find(filter)
-        .select(
-          '-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires',
-        )
+        .select('name email role createdAt')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

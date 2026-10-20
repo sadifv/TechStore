@@ -29,6 +29,7 @@ test('con ventana bloqueada conserva enlace y navega a la confirmación para rea
   await submitWhatsappCheckout(options);
   assert.equal(destination, '/pedido-enviado?orderId=order-1');
   assert.match(options.storage.getItem('techstore.whatsapp.order-1'), /^https:\/\/wa.me/);
+  assert.equal(options.storage.getItem('techstore.orderAccess.order-1'), '1');
 });
 test('reintentar después de un error conserva la clave y cierra la ventana vacía', async () => {
   const options = setup();

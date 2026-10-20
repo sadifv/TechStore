@@ -6,10 +6,15 @@ const test = require('node:test');
 const controllerPath = path.join(__dirname, '..', 'controllers', 'adminController.js');
 const originalLoad = Module._load;
 let newsletterSkip;
+let userSelection;
 let responseData;
 
 const query = (result = []) => ({
   populate() {
+    return this;
+  },
+  select(fields) {
+    userSelection = fields;
     return this;
   },
   sort() {
@@ -97,4 +102,11 @@ test('uses the first page for invalid subscriber page parameters', async () => {
 
   assert.equal(newsletterSkip, 0);
   assert.equal(result.data.subscriberPagination.currentPage, 1);
+});
+
+test('projects only public account fields into the admin dashboard', async () => {
+  userSelection = undefined;
+  await renderDashboard('1');
+
+  assert.equal(userSelection, 'name email role createdAt');
 });

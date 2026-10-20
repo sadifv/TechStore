@@ -18,7 +18,7 @@ TechStore es una plataforma e-commerce full-stack moderna y accesible orientada 
 
 Asegúrate de tener instalado en tu sistema:
 
-- **Node.js** (v18.0.0 o superior)
+- **Node.js** (v20.19.0 o superior, o v22.12.0 o superior)
 - **npm** (v9.0.0 o superior)
 - **MongoDB** (Instancia local corriendo en `mongodb://127.0.0.1:27017/` o URI de MongoDB Atlas)
 
@@ -70,7 +70,7 @@ Asegúrate de tener instalado en tu sistema:
 - Los pedidos pendientes se pueden cancelar desde el panel, liberando inventario y cupón. El plazo de 24 horas se cuenta desde la creación, aunque se registre contacto. Después de ese plazo no se acepta la confirmación de pago, incluso antes de la siguiente ejecución del cron.
 - El navegador conserva una clave por intento de checkout para recuperar una respuesta perdida sin crear otra orden. El backend espera la inicialización del índice único de `checkoutKey` antes de aceptar tráfico. Si el navegador bloquea la ventana, la página del pedido permite abrir WhatsApp de nuevo.
 - Las pruebas cubren checkout, reintentos, permisos de administrador, confirmaciones, cancelaciones, inventario y ventanas bloqueadas. Usan persistencia simulada y no envían mensajes reales a WhatsApp.
-- GitHub Actions comprueba backend y frontend en Node.js 22 y 24 y audita las dependencias de producción del backend en cada push y pull request.
+- GitHub Actions comprueba backend y frontend en Node.js 22 y 24, y ejecuta `npm audit` en ambos proyectos en cada push y pull request.
 
 ## Boletín, campañas y cupones
 

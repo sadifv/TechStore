@@ -21,6 +21,7 @@ const { getBackendBaseUrl } = require('./config/backendUrl');
 const errorHandler = require('./middleware/errorMiddleware');
 const logger = require('./config/logger');
 const httpLogger = require('./middleware/loggerMiddleware');
+const { createCsrfProtection } = require('./middleware/csrfProtection');
 const { adminLimiter } = require('./middleware/rateLimiter');
 const { scheduleMaintenanceJobs } = require('./services/maintenanceJobs');
 
@@ -78,6 +79,10 @@ app.use(
     credentials: true,
   }),
 );
+
+// Defense in depth for browser-originated state changes. CORS controls
+// response visibility; this guard also rejects cross-site form submissions.
+app.use(createCsrfProtection(allowedOrigins));
 
 // Endpoint de salud para comprobar que Express y MongoDB pueden atender tráfico.
 app.get('/health', (req, res) => {

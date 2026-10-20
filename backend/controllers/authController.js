@@ -16,13 +16,16 @@ const regenerateSession = (req) =>
 
 const isAcceptablePassword = (password) =>
   typeof password === 'string' && Buffer.byteLength(password, 'utf8') <= 72;
+const registrationMessage =
+  'Solicitud procesada. Si puedes crear una cuenta con este correo, ya está lista; también puedes intentar iniciar sesión.';
 
 // ==========================================
 // REGISTRO
 // ==========================================
 const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, password } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
     if (!isAcceptablePassword(password)) {
       return res
         .status(400)
@@ -31,44 +34,28 @@ const registerUser = async (req, res, next) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: 'El correo electrónico ya está registrado.',
-      });
+      // Match the password hashing work for new accounts to reduce timing clues.
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      return res.status(202).json({ success: true, message: registrationMessage });
     }
 
     const newUser = new User({ name, email, password, role: 'user' });
     await newUser.save();
 
-    await regenerateSession(req);
-    req.session.user = {
-      id: String(newUser._id),
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      authVersion: newUser.authVersion || 0,
-    };
-
     logger.info('Nuevo usuario registrado.');
 
-    // ✅ Enviar email de bienvenida (no bloqueante)
-    try {
-      const { sendWelcomeEmail } = require('../config/mailer');
-      if (typeof sendWelcomeEmail === 'function') {
-        await sendWelcomeEmail(newUser.email, newUser.name);
-      }
-    } catch (emailError) {
-      logger.warn('No se pudo enviar el correo de bienvenida.', {
-        errorCode: emailError.code || emailError.name,
+    res.status(202).json({ success: true, message: registrationMessage });
+    Promise.resolve()
+      .then(() => require('../config/mailer').sendWelcomeEmail(newUser.email, newUser.name))
+      .catch((emailError) => {
+        logger.warn('No se pudo enviar el correo de bienvenida.', {
+          errorCode: emailError.code || emailError.name,
+        });
       });
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Usuario registrado con éxito.',
-      user: req.session.user,
-    });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(202).json({ success: true, message: registrationMessage });
+    }
     if (error.name === 'ValidationError') {
       const message = Object.values(error.errors)
         .map((val) => val.message)
@@ -178,7 +165,7 @@ const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+resetPasswordToken +resetPasswordExpires');
 
     if (!user) {
       logger.warn('Solicitud de recuperación recibida para una cuenta inexistente.');
@@ -230,7 +217,7 @@ const resetPassword = async (req, res, next) => {
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() },
-    }).select('+authVersion');
+    }).select('+authVersion +resetPasswordToken +resetPasswordExpires');
 
     if (!user) {
       return res.status(400).json({

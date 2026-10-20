@@ -1,15 +1,37 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCartActions } from '../CartContext.js';
-import { money, useAdminData } from './shared.jsx';
+import { money } from './shared.jsx';
 import { finishCheckoutAttempt } from '../../whatsappCheckout.js';
+import { requestJson } from '../../api.js';
 
 export function CheckoutSuccessPage() {
   const orderId = new URLSearchParams(location.search).get('orderId');
-  const { data, error } = useAdminData(
-    `/api/orders/success?orderId=${encodeURIComponent(orderId || '')}`,
-  );
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(Boolean(orderId));
+  const checkoutKey = orderId ? sessionStorage.getItem(`techstore.orderAccess.${orderId}`) : null;
   const { reconcileGuestItems } = useCartActions();
   const reconciled = useRef(false);
+  useEffect(() => {
+    if (!orderId) return undefined;
+    let active = true;
+    requestJson('/api/orders/success', {
+      method: 'POST',
+      body: JSON.stringify({ orderId, checkoutKey }),
+    })
+      .then((result) => {
+        if (active) setData(result.data);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [orderId, checkoutKey]);
   useEffect(() => {
     if (!data || reconciled.current) return;
     finishCheckoutAttempt(sessionStorage);
@@ -37,7 +59,7 @@ export function CheckoutSuccessPage() {
         <a href="/catalogo">Volver al catálogo</a>
       </section>
     );
-  if (!data)
+  if (loading || (!data && !error))
     return (
       <section className="products-section">
         <p role="status">Cargando los datos de tu pedido…</p>

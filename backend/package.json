@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "node --watch server.js",
     "test": "node --test",
     "db:ensure-reservation-ttl": "node scripts/ensureReservationTtlIndex.js"
   },
@@ -28,8 +28,5 @@
     "openai": "^7.32.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
   }
 }

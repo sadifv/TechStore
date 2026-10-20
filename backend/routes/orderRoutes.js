@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { createOrder, getUserOrders } = require('../controllers/orderController');
 const { requireAuth } = require('../middleware/authMiddleware');
+const { isOrderSuccessAccessible } = require('../services/orderSuccessAccess');
 
 router.post('/checkout', createOrder);
 
 // Confirmación de que el pedido quedó registrado antes de abrir WhatsApp.
-router.get('/success', async (req, res, next) => {
+router.post('/success', async (req, res, next) => {
   try {
-    const { orderId } = req.query;
+    const { orderId, checkoutKey } = req.body || {};
     if (typeof orderId !== 'string' || !/^[a-f\d]{24}$/i.test(orderId)) {
       return res.status(400).json({ success: false, error: 'Identificador de pedido inválido.' });
     }
@@ -16,6 +17,11 @@ router.get('/success', async (req, res, next) => {
     const Order = require('../models/Order');
     const order = await Order.findById(orderId).lean();
     if (!order || order.paymentMethod !== 'whatsapp') {
+      return res.status(404).json({ success: false, error: 'No se encontró el pedido.' });
+    }
+
+    const sessionUserId = req.session?.user?.id || req.session?.user?._id;
+    if (!isOrderSuccessAccessible({ order, userId: sessionUserId, checkoutKey })) {
       return res.status(404).json({ success: false, error: 'No se encontró el pedido.' });
     }
 

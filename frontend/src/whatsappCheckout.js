@@ -30,6 +30,7 @@ export async function submitWhatsappCheckout({
       throw new Error('No se pudo preparar el mensaje de WhatsApp.');
     }
     storage.setItem(`techstore.whatsapp.${result.orderId}`, result.whatsappUrl);
+    storage.setItem(`techstore.orderAccess.${result.orderId}`, checkoutKey);
     if (popup) popup.location = result.whatsappUrl;
     navigate(`/pedido-enviado?orderId=${encodeURIComponent(result.orderId)}`);
   } catch (error) {

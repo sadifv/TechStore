@@ -34,6 +34,7 @@ function AccountForm({
 
 function AuthPage({ register = false }) {
   const [status, setStatus] = useState('');
+  const [statusType, setStatusType] = useState('error');
   const [busy, setBusy] = useState(false);
   const next = safeReturnTo(new URLSearchParams(location.search).get('next'));
 
@@ -41,12 +42,20 @@ function AuthPage({ register = false }) {
     event.preventDefault();
     setBusy(true);
     setStatus('');
-    const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+    setStatusType('error');
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries());
     try {
-      await requestJson(register ? '/api/auth/register' : '/api/auth/login', {
+      const result = await requestJson(register ? '/api/auth/register' : '/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      if (register) {
+        setStatusType('success');
+        setStatus(result.message);
+        form.reset();
+        return;
+      }
       location.assign(next);
     } catch (error) {
       setStatus(error.message);
@@ -61,6 +70,7 @@ function AuthPage({ register = false }) {
       description={register ? 'Regístrate para comenzar a comprar en TechStore.' : undefined}
       onSubmit={submit}
       status={status}
+      statusType={statusType}
       buttonText={register ? 'Crear Cuenta' : 'Ingresar'}
       busy={busy}
     >

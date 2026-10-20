@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'La contraseña es obligatoria'],
       minlength: [12, 'La contraseña debe tener al menos 12 caracteres'],
+      select: false,
     },
     role: {
       type: String,
@@ -38,10 +39,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    verificationToken: String,
-    verificationTokenExpires: Date,
-    resetPasswordToken: String,
-    resetPasswordExpires: Date,
+    verificationToken: { type: String, select: false },
+    verificationTokenExpires: { type: Date, select: false },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
   },
   {
     timestamps: true,
