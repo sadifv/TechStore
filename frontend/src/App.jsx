@@ -4,8 +4,6 @@ import {
   ForgotPasswordPage,
   LegalPage,
   LoginPage,
-  MembershipPage,
-  MockMembershipCheckoutPage,
   ProfilePage,
   RegisterPage,
   ResetPasswordPage,
@@ -66,7 +64,7 @@ export default function App() {
   const productMatch = pathname.match(/^\/producto\/([^/]+)$/);
   const resetMatch = pathname.match(/^\/reset-password\/([^/]+)$/);
   const unsubscribeMatch = pathname.match(
-    /^\/(?:api\/)?(?:newsletter|membership)\/unsubscribe\/([^/]+)$/,
+    /^\/(?:api\/)?newsletter\/unsubscribe\/([^/]+)$/,
   );
   const orderDetailMatch = pathname.match(/^\/admin\/orders\/([^/]+)$/);
   const packingSlipMatch = pathname.match(/^\/admin\/orders\/([^/]+)\/packing-slip$/);
@@ -93,8 +91,6 @@ export default function App() {
         <p role="status">Cargando tu cuenta…</p>
       </section>
     );
-  else if (pathname === '/vip') page = <MembershipPage user={user} />;
-  else if (pathname === '/vip/checkout') page = <MockMembershipCheckoutPage />;
   else if (pathname === '/legal') page = <LegalPage />;
   else if (pathname === '/forgot-password') page = <ForgotPasswordPage />;
   else if (resetMatch) page = <ResetPasswordPage token={decodeURIComponent(resetMatch[1])} />;
@@ -104,7 +100,7 @@ export default function App() {
     pathname === '/marketing/unsubscribe'
   )
     page = <NewsletterUnsubscribePage />;
-  else if (pathname === '/checkout-success' || pathname === '/api/orders/success')
+  else if (pathname === '/pedido-enviado')
     page = <CheckoutSuccessPage />;
   else if (pathname === '/error') page = <ErrorPage />;
   else if (pathname === '/admin' || pathname === '/admin/dashboard') page = <AdminDashboardPage />;

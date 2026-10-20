@@ -232,7 +232,7 @@ export function AdminMarketingPage() {
   return (
     <section className="admin-container container admin-marketing">
       <header className="admin-header">
-        <h1>Marketing y membresías</h1>
+        <h1>Marketing y cupones</h1>
         <a href="/admin/dashboard" className="btn btn-outline">
           Volver al dashboard
         </a>
@@ -321,8 +321,6 @@ export function AdminMarketingPage() {
               Público
               <select name="audience">
                 <option value="newsletter">Boletín gratuito</option>
-                <option value="vip">VIP con consentimiento</option>
-                <option value="all">Boletín y VIP</option>
               </select>
             </label>
             <label>

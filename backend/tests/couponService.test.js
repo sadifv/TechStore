@@ -51,16 +51,10 @@ const Coupon = {
     );
   },
 };
-const Membership = {
-  async findOne() {
-    return null;
-  },
-};
 
 Module._load = function (request, parent, isMain) {
   if (parent?.filename === servicePath) {
     if (request === '../models/Coupon') return Coupon;
-    if (request === '../models/Membership') return Membership;
   }
   return originalLoad.call(this, request, parent, isMain);
 };

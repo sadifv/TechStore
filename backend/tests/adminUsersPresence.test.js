@@ -40,7 +40,6 @@ const mocks = new Map([
   ['../models/Contact', {}],
   ['../models/Newsletter', {}],
   ['../models/Cart', {}],
-  ['../models/Membership', {}],
   ['../models/Presence', { find: findPresence }],
   ['../services/presenceService', { isOnline: (lastSeenAt) => lastSeenAt != null }],
   ['../config/logger', { info() {}, warn() {}, error() {} }],

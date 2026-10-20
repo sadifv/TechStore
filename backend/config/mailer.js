@@ -132,29 +132,9 @@ const sendMarketingCampaignEmail = async ({
   });
 };
 
-const sendMembershipWelcomeEmail = async ({
-  to,
-  name,
-  amount,
-  welcomeCouponCode,
-  monthlyCouponCode,
-  unsubscribeUrl,
-  isTest = false,
-}) => {
-  return sendTemplateEmail({
-    to,
-    subject: isTest
-      ? 'Prueba de entrega de correo VIP | TechStore'
-      : 'Tu membresía TechStore VIP está activa',
-    templateName: 'email-vip-welcome',
-    templateData: { name, amount, welcomeCouponCode, monthlyCouponCode, unsubscribeUrl, isTest },
-  });
-};
-
 module.exports = {
   sendOrderConfirmation,
   sendPasswordResetEmail,
   sendWelcomeEmail,
   sendMarketingCampaignEmail,
-  sendMembershipWelcomeEmail,
 };

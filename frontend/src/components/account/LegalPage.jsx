@@ -14,7 +14,6 @@ export function LegalPage() {
           <li>Nombre y correo electrónico al registrarte</li>
           <li>Dirección de envío para procesar pedidos</li>
           <li>Historial de compras y preferencias</li>
-          <li>Preferencias de membresía y consentimiento para comunicaciones promocionales</li>
         </ul>
         <h3>Cómo usamos tu información</h3>
         <ul>
@@ -25,7 +24,7 @@ export function LegalPage() {
         </ul>
         <p>
           Puedes darte de baja de campañas desde el enlace incluido en cada correo. La baja no
-          afecta los mensajes transaccionales de tus pedidos ni el estado de una membresía activa.
+          afecta los mensajes transaccionales relacionados con tus pedidos.
         </p>
         <h3>Protección de datos</h3>
         <p>
@@ -46,19 +45,10 @@ export function LegalPage() {
           Nos esforzamos por mostrar información precisa, pero pueden existir errores. Nos
           reservamos el derecho de corregir precios y descripciones.
         </p>
-        <h3>Membresía VIP y cupones</h3>
+        <h3>Cupones promocionales</h3>
         <p>
-          El precio y las condiciones de los cupones se muestran en{' '}
-          <a href="/vip">la página de membresía</a> y pueden cambiar para nuevas altas. Cuando se
-          ofrece con Stripe, la membresía se factura mensualmente con renovación automática hasta
-          que la canceles; conserva el acceso hasta terminar el período pagado. Puedes cancelar
-          desde tu cuenta y administrar tu método de pago en el portal de Stripe. Los cupones están
-          sujetos a su compra mínima, tope, vencimiento y límite de usos; se validan al momento del
-          checkout. La baja de comunicaciones promocionales no cancela la membresía.
-        </p>
-        <p>
-          La modalidad simulada solo existe en desarrollo, no solicita tarjeta ni genera cobros, y
-          no se renueva automáticamente. No se activarán altas simuladas en producción.
+          Los cupones promocionales vigentes están sujetos a compra mínima, descuento máximo,
+          vencimiento y límite de usos; se validan al momento de registrar el pedido.
         </p>
         <h3>Envíos y entregas</h3>
         <p>

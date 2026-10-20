@@ -136,7 +136,6 @@ export function AdminDashboardPage() {
       </section>
     );
   const {
-    activeMemberships = [],
     orders = [],
     products = [],
     topProducts = [],
@@ -155,7 +154,7 @@ export function AdminDashboardPage() {
             Usuarios
           </a>
           <a href="/admin/marketing" className="btn btn-primary">
-            Marketing y membresías
+            Marketing y cupones
           </a>
         </nav>
       </header>
@@ -165,68 +164,12 @@ export function AdminDashboardPage() {
           ['Ingresos Pagados', money(data.totalRevenue)],
           ['Productos Vendidos', data.totalProductsSold],
           ['Carritos Activos', data.activeCartCount],
-          ['Membresías VIP Activas', data.activeMembershipCount],
         ].map(([label, value]) => (
           <article className="stat-card" key={label}>
             <h3>{label}</h3>
             <p className="stat-number">{value ?? 0}</p>
           </article>
         ))}
-      </section>
-      <section className="dashboard-memberships">
-        <header className="section-heading">
-          <div>
-            <h2 className="section-title">Suscripciones VIP activas</h2>
-            <p className="membership-dashboard-note">
-              Se muestran las membresías vigentes; la lista presenta hasta 100 usuarios.
-            </p>
-          </div>
-          <a href="/admin/marketing" className="btn btn-sm btn-outline">
-            Gestionar campañas y cupones
-          </a>
-        </header>
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Inicio del período</th>
-                <th>Vigente hasta</th>
-                <th>Precio</th>
-                <th>Proveedor</th>
-                <th>Estado de renovación</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeMemberships.length ? (
-                activeMemberships.map((membership) => (
-                  <tr key={membership._id}>
-                    <td>
-                      {membership.user?.name || 'Cuenta no disponible'}
-                      <br />
-                      {membership.user?.email}
-                    </td>
-                    <td>{date(membership.currentPeriodStart)}</td>
-                    <td>{date(membership.currentPeriodEnd)}</td>
-                    <td>
-                      {membership.currency || 'USD'} {money(membership.amount)}
-                    </td>
-                    <td>
-                      {membership.provider === 'mock' ? 'Prueba (sin cobro)' : membership.provider}
-                    </td>
-                    <td>
-                      {membership.cancelAtPeriodEnd ? 'Cancelada al finalizar período' : 'Activa'}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6">No hay membresías activas.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
       </section>
       <section className="dashboard-orders">
         <div className="section-heading">
@@ -386,7 +329,7 @@ export function AdminDashboardPage() {
       </section>
       <section className="dashboard-newsletter">
         <h2 className="section-title">Suscriptores al boletín</h2>
-        <p className="membership-dashboard-note">
+        <p className="text-muted">
           {subscriberPagination.totalSubscribers} suscriptores registrados; se muestran hasta 20 por
           página.
         </p>

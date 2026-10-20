@@ -9,7 +9,7 @@ TechStore es una plataforma e-commerce full-stack moderna y accesible orientada 
 - **Backend:** Node.js y Express.js (las plantillas EJS se conservan para correos).
 - **Base de Datos:** MongoDB con Mongoose y sesiones persistentes vía `connect-mongo`.
 - **Seguridad & Middleware:** Helmet, CORS, Express Rate Limit, Express Slow Down, Express Validator, Bcryptjs.
-- **Integraciones:** Stripe API (Checkout y Webhooks), OpenAI API (Asistente TechBot), Winston (Logging estructurado).
+- **Integraciones:** pedidos por WhatsApp, OpenAI API (Asistente TechBot), Winston (Logging estructurado).
 - **Frontend:** React, Vite, CSS y Remix Icon.
 
 ---
@@ -54,22 +54,17 @@ Asegúrate de tener instalado en tu sistema:
 
 - Ejecuta `npm test` desde `backend/` para las pruebas automatizadas del servidor.
 - Ejecuta `npm test`, `npm run lint` y `npm run build` desde `frontend/` para comprobar React.
-- `npm run test:integration` desde `backend/` ejecuta un flujo real de checkout contra MongoDB y Stripe en modo test. Requiere MongoDB accesible, `MONGO_TEST_URI` apuntando a una base aislada cuyo nombre termine en `_test`, y `STRIPE_SECRET_KEY` con una clave `sk_test_`. El test crea una sesión de Checkout sin cobrar, la expira y comprueba que la orden y el stock se hayan actualizado; al finalizar elimina únicamente el producto y la orden creados por esa prueba.
-- La integración también comprueba la creación de la suscripción VIP mensual en Stripe test y el estado de una sesión VIP expirada; nunca confirma ni cobra una suscripción.
-- Nunca configures `MONGO_TEST_URI` con la base de desarrollo/producción ni uses una clave Stripe `sk_live_` para esta prueba.
 - `npm run db:ensure-reservation-ttl` desde `backend/` muestra una vista previa del índice TTL de `reservations`; no cambia nada por defecto. Para aplicarlo explícitamente, ejecuta `npm run db:ensure-reservation-ttl -- --apply`. MongoDB eliminará automáticamente documentos con `expiresAt` vencido; revisa el conteo antes de aplicar.
 
 ## Seguridad y despliegue
 
 - `backend/.env` y las variantes `.env.*` (excepto `backend/.env.example`) se excluyen de Git. Si una captura, log o commit revela una contraseña o clave, revócala o rótala desde el proveedor correspondiente; cambiar el archivo local no invalida la credencial expuesta.
-- La aplicación rechaza claves Stripe `sk_test_` en producción y claves `sk_live_` fuera de producción para evitar pruebas accidentales con dinero real o un checkout de producción que no cobre.
-- Para habilitar cobros VIP, establece `MEMBERSHIP_PAYMENT_MODE=stripe`, configura `STRIPE_WEBHOOK_SECRET` y `APP_URL` HTTPS, y usa una clave `sk_test_` en desarrollo o `sk_live_` en producción. Configura el endpoint `/api/orders/webhook` para recibir `checkout.session.completed`, `checkout.session.expired`, `customer.subscription.*`, `invoice.paid` e `invoice.payment_failed`. Activa el Customer Portal en Stripe para que los clientes puedan actualizar su tarjeta. En producción el checkout consulta a Stripe y se bloquea si la cuenta no tiene `charges_enabled` y `payouts_enabled`; esto debe comprobarse antes de anunciar la membresía.
+- `WHATSAPP_BUSINESS_PHONE` debe incluir el código de país y solo dígitos, por ejemplo `593963976623`. El checkout crea un pedido pendiente, reserva temporalmente el inventario y abre WhatsApp con el resumen listo para que el cliente lo envíe. Si el cliente no termina el contacto en 24 horas, el pedido vence y el inventario se libera.
+- El pago no se confirma al abrir WhatsApp. Un administrador debe verificarlo con el cliente y usar **Confirmar pago recibido** en el detalle del pedido antes de prepararlo o enviarlo.
 - GitHub Actions comprueba backend y frontend en Node.js 22 y 24 y audita las dependencias de producción del backend en cada push y pull request.
 
-## Membresía VIP y campañas
+## Boletín, campañas y cupones
 
-- La página `/vip` ofrece una suscripción de **$4.99 al mes** con Stripe Checkout cuando `MEMBERSHIP_PAYMENT_MODE=stripe`. En Stripe, el webhook y la confirmación de Checkout mantienen el estado de la suscripción; los cobros fallidos pasan a `past_due`, los pagos recuperados reactivan el acceso, y se puede cancelar al final del período o administrar el método de pago desde el portal Stripe.
-- En desarrollo, `MEMBERSHIP_PAYMENT_MODE=mock` habilita una pantalla de confirmación sin tarjeta ni cobro. El simulador se rechaza fuera de `NODE_ENV=development`.
-- La activación de prueba genera un cupón de bienvenida (15%, máximo $10) y uno mensual (10%, máximo $8); ambos requieren una compra mínima de $50, son de un solo uso y vencen al terminar el período VIP. Estos valores se pueden ajustar con `VIP_MONTHLY_PRICE`, `VIP_COUPON_MIN_ORDER`, `VIP_WELCOME_DISCOUNT_PERCENT`, `VIP_WELCOME_MAX_DISCOUNT`, `VIP_MONTHLY_DISCOUNT_PERCENT` y `VIP_MONTHLY_MAX_DISCOUNT`.
-- La simulación mock dura 30 días y no se renueva. La suscripción Stripe se renueva mensualmente y genera un cupón VIP de un uso por período, además del cupón de bienvenida inicial. Los cupones se validan en el servidor y su uso se reserva durante el checkout; si el pago se cancela o vence, el cupón queda disponible otra vez.
-- El boletín sigue siendo gratuito e independiente. La página `/admin/marketing` permite administrar cupones y enviar campañas al boletín, a miembros VIP que dieron consentimiento, o a ambos. Los mensajes incluyen un enlace de baja. Sin credenciales SMTP, se registran como simulados y no se envían.
+- El boletín es gratuito; la página `/admin/marketing` permite administrar cupones promocionales y enviar campañas a suscriptores que dieron consentimiento. Los mensajes incluyen un enlace de baja.
+- Sin credenciales SMTP, los envíos se registran como simulados y no se envían.
+- Los cupones se validan en el servidor y su uso se reserva durante el checkout; si un pedido vence o se cancela, el cupón vuelve a estar disponible.

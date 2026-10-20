@@ -6,20 +6,13 @@ export default function NewsletterUnsubscribePage() {
   const query = new URLSearchParams(location.search);
   const newsletterPath =
     path.startsWith('/api/newsletter/unsubscribe/') || path.startsWith('/newsletter/unsubscribe/');
-  const membershipPath =
-    path.startsWith('/api/membership/unsubscribe/') || path.startsWith('/membership/unsubscribe/');
   const newsletterToken = newsletterPath
     ? decodeURIComponent(path.split('/').at(-1) || '')
     : query.get('newsletter') || '';
-  const vipToken = membershipPath
-    ? decodeURIComponent(path.split('/').at(-1) || '')
-    : query.get('vip') || '';
   const campaign =
     path.startsWith('/api/marketing/unsubscribe') || path.startsWith('/marketing/unsubscribe');
   const validToken = (token) => /^[a-f0-9]{48}$/i.test(token);
-  const valid = campaign
-    ? validToken(newsletterToken) || validToken(vipToken)
-    : validToken(newsletterToken || vipToken);
+  const valid = validToken(newsletterToken);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -31,12 +24,7 @@ export default function NewsletterUnsubscribePage() {
       if (campaign)
         await requestJson('/api/marketing/unsubscribe', {
           method: 'POST',
-          body: JSON.stringify({ newsletter: newsletterToken, vip: vipToken }),
-        });
-      else if (membershipPath)
-        await requestJson(`/api/membership/unsubscribe/${encodeURIComponent(vipToken)}`, {
-          method: 'POST',
-          body: JSON.stringify({}),
+          body: JSON.stringify({ newsletter: newsletterToken }),
         });
       else
         await requestJson(`/api/newsletter/unsubscribe/${encodeURIComponent(newsletterToken)}`, {
@@ -63,7 +51,7 @@ export default function NewsletterUnsubscribePage() {
           <>
             <p>
               Confirma si quieres dejar de recibir{' '}
-              {campaign || vipToken
+              {campaign
                 ? 'estas comunicaciones de marketing'
                 : 'el boletín de TechStore'}
               .

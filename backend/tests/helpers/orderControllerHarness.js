@@ -125,29 +125,6 @@ const Cart = {
   },
 };
 
-const stripeInstance = {
-  webhooks: {
-    constructEvent() {
-      return state.webhookEvent;
-    },
-  },
-  checkout: {
-    sessions: {
-      async retrieve(sessionId) {
-        const session = state.stripeSessions.get(sessionId);
-        if (!session) throw new Error(`Unknown Stripe session: ${sessionId}`);
-        return session;
-      },
-      async expire(sessionId) {
-        const session = state.stripeSessions.get(sessionId);
-        if (!session) throw new Error(`Unknown Stripe session: ${sessionId}`);
-        session.status = 'expired';
-        return session;
-      },
-    },
-  },
-};
-
 const logger = {
   info() {},
   warn() {},
@@ -197,9 +174,7 @@ const reset = () => {
   state.restorationKeys = new Map();
   state.failProductUpdates = new Map();
   state.expiredOrders = [];
-  state.stripeSessions = new Map();
   state.cart = null;
-  state.webhookEvent = null;
   state.coupons = new Map();
   state.failCouponStatusUpdateOnce = 0;
   state.failMarkerCleanup = 0;
@@ -212,6 +187,7 @@ const addOrder = (overrides = {}) => {
   const order = {
     _id: 'order-1',
     paymentStatus: 'pending',
+    paymentMethod: 'whatsapp',
     status: 'pending',
     inventoryRestored: false,
     inventoryRestorationKeysPruned: false,
@@ -229,35 +205,34 @@ const addProduct = (productId, stock) => {
   state.restorationKeys.set(productId, new Set());
 };
 
-const sendWebhook = async (type, object) => {
-  state.webhookEvent = { type, data: { object } };
-  const response = {
-    statusCode: 200,
-    body: null,
-    status(code) {
-      this.statusCode = code;
-      return this;
-    },
-    json(body) {
-      this.body = body;
-      return this;
-    },
-  };
-  await controller.handleStripeWebhook(
-    {
-      headers: { 'stripe-signature': 'test-signature' },
-      body: Buffer.from('test-webhook'),
-    },
+const responseHarness = () => ({
+  statusCode: 200,
+  body: null,
+  status(code) { this.statusCode = code; return this; },
+  json(body) { this.body = body; return this; },
+});
+
+const confirmPayment = async (order) => {
+  const response = responseHarness();
+  await controller.markWhatsappOrderPaid(
+    { params: { id: order._id } },
     response,
+    (error) => { throw error; },
   );
   return response;
 };
 
-process.env.STRIPE_WEBHOOK_SECRET = 'test-webhook-secret';
-process.env.STRIPE_SECRET_KEY = 'sk_test_unit_test_key';
+const expireOrders = async (...orders) => {
+  state.expiredOrders = orders;
+  for (const order of orders) {
+    order.paymentMethod = 'whatsapp';
+    order.createdAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+  }
+  return controller.expirePendingWhatsappOrders();
+};
+
 Module._load = function (request, parent, isMain) {
   if (parent?.filename === controllerPath) {
-    if (request === '../config/stripe') return stripeInstance;
     if (request === '../models/Order') return Order;
     if (request === '../models/Product') return Product;
     if (request === '../models/Reservation') return {};
@@ -314,7 +289,8 @@ module.exports = {
   addCoupon,
   addProduct,
   reset,
-  sendWebhook,
+  confirmPayment,
+  expireOrders,
   state,
   controller,
 };

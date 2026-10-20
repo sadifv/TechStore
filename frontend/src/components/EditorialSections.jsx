@@ -80,21 +80,3 @@ export function TestimonialsSection() {
     </section>
   );
 }
-
-export function VipPromo({ monthlyPrice = 4.99 }) {
-  return (
-    <section className="vip-promo-section" aria-labelledby="vip-promo-heading">
-      <div className="vip-promo-content">
-        <span className="membership-eyebrow">TECHSTORE VIP</span>
-        <h2 id="vip-promo-heading">Beneficios exclusivos para tus compras</h2>
-        <p>
-          Membresía mensual de ${Number(monthlyPrice).toFixed(2)} con cupones VIP y avisos
-          anticipados de campañas seleccionadas.
-        </p>
-        <a href="/vip" className="btn btn-primary">
-          Conocer la membresía VIP
-        </a>
-      </div>
-    </section>
-  );
-}

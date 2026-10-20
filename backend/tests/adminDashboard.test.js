@@ -43,10 +43,6 @@ const Newsletter = {
   find: () => query(),
 };
 const Cart = { countDocuments: async () => 0 };
-const Membership = {
-  countDocuments: async () => 0,
-  find: () => query(),
-};
 const mocks = new Map([
   ['../models/Order', Order],
   ['../models/Product', Product],
@@ -54,7 +50,6 @@ const mocks = new Map([
   ['../models/Contact', Contact],
   ['../models/Newsletter', Newsletter],
   ['../models/Cart', Cart],
-  ['../models/Membership', Membership],
   ['../config/logger', { info() {}, warn() {}, error() {} }],
 ]);
 

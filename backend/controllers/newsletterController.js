@@ -1,5 +1,4 @@
 const Newsletter = require('../models/Newsletter');
-const Membership = require('../models/Membership');
 const crypto = require('crypto');
 const logger = require('../config/logger');
 const { redirectToFrontend } = require('../config/frontendUrl');
@@ -82,8 +81,6 @@ const unsubscribeCampaignMarketing = async (req, res, next) => {
       typeof source.newsletter === 'string' && /^[a-f0-9]{48}$/i.test(source.newsletter)
         ? source.newsletter
         : null;
-    const vipToken =
-      typeof source.vip === 'string' && /^[a-f0-9]{48}$/i.test(source.vip) ? source.vip : null;
 
     if (req.method === 'GET') {
       const queryStart = req.originalUrl.indexOf('?');
@@ -91,28 +88,14 @@ const unsubscribeCampaignMarketing = async (req, res, next) => {
       return redirectToFrontend(req, res, `/marketing/unsubscribe${queryString}`);
     }
 
-    if (!newsletterToken && !vipToken) {
+    if (!newsletterToken) {
       return res.status(400).json({ success: false, error: 'El enlace de baja no es válido.' });
     }
 
-    const updates = [];
-    if (newsletterToken) {
-      updates.push(
-        Newsletter.updateOne(
-          { unsubscribeToken: newsletterToken, isSubscribed: { $ne: false } },
-          { $set: { isSubscribed: false }, $unset: { unsubscribeToken: 1 } },
-        ),
-      );
-    }
-    if (vipToken) {
-      updates.push(
-        Membership.updateOne(
-          { marketingToken: vipToken, marketingOptIn: true },
-          { $set: { marketingOptIn: false }, $unset: { marketingToken: 1 } },
-        ),
-      );
-    }
-    await Promise.all(updates);
+    await Newsletter.updateOne(
+      { unsubscribeToken: newsletterToken, isSubscribed: { $ne: false } },
+      { $set: { isSubscribed: false }, $unset: { unsubscribeToken: 1 } },
+    );
     return res.json({ success: true, message: 'Tus preferencias de marketing se actualizaron.' });
   } catch (error) {
     next(error);

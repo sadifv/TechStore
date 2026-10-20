@@ -7,8 +7,6 @@ const { redirectToFrontend } = require('../config/frontendUrl');
 router.get('/', redirectToFrontend);
 router.get('/catalogo', redirectToFrontend);
 router.get('/producto/:id', redirectToFrontend);
-router.get('/vip', redirectToFrontend);
-router.get('/vip/checkout', redirectToFrontend);
 router.get('/legal', redirectToFrontend);
 router.get('/login', redirectToFrontend);
 router.get('/register', redirectToFrontend);

@@ -1,7 +1,6 @@
 const cron = require('node-cron');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
-const Membership = require('../models/Membership');
 const logger = require('../config/logger');
 const { runWithDistributedMaintenanceLock } = require('./distributedMaintenanceLock');
 
@@ -37,23 +36,13 @@ const scheduleMaintenanceJobs = () => {
   cron.schedule('*/10 * * * *', () =>
     runWithDistributedMaintenanceLock('reconcile-expired-checkouts', async () => {
       const {
-        reconcileExpiredOrders,
+        expirePendingWhatsappOrders,
         pruneCompletedInventoryRestorationKeys,
       } = require('../controllers/orderController');
-      const reconciledOrders = await reconcileExpiredOrders();
-      if (reconciledOrders > 0) logger.info(`Órdenes de Stripe vencidas reconciliadas: ${reconciledOrders}`);
+      const expiredOrders = await expirePendingWhatsappOrders();
+      if (expiredOrders > 0) logger.info(`Pedidos de WhatsApp vencidos: ${expiredOrders}`);
       const prunedOrders = await pruneCompletedInventoryRestorationKeys();
       if (prunedOrders > 0) logger.info(`Claves de restitución de inventario limpiadas: ${prunedOrders}`);
-    }),
-  );
-
-  cron.schedule('15 0 * * *', () =>
-    runWithDistributedMaintenanceLock('expire-memberships', async () => {
-      const result = await Membership.updateMany(
-        { status: 'active', currentPeriodEnd: { $lte: new Date() } },
-        { $set: { status: 'expired' } },
-      );
-      if (result.modifiedCount > 0) logger.info(`Membresías VIP expiradas: ${result.modifiedCount}`);
     }),
   );
 };

@@ -36,8 +36,8 @@ export function NewsletterSection() {
         <header className="newsletter-content">
           <h2>Suscríbete a nuestras ofertas</h2>
           <p>
-            Suscripción gratuita a novedades y campañas generales. La membresía VIP de pago es
-            independiente.
+            Suscripción gratuita a novedades y campañas generales. Puedes darte de baja cuando
+            quieras.
           </p>
           <form id="newsletter-form" onSubmit={subscribe} className="newsletter-form">
             <p className="form-field">

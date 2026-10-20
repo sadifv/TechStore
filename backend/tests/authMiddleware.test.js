@@ -23,9 +23,9 @@ const createResponse = () => ({
 
 test('unauthenticated API requests return JSON instead of redirecting', () => {
   const req = {
-    originalUrl: '/api/membership',
+    originalUrl: '/api/orders',
     baseUrl: '/api',
-    path: '/membership',
+    path: '/orders',
     headers: { accept: '*/*' },
   };
   const res = createResponse();

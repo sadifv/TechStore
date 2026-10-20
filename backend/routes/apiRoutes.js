@@ -9,16 +9,6 @@ const {
   unsubscribeCampaignMarketing,
 } = require('../controllers/newsletterController');
 const {
-  getMembershipStatus,
-  startMembershipCheckout,
-  confirmMockMembership,
-  confirmStripeMembership,
-  cancelMembership,
-  createMembershipPortalSession,
-  unsubscribeVipMarketing,
-  getPublicMembershipConfig,
-} = require('../controllers/membershipController');
-const {
   registerUser,
   loginUser,
   logoutUser,
@@ -43,6 +33,7 @@ const {
   getPackingSlip,
   getAdminUsers,
 } = require('../controllers/adminController');
+const { markWhatsappOrderPaid } = require('../controllers/orderController');
 const { getAdminMarketing } = require('../controllers/marketingController');
 const { recordHeartbeat } = require('../controllers/presenceController');
 
@@ -60,16 +51,7 @@ router
   .route('/marketing/unsubscribe')
   .get(unsubscribeCampaignMarketing)
   .post(unsubscribeCampaignMarketing);
-router.get('/membership/config', getPublicMembershipConfig);
-router.get('/membership', requireAuth, getMembershipStatus);
 router.post('/presence/heartbeat', requireAuth, recordHeartbeat);
-router.post('/membership/checkout', requireAuth, sensitiveLimiter, startMembershipCheckout);
-router.post('/membership/mock-confirm', requireAuth, sensitiveLimiter, confirmMockMembership);
-router.get('/membership/confirm', requireAuth, confirmStripeMembership);
-router.post('/membership/cancel', requireAuth, sensitiveLimiter, cancelMembership);
-router.post('/membership/portal', requireAuth, sensitiveLimiter, createMembershipPortalSession);
-router.get('/membership/unsubscribe/:token', unsubscribeVipMarketing);
-router.post('/membership/unsubscribe/:token', unsubscribeVipMarketing);
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById);
 
@@ -79,6 +61,7 @@ router.get('/admin/marketing', requireAdmin, getAdminMarketing);
 router.get('/admin/orders', requireAdmin, getAdminOrders);
 router.get('/admin/orders/:id/packing-slip', requireAdmin, getPackingSlip);
 router.get('/admin/orders/:id', requireAdmin, getAdminOrderDetail);
+router.post('/admin/orders/:id/confirm-payment', requireAdmin, markWhatsappOrderPaid);
 router.get('/admin/users', requireAdmin, getAdminUsers);
 
 // ==========================================

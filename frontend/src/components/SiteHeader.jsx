@@ -44,11 +44,6 @@ export default function SiteHeader({ user }) {
           </a>
         </li>
         <li>
-          <a href="/vip" onClick={() => setOpen(false)}>
-            <i className="ri-vip-crown-line" aria-hidden="true" /> VIP
-          </a>
-        </li>
-        <li>
           <a href="/#contacto" onClick={() => setOpen(false)}>
             <i className="ri-mail-line" aria-hidden="true" /> Contacto
           </a>

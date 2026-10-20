@@ -1,13 +1,13 @@
 const Coupon = require('../models/Coupon');
-const Membership = require('../models/Membership');
 
-const getCouponDiscount = async ({ code, userId, subtotal }) => {
+const getCouponDiscount = async ({ code, subtotal }) => {
   const normalizedCode = typeof code === 'string' ? code.trim().toUpperCase() : '';
   if (!normalizedCode) return null;
 
   const now = new Date();
   const coupon = await Coupon.findOne({
     code: normalizedCode,
+    type: 'campaign',
     active: true,
     startsAt: { $lte: now },
     $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
@@ -17,32 +17,6 @@ const getCouponDiscount = async ({ code, userId, subtotal }) => {
     const error = new Error('El cupón no existe, venció o ya no está disponible.');
     error.statusCode = 400;
     throw error;
-  }
-
-  if (coupon.allowedUser && (!userId || coupon.allowedUser.toString() !== userId.toString())) {
-    const error = new Error('Este cupón pertenece a otra cuenta.');
-    error.statusCode = 403;
-    throw error;
-  }
-
-  if (coupon.membership) {
-    const membership = await Membership.findOne({
-      _id: coupon.membership,
-      user: userId,
-      status: 'active',
-      ...(process.env.NODE_ENV === 'production'
-        ? { provider: { $exists: true, $ne: 'mock' } }
-        : {}),
-      currentPeriodEnd: { $gt: now },
-    })
-      .select('_id')
-      .lean();
-
-    if (!membership) {
-      const error = new Error('Este cupón requiere una membresía VIP activa.');
-      error.statusCode = 403;
-      throw error;
-    }
   }
 
   if (Number(subtotal) < coupon.minOrderAmount) {

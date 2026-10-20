@@ -22,7 +22,7 @@ const campaignSchema = new mongoose.Schema(
     },
     audience: {
       type: String,
-      enum: ['newsletter', 'vip', 'all'],
+      enum: ['newsletter'],
       required: true,
     },
     couponCode: {

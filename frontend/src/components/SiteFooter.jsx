@@ -39,9 +39,6 @@ export default function SiteFooter() {
               <a href="/catalogo">Catálogo</a>
             </li>
             <li>
-              <a href="/vip">Membresía VIP</a>
-            </li>
-            <li>
               <a href="/#contacto">Contacto</a>
             </li>
             <li>

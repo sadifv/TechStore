@@ -5,9 +5,9 @@ const isApiRequest = require('../middleware/isApiRequest');
 test('detects an API path behind an Express mount prefix', () => {
   assert.equal(
     isApiRequest({
-      originalUrl: '/membership',
+      originalUrl: '/orders',
       baseUrl: '/api',
-      path: '/membership',
+      path: '/orders',
       headers: { accept: '*/*' },
     }),
     true,

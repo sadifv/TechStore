@@ -68,8 +68,8 @@ const orderSchema = new mongoose.Schema(
     cartSnapshotUpdatedAt: Date,
     paymentMethod: {
       type: String,
-      enum: ['card', 'transfer', 'cash'],
-      default: 'card',
+      enum: ['whatsapp'],
+      default: 'whatsapp',
     },
     paymentStatus: {
       type: String,
@@ -91,18 +91,6 @@ const orderSchema = new mongoose.Schema(
       default: 'pending',
       index: true,
     },
-    stripeSessionId: {
-      type: String,
-    },
-    cancelTokenHash: {
-      type: String,
-      select: false,
-    },
-    cancelTokenExpiresAt: {
-      type: Date,
-      select: false,
-    },
-    stripeExpiresAt: Date,
     shippingAddress: {
       street: { type: String, default: 'Dirección estándar' },
       city: { type: String, default: 'Guayaquil' },
@@ -111,7 +99,5 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
-orderSchema.index({ paymentStatus: 1, stripeExpiresAt: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

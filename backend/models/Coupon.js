@@ -12,7 +12,7 @@ const couponSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['welcome', 'monthly', 'campaign'],
+      enum: ['campaign'],
       default: 'campaign',
     },
     discountPercent: {
@@ -30,14 +30,6 @@ const couponSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
-    },
-    allowedUser: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    },
-    membership: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Membership',
     },
     startsAt: {
       type: Date,

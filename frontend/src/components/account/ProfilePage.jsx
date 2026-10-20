@@ -2,59 +2,19 @@ import { useEffect, useState } from 'react';
 import { requestJson } from '../../api.js';
 import { formatCurrency } from './utils.js';
 
-export function MembershipSummary({ membership }) {
-  if (!membership) return <p className="membership-status">Aún no tienes una membresía activa.</p>;
-  const endDate = membership.currentPeriodEnd
-    ? new Date(membership.currentPeriodEnd).toLocaleDateString('es-EC')
-    : null;
-  const label =
-    membership.status === 'active'
-      ? `Activa hasta el ${endDate || 'fin del período'}.${membership.cancelAtPeriodEnd ? ' La cancelación ya está programada.' : ''}`
-      : membership.status === 'pending'
-        ? 'Tu pago está pendiente de confirmación.'
-        : membership.status === 'past_due'
-          ? 'Hay un pago pendiente en tu membresía.'
-          : 'Tu membresía no está activa.';
-  return (
-    <>
-      <p className="membership-status">{label}</p>
-      <div className="membership-coupons">
-        {membership.welcomeCouponCode && (
-          <p>
-            Cupón de bienvenida: <strong>{membership.welcomeCouponCode}</strong>
-          </p>
-        )}
-        {membership.monthlyCouponCode && (
-          <p>
-            Cupón VIP mensual: <strong>{membership.monthlyCouponCode}</strong>
-          </p>
-        )}
-      </div>
-    </>
-  );
-}
-
 export function ProfilePage({ user }) {
   const [orders, setOrders] = useState(null);
-  const [membership, setMembership] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    Promise.allSettled([requestJson('/api/orders'), requestJson('/api/membership')]).then(
-      ([orderResult, membershipResult]) => {
+    requestJson('/api/orders')
+      .then((result) => {
         if (!active) return;
-        if (orderResult.status === 'fulfilled') setOrders(orderResult.value.orders || []);
-        else setError(orderResult.reason.message);
-        if (membershipResult.status === 'fulfilled')
-          setMembership(membershipResult.value.membership);
-        else
-          setError((current) =>
-            current
-              ? `${current} ${membershipResult.reason.message}`
-              : membershipResult.reason.message,
-          );
-      },
-    );
+        setOrders(result.orders || []);
+      })
+      .catch((cause) => {
+        if (active) setError(cause.message);
+      });
     return () => {
       active = false;
     };
@@ -74,21 +34,6 @@ export function ProfilePage({ user }) {
             <strong>Correo:</strong> {user?.email || '—'}
           </p>
         </article>
-      </section>
-      <section
-        className="membership-card profile-membership-card"
-        aria-labelledby="profile-membership-heading"
-      >
-        <h2 id="profile-membership-heading">Membresía VIP</h2>
-        <MembershipSummary membership={membership} />
-        {error && (
-          <p className="form-status error" role="status">
-            {error}
-          </p>
-        )}
-        <a href="/vip" className="btn btn-outline">
-          Ver planes y beneficios
-        </a>
       </section>
       <section className="orders-section">
         <h2>Historial de Compras</h2>

@@ -12,17 +12,10 @@ const Newsletter = {
     return { modifiedCount: 1 };
   },
 };
-const Membership = {
-  async updateOne(...args) {
-    calls.push(['membership', ...args]);
-    return { modifiedCount: 1 };
-  },
-};
 
 Module._load = function (request, parent, isMain) {
   if (parent?.filename === controllerPath) {
     if (request === '../models/Newsletter') return Newsletter;
-    if (request === '../models/Membership') return Membership;
     if (request === '../config/logger') return { info() {}, warn() {}, error() {} };
   }
   return originalLoad.call(this, request, parent, isMain);
@@ -104,8 +97,8 @@ test('GET campaign unsubscribe shows confirmation without changing preferences',
   await controller.unsubscribeCampaignMarketing(
     {
       method: 'GET',
-      query: { newsletter: 'c'.repeat(48), vip: 'd'.repeat(48) },
-      originalUrl: `/api/marketing/unsubscribe?newsletter=${'c'.repeat(48)}&vip=${'d'.repeat(48)}`,
+      query: { newsletter: 'c'.repeat(48) },
+      originalUrl: `/api/marketing/unsubscribe?newsletter=${'c'.repeat(48)}`,
     },
     res,
     (error) => {
@@ -116,7 +109,7 @@ test('GET campaign unsubscribe shows confirmation without changing preferences',
   assert.equal(calls.length, 0);
   assert.equal(
     res.location,
-    `http://localhost:5173${`/marketing/unsubscribe?newsletter=${'c'.repeat(48)}&vip=${'d'.repeat(48)}`}`,
+    `http://localhost:5173${`/marketing/unsubscribe?newsletter=${'c'.repeat(48)}`}`,
   );
 });
 
@@ -127,7 +120,7 @@ test('POST campaign unsubscribe applies only the confirmed token updates', async
   await controller.unsubscribeCampaignMarketing(
     {
       method: 'POST',
-      body: { newsletter: 'e'.repeat(48), vip: 'f'.repeat(48) },
+      body: { newsletter: 'e'.repeat(48) },
       accepts: () => true,
     },
     res,
@@ -138,7 +131,7 @@ test('POST campaign unsubscribe applies only the confirmed token updates', async
 
   assert.deepEqual(
     calls.map((call) => call[0]),
-    ['newsletter', 'membership'],
+    ['newsletter'],
   );
   assert.equal(res.data.success, true);
 });

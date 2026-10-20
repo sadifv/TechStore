@@ -1,12 +1,9 @@
-const crypto = require('crypto');
-const stripe = require('../config/stripe');
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const Cart = require('../models/Cart');
 const logger = require('../config/logger');
-const { handleMembershipStripeEvent } = require('../services/membershipStripeService');
 const {
   getCouponDiscount,
   reserveCoupon,
@@ -14,14 +11,12 @@ const {
   consumeCouponReservation,
 } = require('../services/couponService');
 const { acquireProductReservationLocks } = require('../services/productReservationLock');
-const { getBackendBaseUrl } = require('../config/backendUrl');
 
 const restoreOrderInventory = async (orderId, items) => {
   let order = await Order.findOneAndUpdate(
     { _id: orderId, paymentStatus: 'pending', inventoryRestored: { $ne: true } },
     {
       $set: { paymentStatus: 'failed', status: 'cancelled' },
-      $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 },
     },
     { returnDocument: 'after' },
   );
@@ -48,7 +43,7 @@ const restoreOrderInventory = async (orderId, items) => {
     if (completedOrder) return false;
 
     for (const item of itemsToRestore) {
-      // The marker and stock increment share one product update, making Stripe retries idempotent.
+      // The marker and stock increment share one product update for safe retry handling.
       const restorationKey = `${order._id}:${item.product}`;
       const result = await Product.updateOne(
         { _id: item.product, inventoryRestorationKeys: { $ne: restorationKey } },
@@ -167,67 +162,29 @@ const pruneCompletedInventoryRestorationKeys = async () => {
   return prunedCount;
 };
 
-const reconcileExpiredOrders = async () => {
+const expirePendingWhatsappOrders = async () => {
   const now = new Date();
-  const fallbackExpiry = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const expiresBefore = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const expiredOrders = await Order.find({
     paymentStatus: { $in: ['pending', 'failed'] },
+    paymentMethod: 'whatsapp',
+    createdAt: { $lte: expiresBefore },
     inventoryRestored: { $ne: true },
-    $or: [
-      {
-        stripeSessionId: { $exists: true, $ne: '' },
-        stripeExpiresAt: { $lte: now },
-      },
-      {
-        stripeSessionId: { $exists: true, $ne: '' },
-        stripeExpiresAt: { $exists: false },
-        createdAt: { $lte: fallbackExpiry },
-      },
-      {
-        stripeSessionId: { $in: [null, ''] },
-        createdAt: { $lte: fallbackExpiry },
-      },
-    ],
   })
     .sort({ createdAt: 1 })
     .limit(100);
 
-  let reconciledCount = 0;
+  let expiredCount = 0;
   for (const order of expiredOrders) {
     try {
-      if (!order.stripeSessionId) {
-        if (await restoreOrderInventory(order._id)) reconciledCount += 1;
-        continue;
-      }
-      const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
-      if (session.metadata?.orderId !== order._id.toString()) {
-        logger.error(`Una sesión de Stripe no coincide con la orden ${order._id}.`);
-        continue;
-      }
-      if (session.payment_status === 'paid') {
-        if (order.paymentStatus === 'failed') {
-          logger.error(
-            `La orden ${order._id} figura pagada en Stripe, pero está marcada como fallida.`,
-          );
-          continue;
-        }
-        await markOrderAsPaid(order._id);
-        reconciledCount += 1;
-        continue;
-      }
-      if (session.status === 'open') {
-        await stripe.checkout.sessions.expire(session.id);
-      } else if (session.status !== 'expired') {
-        continue;
-      }
-      if (await restoreOrderInventory(order._id)) reconciledCount += 1;
+      if (await restoreOrderInventory(order._id)) expiredCount += 1;
     } catch (error) {
-      logger.error(`No se pudo reconciliar la orden expirada ${order._id}: ${error.message}`, {
+      logger.error(`No se pudo expirar la orden de WhatsApp ${order._id}: ${error.message}`, {
         stack: error.stack,
       });
     }
   }
-  return reconciledCount;
+  return expiredCount;
 };
 
 const markOrderAsPaid = async (orderId) => {
@@ -235,7 +192,6 @@ const markOrderAsPaid = async (orderId) => {
     { _id: orderId, paymentStatus: 'pending' },
     {
       $set: { paymentStatus: 'paid', status: 'processing' },
-      $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 },
     },
     { returnDocument: 'after' },
   );
@@ -246,7 +202,7 @@ const markOrderAsPaid = async (orderId) => {
 
   if (!order) return null;
 
-  await reconcilePaidOrderCart(order);
+  await reconcileOrderCart(order);
 
   if (order?.couponReservationStatus === 'reserved') {
     await consumeCouponReservation(
@@ -263,7 +219,7 @@ const markOrderAsPaid = async (orderId) => {
   return order;
 };
 
-const reconcilePaidOrderCart = async (order) => {
+const reconcileOrderCart = async (order) => {
   if (!order.user || !order.cartSnapshotUpdatedAt) return;
 
   // Never clear cart changes made while the customer was completing payment.
@@ -294,24 +250,16 @@ const reconcilePaidOrderCart = async (order) => {
 // CREAR ORDEN
 // ==========================================
 
-// @desc    Crear orden y sesión de Stripe Checkout
+// @desc    Crear un pedido y preparar el mensaje de WhatsApp
 // @route   POST /api/orders/checkout
 // @access  Public (soporta invitados)
 const createOrder = async (req, res, next) => {
   let newOrder;
   let reservedItems = [];
-  let stripeSessionId;
   let couponDiscount;
   let releaseStockLocks;
   try {
-    const { items, guestInfo, shippingAddress, paymentMethod = 'card', couponCode } = req.body;
-
-    if (paymentMethod !== 'card') {
-      return res.status(400).json({
-        success: false,
-        error: 'El único método de pago disponible es tarjeta.',
-      });
-    }
+    const { items, guestInfo, shippingAddress, couponCode } = req.body;
 
     // ✅ FIX: Validar items
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -414,7 +362,6 @@ const createOrder = async (req, res, next) => {
     if (couponCode) {
       couponDiscount = await getCouponDiscount({
         code: couponCode,
-        userId,
         subtotal: totalAmount,
       });
     }
@@ -442,8 +389,6 @@ const createOrder = async (req, res, next) => {
     }
 
     // Construir datos de la orden
-    const cancelToken = crypto.randomBytes(32).toString('hex');
-    const cancelTokenHash = crypto.createHash('sha256').update(cancelToken).digest('hex');
     const orderData = {
       items: orderItems,
       subtotalAmount: totalAmount,
@@ -455,11 +400,9 @@ const createOrder = async (req, res, next) => {
       couponReservationManaged: couponDiscount ? false : undefined,
       paymentStatus: 'pending',
       status: 'pending',
-      paymentMethod,
+      paymentMethod: 'whatsapp',
       cartSnapshotUpdatedAt,
       inventoryRestored: false,
-      cancelTokenHash,
-      cancelTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     };
 
     if (userId) {
@@ -523,74 +466,42 @@ const createOrder = async (req, res, next) => {
     await releaseStockLocks();
     releaseStockLocks = null;
 
-    // Construir line items para Stripe
-    const lineItems = orderItems.map((oi) => ({
-      quantity: oi.quantity,
-      price_data: {
-        currency: 'usd',
-        unit_amount: Math.round(oi.price * 100),
-        product_data: {
-          name: oi.productName || 'Producto TechStore',
-        },
-      },
-    }));
-
-    let stripeDiscounts;
-    if (discountAmount > 0) {
-      const stripeCoupon = await stripe.coupons.create({
-        amount_off: Math.round(discountAmount * 100),
-        currency: 'usd',
-        duration: 'once',
-        name: `Cupón ${couponDiscount.coupon.code}`,
-      });
-      stripeDiscounts = [{ coupon: stripeCoupon.id }];
+    const phone = (process.env.WHATSAPP_BUSINESS_PHONE || '').replace(/\D/g, '');
+    if (!/^\d{8,15}$/.test(phone)) {
+      const error = new Error('WhatsApp no está configurado. Contacta con la tienda por otro medio.');
+      error.statusCode = 503;
+      throw error;
     }
 
-    // Crear sesión de Stripe Checkout
-    const backendUrl = getBackendBaseUrl();
-    const stripeSessionOptions = {
-      line_items: lineItems,
-      mode: 'payment',
-      // Stripe must return to Express so it can verify and persist payment
-      // before redirecting the customer to the React success page.
-      success_url: `${backendUrl}/api/orders/confirm?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${backendUrl}/api/orders/cancel?orderId=${newOrder._id}&cancelToken=${cancelToken}`,
-      metadata: {
-        orderId: newOrder._id.toString(),
-      },
-      customer_email: guestInfo?.email || req.session?.user?.email || undefined,
-    };
-    if (stripeDiscounts) stripeSessionOptions.discounts = stripeDiscounts;
-    const session = await stripe.checkout.sessions.create(stripeSessionOptions);
-    stripeSessionId = session.id;
-
-    // Guardar sessionId en la orden
-    newOrder.stripeSessionId = session.id;
-    if (session.expires_at) {
-      newOrder.stripeExpiresAt = new Date(session.expires_at * 1000);
-      newOrder.cancelTokenExpiresAt = new Date(session.expires_at * 1000);
-    }
+    const buyerName = guestInfo?.name || req.session?.user?.name || 'Cliente';
+    const buyerEmail = guestInfo?.email || req.session?.user?.email || 'No proporcionado';
+    const productLines = orderItems
+      .map((item) => `• ${item.productName} x${item.quantity} — $${(item.price * item.quantity).toFixed(2)}`)
+      .join('\n');
+    const message = [
+      'Hola, quiero completar este pedido de TechStore:',
+      `Pedido: ${newOrder._id}`,
+      `Nombre: ${buyerName}`,
+      `Correo: ${buyerEmail}`,
+      productLines,
+      `Subtotal: $${totalAmount.toFixed(2)}`,
+      ...(discountAmount > 0 ? [`Descuento: -$${discountAmount.toFixed(2)}`] : []),
+      `Total: $${finalAmount.toFixed(2)}`,
+      'Por favor, confírmame disponibilidad y cómo finalizar la compra.',
+    ].join('\n');
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     await newOrder.save();
+    if (userId) await reconcileOrderCart(newOrder);
 
     logger.info(`Orden creada: ${newOrder._id} - Total: $${finalAmount.toFixed(2)}.`);
 
     res.status(201).json({
       success: true,
       orderId: newOrder._id,
-      sessionId: session.id,
-      url: session.url,
+      whatsappUrl,
     });
   } catch (error) {
     if (newOrder) {
-      if (stripeSessionId) {
-        try {
-          await stripe.checkout.sessions.expire(stripeSessionId);
-        } catch (expireError) {
-          logger.error('No se pudo expirar la sesión de Stripe.', {
-            errorCode: expireError.code || expireError.name,
-          });
-        }
-      }
       try {
         if (releaseStockLocks) {
           await releaseStockLocks();
@@ -615,144 +526,6 @@ const createOrder = async (req, res, next) => {
     if (releaseStockLocks) {
       await releaseStockLocks();
     }
-  }
-};
-
-const cancelOrderCheckout = async (req, res, next) => {
-  try {
-    const { orderId, cancelToken } = req.query;
-    if (
-      !orderId ||
-      !mongoose.isObjectIdOrHexString(orderId) ||
-      typeof cancelToken !== 'string' ||
-      !/^[a-f0-9]{64}$/i.test(cancelToken)
-    ) {
-      return res.redirect('/');
-    }
-
-    const cancelTokenHash = crypto.createHash('sha256').update(cancelToken).digest('hex');
-    const order = await Order.findOne({
-      _id: orderId,
-      paymentStatus: 'pending',
-      stripeSessionId: { $exists: true, $ne: '' },
-      cancelTokenHash,
-      cancelTokenExpiresAt: { $gt: new Date() },
-    });
-    if (!order) {
-      return res.redirect('/');
-    }
-
-    const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
-    if (session.metadata?.orderId !== order._id.toString()) {
-      return res.redirect('/');
-    }
-
-    if (session.payment_status === 'paid') {
-      await markOrderAsPaid(order._id);
-      await Order.updateOne(
-        { _id: order._id, cancelTokenHash },
-        { $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 } },
-      );
-      return res.redirect(`/api/orders/success?orderId=${order._id}`);
-    } else if (session.status === 'open') {
-      await stripe.checkout.sessions.expire(session.id);
-      await restoreOrderInventory(order._id);
-    } else if (session.status === 'expired') {
-      await restoreOrderInventory(order._id);
-    }
-
-    await Order.updateOne(
-      { _id: order._id, cancelTokenHash },
-      { $unset: { cancelTokenHash: 1, cancelTokenExpiresAt: 1 } },
-    );
-
-    res.redirect('/?checkout=cancelled');
-  } catch (error) {
-    logger.error(`Error al cancelar checkout: ${error.message}`, { stack: error.stack });
-    next(error);
-  }
-};
-
-// ==========================================
-// CONFIRMAR PAGO
-// ==========================================
-
-// @desc    Confirmar pago de orden después de Stripe Checkout
-// @route   GET /api/orders/confirm
-// @access  Public
-const confirmOrderPayment = async (req, res, next) => {
-  try {
-    const { session_id } = req.query;
-
-    if (!session_id) {
-      return res.status(400).json({
-        success: false,
-        error: 'Falta el parámetro session_id.',
-      });
-    }
-
-    // Verificar sesión en Stripe
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-
-    if (session.payment_status !== 'paid') {
-      return res.status(400).json({
-        success: false,
-        error: 'El pago no ha sido completado.',
-      });
-    }
-
-    const orderId = session.metadata?.orderId;
-    if (!orderId) {
-      return res.status(400).json({
-        success: false,
-        error: 'No se encontró la orden asociada.',
-      });
-    }
-
-    // Actualizar orden
-    const orderToConfirm = await Order.findById(orderId);
-    if (!orderToConfirm || orderToConfirm.stripeSessionId !== session.id) {
-      return res.status(404).json({
-        success: false,
-        error: 'Orden no encontrada para esta sesión de pago.',
-      });
-    }
-
-    const order = await markOrderAsPaid(orderId);
-
-    if (!order) {
-      const currentOrder = await Order.findById(orderId).lean();
-      if (currentOrder?.paymentStatus === 'paid') {
-        if (req.accepts('html')) {
-          return res.redirect(`/api/orders/success?orderId=${currentOrder._id}`);
-        }
-        return res.status(200).json({
-          success: true,
-          message: 'Pago confirmado exitosamente.',
-          order: currentOrder,
-        });
-      }
-      return res.status(404).json({
-        success: false,
-        error: 'La orden ya no está pendiente de pago.',
-      });
-    }
-
-    logger.info(`Pago confirmado para orden: ${order._id}`);
-
-    // ✅ FIX: Redirigir a la página de éxito si es navegación HTML
-    if (req.accepts('html')) {
-      return res.redirect(`/api/orders/success?orderId=${order._id}`);
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Pago confirmado exitosamente.',
-      order,
-    });
-  } catch (error) {
-    logger.error(`Error al confirmar pago: ${error.message}`, { stack: error.stack });
-    next(error);
   }
 };
 
@@ -785,79 +558,6 @@ const getUserOrders = async (req, res, next) => {
   } catch (error) {
     logger.error(`Error al obtener órdenes del usuario: ${error.message}`, { stack: error.stack });
     next(error);
-  }
-};
-
-// ==========================================
-// WEBHOOK DE STRIPE
-// ==========================================
-
-// @desc    Webhook de Stripe para eventos de pago
-// @route   POST /api/orders/webhook
-// @access  Public (validado con Stripe Signature)
-const handleStripeWebhook = async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  // ✅ FIX: Validar que el webhook secret esté configurado
-  if (!endpointSecret) {
-    logger.error('STRIPE_WEBHOOK_SECRET no está configurado en .env');
-    return res.status(500).send('Webhook no configurado.');
-  }
-
-  // ✅ FIX: Validar que req.body sea Buffer (raw)
-  if (!Buffer.isBuffer(req.body)) {
-    logger.error('El body del webhook no está en formato raw. Verifica express.raw() en server.js');
-    return res.status(500).send('Configuración de webhook incorrecta.');
-  }
-
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    logger.error(`Error en firma de webhook: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Stripe debe reintentar eventos cuando la restitución no se haya completado.
-  try {
-    const membershipEventHandled = await handleMembershipStripeEvent(event);
-    if (!membershipEventHandled)
-      switch (event.type) {
-        case 'checkout.session.completed': {
-          const session = event.data.object;
-          const orderId = session.metadata?.orderId;
-
-          if (orderId) {
-            const order = await markOrderAsPaid(orderId);
-            if (order) logger.info(`Webhook: Orden ${orderId} pagada exitosamente.`);
-          }
-          break;
-        }
-
-        case 'checkout.session.expired': {
-          const session = event.data.object;
-          const orderId = session.metadata?.orderId;
-
-          if (orderId) {
-            const restored = await restoreOrderInventory(orderId);
-            if (restored)
-              logger.info(`Webhook: Orden ${orderId} expirada/cancelada; inventario restituido.`);
-          }
-          break;
-        }
-
-        default:
-          logger.info(`Webhook: Evento no manejado: ${event.type}`);
-      }
-
-    res.json({ received: true });
-  } catch (dbError) {
-    logger.error(`Error procesando webhook de Stripe: ${dbError.message}`, {
-      stack: dbError.stack,
-    });
-    res.status(500).json({ error: 'Error procesando webhook.' });
   }
 };
 
@@ -937,13 +637,41 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
+const markWhatsappOrderPaid = async (req, res, next) => {
+  try {
+    const pendingOrder = await Order.findOne({
+      _id: req.params.id,
+      paymentMethod: 'whatsapp',
+      paymentStatus: 'pending',
+      status: 'pending',
+    });
+    if (!pendingOrder) {
+      return res.status(404).json({
+        success: false,
+        error: 'No se encontró un pedido de WhatsApp pendiente.',
+      });
+    }
+
+    const order = await markOrderAsPaid(pendingOrder._id);
+    if (!order) {
+      return res.status(409).json({
+        success: false,
+        error: 'El pedido cambió mientras se confirmaba. Actualiza la página.',
+      });
+    }
+
+    logger.info(`Pago confirmado manualmente para pedido de WhatsApp ${order._id}.`);
+    return res.json({ success: true, order });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createOrder,
-  cancelOrderCheckout,
-  confirmOrderPayment,
-  reconcileExpiredOrders,
+  markWhatsappOrderPaid,
+  expirePendingWhatsappOrders,
   pruneCompletedInventoryRestorationKeys,
   getUserOrders,
-  handleStripeWebhook,
   updateOrderStatus,
 };

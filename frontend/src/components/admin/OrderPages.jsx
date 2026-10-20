@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   AdminNotice,
   AdminPagination,
+  adminMutation,
   date,
   money,
   OrderStatusSelect,
@@ -114,6 +115,8 @@ export function AdminOrdersPage() {
 
 export function AdminOrderDetailPage({ orderId }) {
   const { data, error, refresh } = useAdminData(`/api/admin/orders/${encodeURIComponent(orderId)}`);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState('');
   const order = data?.order;
   if (error) return <AdminNotice error={error} />;
   if (!order)
@@ -161,6 +164,34 @@ export function AdminOrderDetailPage({ orderId }) {
         </article>
         <article className="order-card">
           <h2>Estado del Pedido</h2>
+          {order.paymentMethod === 'whatsapp' && order.paymentStatus === 'pending' && (
+            <>
+              <p>Confirma el pago solo después de verificarlo directamente con el cliente.</p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={confirmingPayment}
+                onClick={async () => {
+                  setConfirmingPayment(true);
+                  setPaymentMessage('');
+                  try {
+                    await adminMutation(`/admin/orders/${order._id}/confirm-payment`, {
+                      method: 'POST',
+                    });
+                    setPaymentMessage('Pago confirmado; el pedido pasó a preparación.');
+                    refresh();
+                  } catch (mutationError) {
+                    setPaymentMessage(mutationError.message);
+                  } finally {
+                    setConfirmingPayment(false);
+                  }
+                }}
+              >
+                {confirmingPayment ? 'Confirmando…' : 'Confirmar pago recibido'}
+              </button>
+              {paymentMessage && <p role="status">{paymentMessage}</p>}
+            </>
+          )}
           <OrderStatusSelect order={order} onUpdated={refresh} />
         </article>
       </div>

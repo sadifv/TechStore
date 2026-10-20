@@ -101,7 +101,6 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // 4. Middlewares para parsear datos
-app.use('/api/orders/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
 
@@ -186,6 +185,9 @@ if (require.main === module) {
   if (process.env.NODE_ENV === 'production') {
     if (!process.env.MONGO_URI) {
       startupErrors.push('MONGO_URI es obligatorio en producción.');
+    }
+    if (!/^\d{8,15}$/.test((process.env.WHATSAPP_BUSINESS_PHONE || '').replace(/\D/g, ''))) {
+      startupErrors.push('WHATSAPP_BUSINESS_PHONE debe incluir el código de país y solo dígitos.');
     }
     if (Buffer.byteLength(process.env.SESSION_SECRET || '', 'utf8') < 32) {
       startupErrors.push('SESSION_SECRET debe contener al menos 32 bytes en producción.');

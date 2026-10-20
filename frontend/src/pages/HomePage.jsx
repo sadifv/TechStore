@@ -1,29 +1,20 @@
 import { useEffect, useState } from 'react';
 import { requestJson } from '../api.js';
 import AiAssistant from '../components/AiAssistant.jsx';
-import { BlogSection, TestimonialsSection, VipPromo } from '../components/EditorialSections.jsx';
+import { BlogSection, TestimonialsSection } from '../components/EditorialSections.jsx';
 import FlashSaleSection from '../components/FlashSaleSection.jsx';
 import { ContactSection, NewsletterSection } from '../components/FormsSections.jsx';
 import HeroSection from '../components/HeroSection.jsx';
 import ProductCard from '../components/ProductCard.jsx';
-import { defaultMembershipConfig } from '../config/membership.js';
 
 export default function HomePage({ user }) {
   const [products, setProducts] = useState([]);
   const [flashSale, setFlashSale] = useState(null);
-  const [monthlyPrice, setMonthlyPrice] = useState(defaultMembershipConfig.monthlyPrice);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
-    requestJson('/api/membership/config')
-      .then((result) => {
-        if (active && Number.isFinite(Number(result.monthlyPrice))) {
-          setMonthlyPrice(Number(result.monthlyPrice));
-        }
-      })
-      .catch(() => undefined);
     requestJson('/api/products?limit=100&sort=recent')
       .then((result) => {
         if (!active) return;
@@ -79,7 +70,6 @@ export default function HomePage({ user }) {
       <BlogSection />
       <TestimonialsSection />
       <NewsletterSection />
-      <VipPromo monthlyPrice={monthlyPrice} />
       <ContactSection />
     </>
   );

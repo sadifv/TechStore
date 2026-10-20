@@ -221,11 +221,11 @@ export function CartProvider({ user, children }) {
     event.preventDefault();
     setBusy(true);
     setStatus('');
+    const whatsappWindow = window.open('', '_blank');
     const form = new FormData(event.currentTarget);
     const payload = {
-      paymentMethod: 'card',
       couponCode: String(form.get('couponCode') || '').trim(),
-      items: items.map(({ id, quantity, price }) => ({ productId: id, quantity, price })),
+      items: items.map(({ id, quantity }) => ({ productId: id, quantity })),
     };
     if (!user)
       payload.guestInfo = {
@@ -237,9 +237,18 @@ export function CartProvider({ user, children }) {
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      if (!result.url) throw new Error('El servidor no devolvió el enlace de pago.');
-      location.assign(result.url);
+      if (!result.whatsappUrl) throw new Error('No se pudo preparar el mensaje de WhatsApp.');
+      await reconcileGuestItems(payload.items.map((item) => ({ ...item })));
+      if (whatsappWindow) {
+        whatsappWindow.opener = null;
+        whatsappWindow.location = result.whatsappUrl;
+      } else {
+        location.assign(result.whatsappUrl);
+        return;
+      }
+      location.assign(`/pedido-enviado?orderId=${encodeURIComponent(result.orderId)}`);
     } catch (error) {
+      whatsappWindow?.close();
       setStatus(error.message);
     } finally {
       setBusy(false);
@@ -439,7 +448,7 @@ export function CartProvider({ user, children }) {
           )}
           <fieldset className="form-group">
             <legend>Método de Pago</legend>
-            <p>Pago seguro con tarjeta de crédito o débito a través de Stripe.</p>
+            <p>Completarás el pedido por WhatsApp. Te confirmaremos disponibilidad y los detalles.</p>
           </fieldset>
           <fieldset className="form-group">
             <legend>Cupón de descuento</legend>
@@ -471,7 +480,7 @@ export function CartProvider({ user, children }) {
               className="btn btn-primary btn-block"
               disabled={busy}
             >
-              {busy ? 'Redirigiendo a Stripe…' : 'Confirmar Pedido'}
+              {busy ? 'Preparando WhatsApp…' : 'Continuar por WhatsApp'}
             </button>
           </footer>
         </form>
