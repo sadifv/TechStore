@@ -17,7 +17,9 @@ const categories = [
 
 export default function CatalogPage() {
   const searchParams = new URLSearchParams(window.location.search);
-  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const initialSearch = searchParams.get('search') || '';
+  const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [category, setCategory] = useState(searchParams.get('category') || 'all');
   const [sort, setSort] = useState(searchParams.get('sort') || 'recent');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
@@ -26,14 +28,20 @@ export default function CatalogPage() {
   const query = new URLSearchParams({
     page: String(page),
     limit: '8',
-    search,
+    search: debouncedSearch,
     category,
     sort,
   }).toString();
 
   useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  useEffect(() => {
     let active = true;
-    requestJson(`/api/products?${query}`)
+    const controller = new AbortController();
+    requestJson(`/api/products?${query}`, { signal: controller.signal })
       .then((result) => {
         if (active) {
           setData({ ...result, key: query });
@@ -48,6 +56,7 @@ export default function CatalogPage() {
       });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [query]);
 

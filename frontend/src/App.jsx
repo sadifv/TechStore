@@ -1,30 +1,81 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { requestJson } from './api.js';
-import {
-  ForgotPasswordPage,
-  LegalPage,
-  LoginPage,
-  ProfilePage,
-  RegisterPage,
-  ResetPasswordPage,
-} from './components/AccountPages.jsx';
 import { CartProvider } from './components/Cart.jsx';
 import SiteFooter from './components/SiteFooter.jsx';
 import SiteHeader from './components/SiteHeader.jsx';
-import {
-  AdminDashboardPage,
-  AdminMarketingPage,
-  AdminOrderDetailPage,
-  AdminOrdersPage,
-  AdminPackingSlipPage,
-  AdminUsersPage,
-  CheckoutSuccessPage,
-} from './components/AdminPages.jsx';
 import NewsletterUnsubscribePage from './components/NewsletterUnsubscribePage.jsx';
 import HomePage from './pages/HomePage.jsx';
-import CatalogPage from './pages/CatalogPage.jsx';
-import ProductPage from './pages/ProductPage.jsx';
 import usePresenceHeartbeat from './hooks/usePresenceHeartbeat.js';
+
+const CatalogPage = lazy(() => import('./pages/CatalogPage.jsx'));
+const ProductPage = lazy(() => import('./pages/ProductPage.jsx'));
+const LoginPage = lazy(() =>
+  import('./components/account/AuthPages.jsx').then((module) => ({ default: module.LoginPage })),
+);
+const RegisterPage = lazy(() =>
+  import('./components/account/AuthPages.jsx').then((module) => ({ default: module.RegisterPage })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import('./components/account/AuthPages.jsx').then((module) => ({
+    default: module.ForgotPasswordPage,
+  })),
+);
+const ResetPasswordPage = lazy(() =>
+  import('./components/account/AuthPages.jsx').then((module) => ({
+    default: module.ResetPasswordPage,
+  })),
+);
+const ProfilePage = lazy(() =>
+  import('./components/account/ProfilePage.jsx').then((module) => ({
+    default: module.ProfilePage,
+  })),
+);
+const LegalPage = lazy(() =>
+  import('./components/account/LegalPage.jsx').then((module) => ({ default: module.LegalPage })),
+);
+const CheckoutSuccessPage = lazy(() =>
+  import('./components/admin/CheckoutSuccessPage.jsx').then((module) => ({
+    default: module.CheckoutSuccessPage,
+  })),
+);
+const AdminDashboardPage = lazy(() =>
+  import('./components/admin/DashboardPage.jsx').then((module) => ({
+    default: module.AdminDashboardPage,
+  })),
+);
+const AdminMarketingPage = lazy(() =>
+  import('./components/admin/UserMarketingPages.jsx').then((module) => ({
+    default: module.AdminMarketingPage,
+  })),
+);
+const AdminUsersPage = lazy(() =>
+  import('./components/admin/UserMarketingPages.jsx').then((module) => ({
+    default: module.AdminUsersPage,
+  })),
+);
+const AdminOrdersPage = lazy(() =>
+  import('./components/admin/OrderPages.jsx').then((module) => ({
+    default: module.AdminOrdersPage,
+  })),
+);
+const AdminOrderDetailPage = lazy(() =>
+  import('./components/admin/OrderPages.jsx').then((module) => ({
+    default: module.AdminOrderDetailPage,
+  })),
+);
+const AdminPackingSlipPage = lazy(() =>
+  import('./components/admin/OrderPages.jsx').then((module) => ({
+    default: module.AdminPackingSlipPage,
+  })),
+);
+
+function PageLoading() {
+  return (
+    <p className="products-section" role="status">
+      Cargando página…
+    </p>
+  );
+}
 
 function NotFoundPage() {
   return (
@@ -110,7 +161,7 @@ export default function App() {
   else if (pathname === '/admin/users') page = <AdminUsersPage />;
   else page = <NotFoundPage />;
 
-  if (packingSlipMatch) return page;
+  if (packingSlipMatch) return <Suspense fallback={<PageLoading />}>{page}</Suspense>;
   return (
     <CartProvider user={user}>
       <a className="skip-link" href="#main-content">
@@ -118,7 +169,7 @@ export default function App() {
       </a>
       <SiteHeader user={user} />
       <main id="main-content" className="main-content">
-        {page}
+        <Suspense fallback={<PageLoading />}>{page}</Suspense>
       </main>
       <SiteFooter />
     </CartProvider>
