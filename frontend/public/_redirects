@@ -1,6 +1,6 @@
 # Proxy de la API y los archivos subidos al servicio definido en render.yaml.
 # Si Render muestra otro dominio público, reemplázalo aquí.
-/api/* https://techstore-backend.onrender.com/api/:splat 200!
-/uploads/* https://techstore-backend.onrender.com/uploads/:splat 200!
+/api/* https://techstore-backend-81wc.onrender.com/api/:splat 200!
+/uploads/* https://techstore-backend-81wc.onrender.com/uploads/:splat 200!
 
 /* /index.html 200
