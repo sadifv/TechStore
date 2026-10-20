@@ -11,22 +11,26 @@ const userDocs = [
 ];
 const presenceDocs = [{ user: 'user-online', lastSeenAt: new Date('2026-10-18T11:59:50.000Z') }];
 let userProjection;
-const findUsers = () => ({
-  select(value) {
-    userProjection = value;
-    return this;
-  },
-  sort() {
-    return this;
-  },
-  skip() {
-    return this;
-  },
-  limit() {
-    return this;
-  },
-  lean: async () => userDocs,
-});
+let userFilter;
+const findUsers = (filter) => {
+  userFilter = filter;
+  return {
+    select(value) {
+      userProjection = value;
+      return this;
+    },
+    sort() {
+      return this;
+    },
+    skip() {
+      return this;
+    },
+    limit() {
+      return this;
+    },
+    lean: async () => userDocs,
+  };
+};
 const findPresence = () => ({
   select() {
     return this;
@@ -83,4 +87,36 @@ test('admin user list includes presence and last activity for each account', asy
     ],
   );
   assert.equal(userProjection, 'name email role createdAt');
+});
+
+test('admin user search treats regex metacharacters as literal text', async () => {
+  let responseData;
+  const response = {
+    json(data) {
+      responseData = data;
+      return data;
+    },
+  };
+  await getAdminUsers({ query: { search: ' [a-z]+ ' } }, response, (error) => {
+    throw error;
+  });
+
+  assert.equal(userFilter.$or[0].name.$regex, '\\[a-z\\]\\+');
+  assert.equal(userFilter.$or[1].email.$regex, '\\[a-z\\]\\+');
+  assert.equal(responseData.data.currentSearch, '[a-z]+');
+});
+
+test('admin user search ignores non-string query values', async () => {
+  let responseData;
+  const response = {
+    json(data) {
+      responseData = data;
+    },
+  };
+  await getAdminUsers({ query: { search: { $ne: '' } } }, response, (error) => {
+    throw error;
+  });
+
+  assert.equal(userFilter.$or, undefined);
+  assert.equal(responseData.data.currentSearch, '');
 });

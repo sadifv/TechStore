@@ -8,6 +8,8 @@ const Presence = require('../models/Presence');
 const { isOnline } = require('../services/presenceService');
 const logger = require('../config/logger');
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const respondWithAdminData = (res, data) => {
   const { title, ...payload } = data;
   return res.json({ success: true, data: payload });
@@ -229,10 +231,12 @@ const getAdminUsers = async (req, res, next) => {
     const skip = (pageNum - 1) * limit;
 
     const filter = {};
-    if (search) {
+    const normalizedSearch = typeof search === 'string' ? search.trim() : '';
+    if (normalizedSearch) {
+      const escapedSearch = escapeRegex(normalizedSearch);
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+        { name: { $regex: escapedSearch, $options: 'i' } },
+        { email: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
     if (role && ['user', 'admin'].includes(role)) {
@@ -267,7 +271,7 @@ const getAdminUsers = async (req, res, next) => {
     respondWithAdminData(res, {
       title: 'Gestión de Usuarios | Admin',
       users: usersWithPresence,
-      currentSearch: search || '',
+      currentSearch: normalizedSearch,
       currentRole: role || '',
       pagination: { currentPage: pageNum, totalPages, totalUsers },
     });

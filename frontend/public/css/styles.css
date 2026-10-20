@@ -3649,6 +3649,16 @@ dialog#checkout-modal {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ========================================
    ADMINISTRACIÓN Y VISTAS DE CONTENIDO
    ======================================== */
