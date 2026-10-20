@@ -43,6 +43,12 @@ const getAppUrl = () => {
 const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} }) => {
   // Modo simulado si no hay transporter
   if (!transporter) {
+    if (process.env.NODE_ENV === 'production') {
+      const error = new Error('El envío de correo no está configurado en producción.');
+      error.code = 'SMTP_NOT_CONFIGURED';
+      error.statusCode = 503;
+      throw error;
+    }
     logger.warn(`[Mailer] Correo simulado (${templateName}); no fue enviado.`);
     return { simulated: true, to, subject, templateName };
   }
@@ -87,16 +93,6 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
   }
 };
 
-// Confirmación de Pedido
-const sendOrderConfirmation = async (userEmail, orderId, totalAmount) => {
-  return sendTemplateEmail({
-    to: userEmail,
-    subject: `✅ Confirmación de pedido #${String(orderId).slice(-8).toUpperCase()} - TechStore`,
-    templateName: 'email-receipt',
-    templateData: { orderId, totalAmount },
-  });
-};
-
 // Restablecimiento de Contraseña
 const sendPasswordResetEmail = async (userEmail, resetUrl) => {
   return sendTemplateEmail({
@@ -133,7 +129,6 @@ const sendMarketingCampaignEmail = async ({
 };
 
 module.exports = {
-  sendOrderConfirmation,
   sendPasswordResetEmail,
   sendWelcomeEmail,
   sendMarketingCampaignEmail,

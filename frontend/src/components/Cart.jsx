@@ -246,9 +246,7 @@ export function CartProvider({ user, children }) {
         return update.promise;
       } else {
         const cart = readGuestCart().map((entry) =>
-          String(entry.id || entry.productId || entry._id) === id
-            ? { ...entry, quantity }
-            : entry,
+          String(entry.id || entry.productId || entry._id) === id ? { ...entry, quantity } : entry,
         );
         saveGuestCart(cart);
       }
@@ -292,7 +290,8 @@ export function CartProvider({ user, children }) {
         storage: sessionStorage,
         newId: () => crypto.randomUUID(),
         openWindow: () => window.open('', '_blank'),
-        request: (body) => requestJson('/api/orders/checkout', { method: 'POST', body: JSON.stringify(body) }),
+        request: (body) =>
+          requestJson('/api/orders/checkout', { method: 'POST', body: JSON.stringify(body) }),
         navigate: (url) => location.assign(url),
       });
     } catch (error) {
@@ -330,220 +329,227 @@ export function CartProvider({ user, children }) {
     <CartStateContext.Provider value={stateValue}>
       <CartActionsContext.Provider value={actionsValue}>
         {children}
-      <aside
-        id="cart-drawer"
-        className={`cart-drawer${drawerOpen ? ' open' : ''}`}
-        aria-hidden={!drawerOpen}
-        aria-labelledby="cart-drawer-heading"
-        inert={!drawerOpen}
-      >
-        <button
-          type="button"
-          className="cart-drawer-overlay"
-          id="cart-overlay"
-          aria-label="Cerrar carrito"
-          onClick={() => setDrawerOpen(false)}
-        />
-        <section className="cart-drawer-content">
-          <header className="cart-drawer-header">
-            <h2 id="cart-drawer-heading">
-              <i className="ri-shopping-cart-2-line" aria-hidden="true" /> Tu Carrito
-            </h2>
-            <button
-              id="cart-close-btn"
-              className="cart-close-btn"
-              type="button"
-              aria-label="Cerrar carrito"
-              onClick={() => setDrawerOpen(false)}
+        <aside
+          id="cart-drawer"
+          className={`cart-drawer${drawerOpen ? ' open' : ''}`}
+          aria-hidden={!drawerOpen}
+          aria-labelledby="cart-drawer-heading"
+          inert={!drawerOpen}
+        >
+          <button
+            type="button"
+            className="cart-drawer-overlay"
+            id="cart-overlay"
+            aria-label="Cerrar carrito"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <section className="cart-drawer-content">
+            <header className="cart-drawer-header">
+              <h2 id="cart-drawer-heading">
+                <i className="ri-shopping-cart-2-line" aria-hidden="true" /> Tu Carrito
+              </h2>
+              <button
+                id="cart-close-btn"
+                className="cart-close-btn"
+                type="button"
+                aria-label="Cerrar carrito"
+                onClick={() => setDrawerOpen(false)}
+              >
+                <i className="ri-close-line" aria-hidden="true" />
+              </button>
+            </header>
+            <section
+              id="cart-drawer-body"
+              className="cart-drawer-body"
+              aria-label="Productos en el carrito"
             >
-              <i className="ri-close-line" aria-hidden="true" />
-            </button>
-          </header>
-          <section
-            id="cart-drawer-body"
-            className="cart-drawer-body"
-            aria-label="Productos en el carrito"
-          >
-            {items.length === 0 ? (
-              <article className="cart-empty-state">
-                <i className="ri-shopping-cart-line" />
-                <p>Tu carrito está vacío</p>
-              </article>
-            ) : (
-              items.map((item) => (
-                <article className="cart-item" data-id={item.id} key={item.cartItemId || item.id}>
-                  <img src={backendAssetUrl(item.image)} alt={item.name} />
-                  <section className="cart-item-details">
-                    <h4>{item.name}</h4>
-                    {item.unavailable ? (
-                      <span className="cart-item-price">Ya no está disponible</span>
-                    ) : (
-                      <span className="cart-item-price">${item.price.toFixed(2)}</span>
-                    )}
-                    <nav className="cart-item-controls" aria-label={`Cantidad de ${item.name}`}>
-                      <button
-                        type="button"
-                        className="btn-qty-minus"
-                        aria-label="Reducir cantidad"
-                        disabled={item.unavailable}
-                        onClick={() => setQuantity(item, item.quantity - 1)}
-                      >
-                        -
-                      </button>
-                      <span>{item.quantity}</span>
-                      <button
-                        type="button"
-                        className="btn-qty-plus"
-                        aria-label="Aumentar cantidad"
-                        disabled={item.unavailable}
-                        onClick={() => setQuantity(item, item.quantity + 1)}
-                      >
-                        +
-                      </button>
-                    </nav>
-                  </section>
-                  <button
-                    type="button"
-                    className="cart-item-remove"
-                    aria-label={`Eliminar ${item.name}`}
-                    onClick={() => remove(item.id, item.cartItemId)}
-                  >
-                    <i className="ri-delete-bin-line" />
-                  </button>
+              {items.length === 0 ? (
+                <article className="cart-empty-state">
+                  <i className="ri-shopping-cart-line" />
+                  <p>Tu carrito está vacío</p>
                 </article>
-              ))
-            )}
-          </section>
-          <footer className="cart-drawer-footer">
-            <p className="cart-summary-row">
-              <span>Subtotal:</span>
-              <strong id="cart-total">${subtotal.toFixed(2)}</strong>
-            </p>
-            <button
-              id="cart-checkout-btn"
-              type="button"
-              className="btn btn-primary btn-block"
-              disabled={!items.length || items.some((item) => item.unavailable)}
-              onClick={() => {
-                setDrawerOpen(false);
-                setStatus('');
-                setCheckoutOpen(true);
-              }}
-            >
-              <i className="ri-secure-payment-line" aria-hidden="true" />
-              Proceder al Pago
-            </button>
-          </footer>
-        </section>
-      </aside>
-      <dialog
-        id="checkout-modal"
-        ref={checkoutDialog}
-        className="checkout-modal"
-        aria-labelledby="checkout-modal-title"
-        onClose={() => setCheckoutOpen(false)}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) setCheckoutOpen(false);
-        }}
-      >
-        <form id="checkout-form" className="modal-container" onSubmit={checkout}>
-          <header className="modal-header">
-            <h2 id="checkout-modal-title">
-              <i className="ri-secure-payment-line" aria-hidden="true" />
-              Finalizar Compra
-            </h2>
-            <button
-              type="button"
-              id="close-checkout-modal"
-              className="modal-close-btn"
-              aria-label="Cerrar modal"
-              onClick={() => setCheckoutOpen(false)}
-            >
-              <i className="ri-close-line" />
-            </button>
-          </header>
-          {!user && (
-            <fieldset className="form-group" id="guest-checkout-fields">
-              <legend>Datos del Comprador</legend>
-              <p className="form-field">
-                <label htmlFor="guest-name">Nombre Completo</label>
-                <input
-                  type="text"
-                  id="guest-name"
-                  name="guestName"
-                  className="form-control"
-                  placeholder="Ej. Juan Pérez"
-                  required
-                />
+              ) : (
+                items.map((item) => (
+                  <article className="cart-item" data-id={item.id} key={item.cartItemId || item.id}>
+                    <img src={backendAssetUrl(item.image)} alt={item.name} />
+                    <section className="cart-item-details">
+                      <h4>{item.name}</h4>
+                      {item.unavailable ? (
+                        <span className="cart-item-price">Ya no está disponible</span>
+                      ) : (
+                        <span className="cart-item-price">${item.price.toFixed(2)}</span>
+                      )}
+                      <nav className="cart-item-controls" aria-label={`Cantidad de ${item.name}`}>
+                        <button
+                          type="button"
+                          className="btn-qty-minus"
+                          aria-label="Reducir cantidad"
+                          disabled={item.unavailable}
+                          onClick={() => setQuantity(item, item.quantity - 1)}
+                        >
+                          -
+                        </button>
+                        <span>{item.quantity}</span>
+                        <button
+                          type="button"
+                          className="btn-qty-plus"
+                          aria-label="Aumentar cantidad"
+                          disabled={item.unavailable}
+                          onClick={() => setQuantity(item, item.quantity + 1)}
+                        >
+                          +
+                        </button>
+                      </nav>
+                    </section>
+                    <button
+                      type="button"
+                      className="cart-item-remove"
+                      aria-label={`Eliminar ${item.name}`}
+                      onClick={() => remove(item.id, item.cartItemId)}
+                    >
+                      <i className="ri-delete-bin-line" />
+                    </button>
+                  </article>
+                ))
+              )}
+            </section>
+            <footer className="cart-drawer-footer">
+              <p className="cart-summary-row">
+                <span>Subtotal:</span>
+                <strong id="cart-total">${subtotal.toFixed(2)}</strong>
               </p>
-              <p className="form-field">
-                <label htmlFor="guest-email">Correo Electrónico para Recibo</label>
-                <input
-                  type="email"
-                  id="guest-email"
-                  name="guestEmail"
-                  className="form-control"
-                  placeholder="correo@ejemplo.com"
-                  required
-                />
+              <button
+                id="cart-checkout-btn"
+                type="button"
+                className="btn btn-primary btn-block"
+                disabled={!items.length || items.some((item) => item.unavailable)}
+                onClick={() => {
+                  setDrawerOpen(false);
+                  setStatus('');
+                  setCheckoutOpen(true);
+                }}
+              >
+                <i className="ri-secure-payment-line" aria-hidden="true" />
+                Proceder al Pago
+              </button>
+            </footer>
+          </section>
+        </aside>
+        <dialog
+          id="checkout-modal"
+          ref={checkoutDialog}
+          className="checkout-modal"
+          aria-labelledby="checkout-modal-title"
+          onClose={() => setCheckoutOpen(false)}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setCheckoutOpen(false);
+          }}
+        >
+          <form id="checkout-form" className="modal-container" onSubmit={checkout}>
+            <header className="modal-header">
+              <h2 id="checkout-modal-title">
+                <i className="ri-secure-payment-line" aria-hidden="true" />
+                Finalizar Compra
+              </h2>
+              <button
+                type="button"
+                id="close-checkout-modal"
+                className="modal-close-btn"
+                aria-label="Cerrar modal"
+                onClick={() => setCheckoutOpen(false)}
+              >
+                <i className="ri-close-line" />
+              </button>
+            </header>
+            {!user && (
+              <fieldset className="form-group" id="guest-checkout-fields">
+                <legend>Datos del Comprador</legend>
+                <p className="form-field">
+                  <label htmlFor="guest-name">Nombre Completo</label>
+                  <input
+                    type="text"
+                    id="guest-name"
+                    name="guestName"
+                    className="form-control"
+                    placeholder="Ej. Juan Pérez"
+                    required
+                  />
+                </p>
+                <p className="form-field">
+                  <label htmlFor="guest-email">Correo electrónico de contacto</label>
+                  <input
+                    type="email"
+                    id="guest-email"
+                    name="guestEmail"
+                    className="form-control"
+                    placeholder="correo@ejemplo.com"
+                    autoComplete="email"
+                    required
+                  />
+                  <small>
+                    Usaremos este correo como dato de contacto. La confirmación y coordinación son
+                    por WhatsApp; no enviamos recibos por correo.
+                  </small>
+                </p>
+              </fieldset>
+            )}
+            <fieldset className="form-group">
+              <legend>Método de Pago</legend>
+              <p>
+                Completarás el pedido por WhatsApp. Te confirmaremos disponibilidad y los detalles.
               </p>
             </fieldset>
-          )}
-          <fieldset className="form-group">
-            <legend>Método de Pago</legend>
-            <p>Completarás el pedido por WhatsApp. Te confirmaremos disponibilidad y los detalles.</p>
-          </fieldset>
-          <fieldset className="form-group">
-            <legend>Cupón de descuento</legend>
-            <label htmlFor="checkout-coupon-code">Código (opcional)</label>
-            <input
-              type="text"
-              id="checkout-coupon-code"
-              name="couponCode"
-              className="form-control"
-              maxLength="32"
-              autoComplete="off"
-              placeholder="Ingresa tu código"
-            />
-            <small>El servidor validará el cupón y calculará el descuento antes del pago.</small>
-          </fieldset>
-          <section className="checkout-summary-box">
-            <span>Subtotal antes del cupón:</span>
-            <strong>${subtotal.toFixed(2)}</strong>
-          </section>
-          {status && (
-            <output id="checkout-status" className="form-status error" role="status">
-              {status}
+            <fieldset className="form-group">
+              <legend>Cupón de descuento</legend>
+              <label htmlFor="checkout-coupon-code">Código (opcional)</label>
+              <input
+                type="text"
+                id="checkout-coupon-code"
+                name="couponCode"
+                className="form-control"
+                maxLength="32"
+                autoComplete="off"
+                placeholder="Ingresa tu código"
+              />
+              <small>El servidor validará el cupón y calculará el descuento antes del pago.</small>
+            </fieldset>
+            <section className="checkout-summary-box">
+              <span>Subtotal antes del cupón:</span>
+              <strong>${subtotal.toFixed(2)}</strong>
+            </section>
+            {status && (
+              <output id="checkout-status" className="form-status error" role="status">
+                {status}
+              </output>
+            )}
+            <footer className="modal-footer">
+              <button
+                type="submit"
+                id="btn-confirm-order"
+                className="btn btn-primary btn-block"
+                disabled={busy}
+              >
+                {busy ? 'Preparando WhatsApp…' : 'Continuar por WhatsApp'}
+              </button>
+            </footer>
+          </form>
+        </dialog>
+        {toast && (
+          <section
+            id="toast-container"
+            className="toast-container"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <output className={`toast toast-${toast.type} show`} role="status">
+              <i
+                className={`ri-${toast.type === 'success' ? 'checkbox-circle' : toast.type === 'error' ? 'error-warning' : toast.type === 'warning' ? 'alert' : 'information'}-line`}
+                aria-hidden="true"
+              />
+              <span>{toast.message}</span>
             </output>
-          )}
-          <footer className="modal-footer">
-            <button
-              type="submit"
-              id="btn-confirm-order"
-              className="btn btn-primary btn-block"
-              disabled={busy}
-            >
-              {busy ? 'Preparando WhatsApp…' : 'Continuar por WhatsApp'}
-            </button>
-          </footer>
-        </form>
-      </dialog>
-      {toast && (
-        <section
-          id="toast-container"
-          className="toast-container"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <output className={`toast toast-${toast.type} show`} role="status">
-            <i
-              className={`ri-${toast.type === 'success' ? 'checkbox-circle' : toast.type === 'error' ? 'error-warning' : toast.type === 'warning' ? 'alert' : 'information'}-line`}
-              aria-hidden="true"
-            />
-            <span>{toast.message}</span>
-          </output>
-        </section>
-      )}
+          </section>
+        )}
       </CartActionsContext.Provider>
     </CartStateContext.Provider>
   );

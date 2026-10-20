@@ -1,6 +1,6 @@
 # 🛒 TechStore - Dropshipping E-Commerce & Admin Panel
 
-TechStore es una plataforma e-commerce full-stack moderna y accesible orientada al comercio electrónico y dropshipping. Incluye catálogo dinámico con filtros, ofertas relámpago con temporizador (_Flash Sales_), asistente virtual interactivo potenciado por IA (OpenAI), gestión de carrito persistente y panel de administración para control de catálogo y pedidos.
+TechStore es una plataforma e-commerce full-stack moderna y accesible orientada al comercio electrónico y dropshipping. Incluye catálogo dinámico con filtros, ofertas relámpago con temporizador (_Flash Sales_), asistente virtual interactivo conectado a Google Gemini, gestión de carrito persistente y panel de administración para control de catálogo y pedidos.
 
 ---
 
@@ -9,7 +9,7 @@ TechStore es una plataforma e-commerce full-stack moderna y accesible orientada 
 - **Backend:** Node.js y Express.js (las plantillas EJS se conservan para correos).
 - **Base de Datos:** MongoDB con Mongoose y sesiones persistentes vía `connect-mongo`.
 - **Seguridad & Middleware:** Helmet, CORS, Express Rate Limit, Express Slow Down, Express Validator, Bcryptjs.
-- **Integraciones:** pedidos por WhatsApp, OpenAI API (Asistente TechBot), Winston (Logging estructurado).
+- **Integraciones:** pedidos por WhatsApp, Google Gemini API (Asistente TechBot), correo SMTP para recuperación de contraseña y campañas, Winston (logging estructurado).
 - **Frontend:** React, Vite, CSS y Remix Icon.
 
 ---

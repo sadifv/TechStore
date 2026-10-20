@@ -55,6 +55,28 @@ reservationSchema.statics.getReservedStock = async function (productId) {
   return result.length > 0 ? result[0].totalReserved : 0;
 };
 
+reservationSchema.statics.getReservedStockByProducts = async function (productIds) {
+  if (!Array.isArray(productIds) || productIds.length === 0) return new Map();
+
+  const results = await this.aggregate([
+    {
+      $match: {
+        product: { $in: productIds },
+        status: 'active',
+        expiresAt: { $gt: new Date() },
+      },
+    },
+    {
+      $group: {
+        _id: '$product',
+        totalReserved: { $sum: '$quantity' },
+      },
+    },
+  ]);
+
+  return new Map(results.map(({ _id, totalReserved }) => [String(_id), totalReserved]));
+};
+
 // Método estático: limpiar reservas expiradas
 reservationSchema.statics.cleanupExpired = async function () {
   const result = await this.updateMany(

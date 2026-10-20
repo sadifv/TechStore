@@ -1,16 +1,19 @@
 const Campaign = require('../models/Campaign');
 const Coupon = require('../models/Coupon');
 const Newsletter = require('../models/Newsletter');
-const { sendMarketingCampaignEmail } = require('../config/mailer');
-const logger = require('../config/logger');
-const crypto = require('crypto');
-const { getFrontendBaseUrl } = require('../config/frontendUrl');
+const { enqueueCampaign } = require('../services/campaignQueue');
 
 const getAdminMarketing = async (req, res, next) => {
   try {
     const [coupons, campaigns] = await Promise.all([
       Coupon.find({ type: 'campaign' }).sort({ createdAt: -1 }).limit(50).lean(),
-      Campaign.find({ audience: 'newsletter' }).sort({ createdAt: -1 }).limit(20).lean(),
+      Campaign.find({ audience: 'newsletter' })
+        .select(
+          'name subject audience status recipientCount sentCount failedCount simulated errorCode createdAt updatedAt',
+        )
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean(),
     ]);
     return res.json({ success: true, data: { coupons, campaigns } });
   } catch (error) {
@@ -96,43 +99,6 @@ const updateAdminCouponStatus = async (req, res, next) => {
   }
 };
 
-const getCampaignRecipients = async (audience) => {
-  if (audience !== 'newsletter') return [];
-  const newsletterRecipients = await Newsletter.find({ isSubscribed: { $ne: false } })
-    .select('email unsubscribeToken')
-    .limit(1001)
-    .lean();
-
-  const recipients = await Promise.all(
-    newsletterRecipients.map(async (recipient) => {
-      let token = recipient.unsubscribeToken;
-      if (!token) {
-        const generatedToken = crypto.randomBytes(24).toString('hex');
-        const updated = await Newsletter.updateOne(
-          {
-            _id: recipient._id,
-            $or: [{ unsubscribeToken: { $exists: false } }, { unsubscribeToken: null }],
-          },
-          { $set: { unsubscribeToken: generatedToken } },
-        );
-        token = updated.modifiedCount
-          ? generatedToken
-          : (await Newsletter.findById(recipient._id).select('unsubscribeToken').lean())
-              ?.unsubscribeToken;
-      }
-      if (!token) throw new Error(`No se pudo generar enlace de baja para ${recipient.email}.`);
-      return { email: recipient.email, name: '', unsubscribeToken: token };
-    }),
-  );
-
-  const appUrl =
-    getFrontendBaseUrl() || (process.env.APP_URL || 'http://localhost:3001').replace(/\/$/, '');
-  return recipients.map((recipient) => {
-    const params = new URLSearchParams({ newsletter: recipient.unsubscribeToken });
-    return { ...recipient, unsubscribeUrl: `${appUrl}/marketing/unsubscribe?${params.toString()}` };
-  });
-};
-
 const sendAdminCampaign = async (req, res, next) => {
   let campaign;
   try {
@@ -175,14 +141,14 @@ const sendAdminCampaign = async (req, res, next) => {
       }
     }
 
-    const recipients = await getCampaignRecipients(audience);
-    if (!recipients.length) {
+    const recipientCount = await Newsletter.countDocuments({ isSubscribed: { $ne: false } });
+    if (!recipientCount) {
       return res.status(400).json({
         success: false,
         error: 'No hay destinatarios con consentimiento para esta campaña.',
       });
     }
-    if (recipients.length > 1000) {
+    if (recipientCount > 1000) {
       return res.status(413).json({
         success: false,
         error: 'La campaña supera el límite de 1000 destinatarios. Usa segmentos más pequeños.',
@@ -195,62 +161,29 @@ const sendAdminCampaign = async (req, res, next) => {
       content: String(content).trim(),
       audience,
       couponCode: normalizedCouponCode || undefined,
-      recipientCount: recipients.length,
-      status: 'sending',
+      recipientCount,
+      status: 'queued',
+      results: [],
     });
+    enqueueCampaign(campaign._id);
 
-    const results = [];
-    for (const recipient of recipients) {
-      try {
-        const result = await sendMarketingCampaignEmail({
-          to: recipient.email,
-          subject: campaign.subject,
-          name: recipient.name,
-          content: campaign.content,
-          couponCode: campaign.couponCode,
-          unsubscribeUrl: recipient.unsubscribeUrl,
-        });
-        results.push({
-          email: recipient.email,
-          status: result.simulated ? 'simulated' : 'sent',
-        });
-      } catch (error) {
-        logger.error('Falló el envío de un correo de campaña.', {
-          errorCode: error.code || error.name,
-        });
-        results.push({ email: recipient.email, status: 'failed' });
-      }
-    }
-
-    const failedCount = results.filter((result) => result.status === 'failed').length;
-    const simulated = results.some((result) => result.status === 'simulated');
-    const sentCount = results.filter((result) => result.status === 'sent').length;
-    campaign.results = results;
-    campaign.failedCount = failedCount;
-    campaign.sentCount = sentCount;
-    campaign.simulated = simulated;
-    campaign.status = failedCount
-      ? failedCount === results.length
-        ? 'failed'
-        : 'partial'
-      : simulated
-        ? 'simulated'
-        : 'sent';
-    await campaign.save();
-
-    res.status(201).json({
+    res.status(202).json({
       success: true,
-      message: simulated
-        ? `Campaña registrada en modo simulado para ${recipients.length} destinatario(s); no se enviaron correos.`
-        : `Campaña procesada: ${sentCount} enviado(s), ${failedCount} fallido(s).`,
-      campaign,
+      message: `Campaña en cola para ${recipientCount} destinatario(s). El avance aparecerá en el historial.`,
+      campaign: {
+        _id: campaign._id,
+        name: campaign.name,
+        status: campaign.status,
+        recipientCount: campaign.recipientCount,
+        createdAt: campaign.createdAt,
+      },
     });
   } catch (error) {
     if (campaign) {
       campaign.status = 'failed';
       await campaign.save();
     }
-    next(error);
+    return next(error);
   }
 };
 

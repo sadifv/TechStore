@@ -45,15 +45,16 @@ const getProducts = async (req, res, next) => {
     ]);
 
     // Calcular stock disponible descontando reservas activas
-    const productsWithAvailability = await Promise.all(
-      products.map(async (product) => {
-        const reserved = await Reservation.getReservedStock(product._id);
-        return {
-          ...product,
-          availableStock: Math.max(0, product.stock - reserved),
-        };
-      }),
+    const reservedByProduct = await Reservation.getReservedStockByProducts(
+      products.map((product) => product._id),
     );
+    const productsWithAvailability = products.map((product) => ({
+      ...product,
+      availableStock: Math.max(
+        0,
+        product.stock - (reservedByProduct.get(String(product._id)) || 0),
+      ),
+    }));
 
     const totalPages = Math.ceil(totalCount / limitNum) || 1;
 

@@ -32,8 +32,8 @@ const campaignSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['sending', 'sent', 'simulated', 'partial', 'failed'],
-      default: 'sending',
+      enum: ['queued', 'sending', 'sent', 'simulated', 'partial', 'failed'],
+      default: 'queued',
     },
     recipientCount: {
       type: Number,
@@ -51,13 +51,19 @@ const campaignSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    errorCode: String,
+    workerId: String,
+    workerLeaseUntil: Date,
     results: [
       {
         email: String,
+        name: String,
+        unsubscribeToken: String,
         status: {
           type: String,
-          enum: ['sent', 'failed', 'simulated'],
+          enum: ['pending', 'sending', 'sent', 'failed', 'simulated'],
         },
+        errorCode: String,
       },
     ],
   },

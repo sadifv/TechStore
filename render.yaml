@@ -10,11 +10,11 @@ services:
       - key: NODE_ENV
         value: production
       - key: TRUST_PROXY_HOPS
-        value: "1"
+        value: '1'
       - key: SESSION_SECRET
         generateValue: true
       - key: WHATSAPP_BUSINESS_PHONE
-        value: "593963976623"
+        value: '593963976623'
       - key: API_URL
         fromService:
           name: techstore-backend
@@ -27,4 +27,8 @@ services:
       - key: APP_URL
         sync: false
       - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
         sync: false

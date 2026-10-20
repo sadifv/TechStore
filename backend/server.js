@@ -140,6 +140,7 @@ app.use(
 // El frontend vive en la aplicación React. Express solo sirve imágenes
 // dinámicas que el administrador sube al backend.
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+app.get('/uploads/products/:imageId', require('./controllers/productImageController').serveProductImage);
 
 // 8. Middleware global para res.locals.user
 const { setUserLocals } = require('./middleware/authMiddleware');
@@ -230,6 +231,7 @@ if (require.main === module) {
   const start = async () => {
     await connectDB();
     await require('./models/Order').init();
+    await require('./services/campaignQueue').startCampaignQueue();
     scheduleMaintenanceJobs();
 
     const PORT = process.env.PORT || 3001;

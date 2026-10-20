@@ -8,6 +8,24 @@ import {
   useAdminData,
 } from './shared.jsx';
 
+const campaignStatusLabel = (campaign) => {
+  if (campaign.errorCode === 'NO_SUBSCRIBERS') return 'Fallida: sin suscriptores activos';
+  if (campaign.errorCode === 'CAMPAIGN_RECIPIENT_LIMIT')
+    return 'Fallida: supera 1000 destinatarios';
+  if (campaign.errorCode === 'DELIVERY_OUTCOME_UNKNOWN')
+    return 'Interrumpida: revisa los envíos fallidos antes de reintentar';
+  return (
+    {
+      queued: 'En cola',
+      sending: 'Envío en curso',
+      sent: 'Enviada',
+      simulated: 'Simulada',
+      partial: 'Parcial',
+      failed: 'Fallida',
+    }[campaign.status] || campaign.status
+  );
+};
+
 export function AdminUsersPage() {
   const query = new URLSearchParams(location.search);
   const [search, setSearch] = useState(query.get('search') || '');
@@ -165,7 +183,9 @@ export function AdminUsersPage() {
 }
 
 export function AdminMarketingPage() {
-  const { data, error, refresh } = useAdminData('/api/admin/marketing');
+  const { data, error, refresh } = useAdminData('/api/admin/marketing', {
+    refreshIntervalMs: 15000,
+  });
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const coupons = data?.coupons || [];
@@ -194,13 +214,13 @@ export function AdminMarketingPage() {
     event.preventDefault();
     if (
       !window.confirm(
-        'La campaña se procesará ahora para el público seleccionado. ¿Quieres continuar?',
+        'La campaña se enviará en segundo plano al público seleccionado. ¿Quieres continuar?',
       )
     )
       return;
     const formData = Object.fromEntries(new FormData(event.currentTarget).entries());
     setBusy(true);
-    setStatus('Procesando campaña…');
+    setStatus('Agregando campaña a la cola…');
     try {
       const result = await adminMutation('/admin/campaigns', {
         method: 'POST',
@@ -423,7 +443,7 @@ export function AdminMarketingPage() {
                 <tr key={campaign._id}>
                   <td>{campaign.name}</td>
                   <td>{campaign.audience}</td>
-                  <td>{campaign.status}</td>
+                  <td>{campaignStatusLabel(campaign)}</td>
                   <td>
                     {campaign.recipientCount} · {campaign.sentCount} enviados ·{' '}
                     {campaign.failedCount} fallidos{campaign.simulated ? ' · simulado' : ''}

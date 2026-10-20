@@ -14,14 +14,15 @@ const processAiChat = async (req, res) => {
       });
     }
 
-    const { message } = req.body;
+    const message = req.body?.message;
 
-    if (!message || message.trim() === '') {
+    if (typeof message !== 'string' || !message.trim() || message.length > 500) {
       return res.status(400).json({
         success: false,
-        error: 'El mensaje no puede estar vacío.',
+        error: 'El mensaje debe contener texto y no superar los 500 caracteres.',
       });
     }
+    const normalizedMessage = message.trim();
 
     const products = await Product.find({}, 'name price category stock')
       .sort({ createdAt: -1 })
@@ -50,12 +51,21 @@ INSTRUCCIONES:
 CATÁLOGO DISPONIBLE:
 ${catalogContext}`;
 
-    const sessionHistory = req.session.chatHistory || [];
+    const sessionHistory = Array.isArray(req.session.chatHistory)
+      ? req.session.chatHistory
+          .filter(
+            (entry) =>
+              ['user', 'assistant'].includes(entry?.role) &&
+              typeof entry.content === 'string' &&
+              entry.content.length <= 500,
+          )
+          .slice(-20)
+      : [];
 
     const messages = [
       { role: 'system', content: systemPrompt },
       ...sessionHistory,
-      { role: 'user', content: message },
+      { role: 'user', content: normalizedMessage },
     ];
 
     const completion = await aiClient.chat.completions.create({
@@ -78,7 +88,7 @@ ${catalogContext}`;
 
     if (!req.session.chatHistory) req.session.chatHistory = [];
     req.session.chatHistory.push(
-      { role: 'user', content: message },
+      { role: 'user', content: normalizedMessage },
       { role: 'assistant', content: aiReply },
     );
 
@@ -106,7 +116,8 @@ ${catalogContext}`;
     } else if (error.status === 429) {
       userMessage = 'El asistente está recibiendo muchas solicitudes. Intenta en unos segundos.';
     } else if (isTimeout) {
-      userMessage = 'Gemini está tardando demasiado en responder. Intenta de nuevo en unos segundos.';
+      userMessage =
+        'Gemini está tardando demasiado en responder. Intenta de nuevo en unos segundos.';
     } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       userMessage = 'No se pudo conectar con el servicio de IA. Revisa tu conexión.';
     }

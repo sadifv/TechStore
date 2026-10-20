@@ -12,19 +12,26 @@ export function LegalPage() {
         <h3>Información que recopilamos</h3>
         <ul>
           <li>Nombre y correo electrónico al registrarte</li>
+          <li>Nombre y correo electrónico de contacto al realizar un pedido como invitado</li>
           <li>Dirección de envío para procesar pedidos</li>
           <li>Historial de compras y preferencias</li>
         </ul>
         <h3>Cómo usamos tu información</h3>
         <ul>
           <li>Procesar y enviar tus pedidos</li>
-          <li>Enviar confirmaciones y actualizaciones por correo</li>
+          <li>Administrar tu cuenta y atender solicitudes de recuperación de contraseña</li>
           <li>Enviar campañas promocionales solo a quienes aceptaron recibirlas</li>
           <li>Mejorar nuestros productos y servicios</li>
         </ul>
         <p>
           Puedes darte de baja de campañas desde el enlace incluido en cada correo. La baja no
           afecta los mensajes transaccionales relacionados con tus pedidos.
+        </p>
+        <h3>Asistente virtual</h3>
+        <p>
+          Si utilizas TechBot, el mensaje que escribes y el historial reciente de esa conversación
+          se envían a Google Gemini para generar una respuesta y se conservan en la sesión de tu
+          cuenta. Puedes borrar la conversación desde el asistente.
         </p>
         <h3>Protección de datos</h3>
         <p>
@@ -65,17 +72,14 @@ export function LegalPage() {
         <h2>Política de Cookies</h2>
         <p>Última actualización: Octubre 2026</p>
         <p>
-          Utilizamos cookies para mejorar tu experiencia de navegación y analizar el tráfico del
-          sitio.
+          Utilizamos cookies esenciales para mantener tu sesión y las funciones necesarias de la
+          tienda. La versión actual del sitio no incluye cookies ni herramientas de analítica de
+          tráfico.
         </p>
         <h3>Tipos de cookies que usamos</h3>
         <ul>
           <li>
-            <strong>Cookies esenciales:</strong> Necesarias para el funcionamiento del sitio
-            (sesiones, carrito)
-          </li>
-          <li>
-            <strong>Cookies de análisis:</strong> Nos ayudan a entender cómo usas el sitio
+            <strong>Cookies esenciales:</strong> Necesarias para conservar la sesión autenticada.
           </li>
         </ul>
         <h3>Gestión de cookies</h3>
