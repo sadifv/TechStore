@@ -13,8 +13,10 @@ const aiClient = hasApiKey
   ? new OpenAI({
       apiKey: process.env.GEMINI_API_KEY,
       baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-      timeout: 30000, // 30s máximo por petición
-      maxRetries: 2, // 2 reintentos automáticos
+      // Netlify's proxy rewrites time out after 26 seconds. Keep the upstream
+      // request below that limit so the API can return a useful error response.
+      timeout: 20000,
+      maxRetries: 0,
     })
   : null;
 
