@@ -19,7 +19,7 @@ const acquireLock = async (name, ownerToken) => {
           leaseUntil: new Date(now.getTime() + LEASE_DURATION_MS),
         },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
     ).lean();
 
     return lock?.ownerToken === ownerToken;

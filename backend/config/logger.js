@@ -56,9 +56,13 @@ const logger = winston.createLogger({
   ],
 });
 
-// En desarrollo o testing, incluir consola con colores
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({ format: consoleFormat }));
-}
+// Render y otros proveedores capturan stdout/stderr; mostrar también allí
+// los errores de producción facilita diagnosticar fallos de arranque.
+logger.add(
+  new winston.transports.Console({
+    format: consoleFormat,
+    stderrLevels: ['error'],
+  }),
+);
 
 module.exports = logger;
