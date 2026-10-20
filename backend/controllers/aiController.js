@@ -61,6 +61,7 @@ ${catalogContext}`;
     const completion = await aiClient.chat.completions.create({
       model: 'gemini-3.8-flash',
       messages,
+      reasoning_effort: 'low',
       max_tokens: 500,
       temperature: 0.7,
     });
@@ -89,7 +90,14 @@ ${catalogContext}`;
 
     res.status(200).json({ success: true, reply: aiReply });
   } catch (error) {
-    logger.error(`Error en aiController: ${error.message}`, { stack: error.stack });
+    const isTimeout =
+      error.name === 'APIConnectionTimeoutError' ||
+      error.code === 'ETIMEDOUT' ||
+      error.name === 'AbortError';
+    logger.error(
+      `Error en aiController: ${error.message} [status=${error.status || 'n/a'}, code=${error.code || 'n/a'}]`,
+      { stack: error.stack },
+    );
 
     let userMessage = 'Ocurrió un error al procesar la respuesta del asistente.';
 
@@ -97,11 +105,13 @@ ${catalogContext}`;
       userMessage = 'Error de autenticación con el servicio de IA. Revisa la API Key.';
     } else if (error.status === 429) {
       userMessage = 'El asistente está recibiendo muchas solicitudes. Intenta en unos segundos.';
+    } else if (isTimeout) {
+      userMessage = 'Gemini está tardando demasiado en responder. Intenta de nuevo en unos segundos.';
     } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
       userMessage = 'No se pudo conectar con el servicio de IA. Revisa tu conexión.';
     }
 
-    res.status(error.status || 500).json({
+    res.status(error.status || (isTimeout ? 504 : 500)).json({
       success: false,
       error: userMessage,
     });
