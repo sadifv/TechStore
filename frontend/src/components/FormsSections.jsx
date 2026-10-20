@@ -1,3 +1,4 @@
+import WhatsappLink from './WhatsappLink.jsx';
 import { useState } from 'react';
 import { requestJson } from '../api.js';
 
@@ -119,7 +120,7 @@ export function ContactSection() {
               <i className="ri-phone-line" aria-hidden="true" />
               <div>
                 <h3>Teléfono</h3>
-                <a href="tel:+593963976623">+593 0963976623</a>
+                <WhatsappLink phone />
               </div>
             </li>
             <li className="contact-info-item">
@@ -154,14 +155,7 @@ export function ContactSection() {
             >
               <i className="ri-instagram-line" aria-hidden="true" />
             </a>
-            <a
-              href="https://wa.me/593963976623"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="WhatsApp"
-            >
-              <i className="ri-whatsapp-line" aria-hidden="true" />
-            </a>
+            <WhatsappLink />
           </nav>
         </aside>
         <form id="contact-form" className="contact-form" onSubmit={sendContact}>

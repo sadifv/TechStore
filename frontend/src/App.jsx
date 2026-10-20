@@ -63,9 +63,7 @@ export default function App() {
 
   const productMatch = pathname.match(/^\/producto\/([^/]+)$/);
   const resetMatch = pathname.match(/^\/reset-password\/([^/]+)$/);
-  const unsubscribeMatch = pathname.match(
-    /^\/(?:api\/)?newsletter\/unsubscribe\/([^/]+)$/,
-  );
+  const unsubscribeMatch = pathname.match(/^\/(?:api\/)?newsletter\/unsubscribe\/([^/]+)$/);
   const orderDetailMatch = pathname.match(/^\/admin\/orders\/([^/]+)$/);
   const packingSlipMatch = pathname.match(/^\/admin\/orders\/([^/]+)\/packing-slip$/);
   let page;
@@ -100,8 +98,7 @@ export default function App() {
     pathname === '/marketing/unsubscribe'
   )
     page = <NewsletterUnsubscribePage />;
-  else if (pathname === '/pedido-enviado')
-    page = <CheckoutSuccessPage />;
+  else if (pathname === '/pedido-enviado') page = <CheckoutSuccessPage />;
   else if (pathname === '/error') page = <ErrorPage />;
   else if (pathname === '/admin' || pathname === '/admin/dashboard') page = <AdminDashboardPage />;
   else if (pathname === '/admin/marketing') page = <AdminMarketingPage />;

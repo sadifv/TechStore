@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useCart } from '../CartContext.js';
 import { money, useAdminData } from './shared.jsx';
+import { finishCheckoutAttempt } from '../../whatsappCheckout.js';
 
 export function CheckoutSuccessPage() {
   const orderId = new URLSearchParams(location.search).get('orderId');
@@ -10,11 +11,14 @@ export function CheckoutSuccessPage() {
   const { reconcileGuestItems } = useCart();
   const reconciled = useRef(false);
   useEffect(() => {
-    if (data?.guestOrder && !reconciled.current) {
+    if (!data || reconciled.current) return;
+    finishCheckoutAttempt(sessionStorage);
+    if (data.guestOrder && !sessionStorage.getItem(`techstore.reconciled.${orderId}`)) {
       reconciled.current = true;
       reconcileGuestItems(data.items);
+      sessionStorage.setItem(`techstore.reconciled.${orderId}`, 'true');
     }
-  }, [data, reconcileGuestItems]);
+  }, [data, orderId, reconcileGuestItems]);
   if (!orderId)
     return (
       <section className="products-section">
@@ -39,6 +43,8 @@ export function CheckoutSuccessPage() {
         <p role="status">Cargando los datos de tu pedido…</p>
       </section>
     );
+  const whatsappUrl = sessionStorage.getItem(`techstore.whatsapp.${orderId}`);
+  const expired = data.paymentStatus === 'failed' || new Date(data.expiresAt) <= new Date();
   return (
     <section className="checkout-success-container" aria-labelledby="checkout-success-heading">
       <article className="success-card">
@@ -48,7 +54,7 @@ export function CheckoutSuccessPage() {
         </header>
         <section className="order-details">
           <p>
-            Tu pedido <strong>#{data._id}</strong> quedó registrado con estado pendiente.
+            Pedido <strong>#{data._id}</strong>: {data.paymentStatus === 'paid' ? 'pago confirmado' : expired ? 'cancelado o vencido' : data.contactConfirmed ? 'contacto recibido; pendiente de pago' : 'pendiente de contacto por WhatsApp'}.
           </p>
           <p>
             Total del pedido: <strong>{money(data.totalAmount)}</strong>
@@ -59,10 +65,14 @@ export function CheckoutSuccessPage() {
               <strong>{money(data.discountAmount)}</strong>
             </p>
           )}
-          <p>
-            Para completar la compra, envía el mensaje que se abrió en WhatsApp. La orden no se
-            marcará como pagada hasta que la tienda lo confirme.
-          </p>
+          {data.paymentStatus === 'pending' && !expired && (
+            <>
+              <p>Envía el mensaje por WhatsApp para completar la compra. El pago se confirmará cuando la tienda lo verifique. La reserva vence a las {new Date(data.expiresAt).toLocaleString()}.</p>
+              {/^https:\/\/wa\.me\/\d+\?text=/.test(whatsappUrl || '') && (
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="btn btn-primary">Abrir WhatsApp y enviar el pedido</a>
+              )}
+            </>
+          )}
         </section>
         <footer>
           <a href="/catalogo" className="btn btn-primary">

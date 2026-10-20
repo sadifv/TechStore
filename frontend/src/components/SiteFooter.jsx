@@ -1,3 +1,4 @@
+import WhatsappLink from './WhatsappLink.jsx';
 export default function SiteFooter() {
   return (
     <>
@@ -19,14 +20,7 @@ export default function SiteFooter() {
             >
               <i className="ri-instagram-line" aria-hidden="true" />
             </a>
-            <a
-              href="https://wa.me/593963976623"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="WhatsApp"
-            >
-              <i className="ri-whatsapp-line" aria-hidden="true" />
-            </a>
+            <WhatsappLink />
           </nav>
         </section>
         <nav className="footer-links" aria-label="Enlaces rápidos">
@@ -75,7 +69,7 @@ export default function SiteFooter() {
             </p>
             <p>
               <i className="ri-phone-line" aria-hidden="true" />
-              <a href="tel:+593963976623">+593 0963976623</a>
+              <WhatsappLink phone />
             </p>
             <p>
               <i className="ri-mail-line" aria-hidden="true" />

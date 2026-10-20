@@ -1,3 +1,4 @@
+import { submitWhatsappCheckout } from '../whatsappCheckout.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../api.js';
 import { CartContext } from './CartContext.js';
@@ -19,6 +20,7 @@ export function CartProvider({ user, children }) {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   const checkoutDialog = useRef(null);
+  const submittingCheckout = useRef(false);
   const notify = useCallback((message, type = 'info') => {
     setToast({ message, type });
     clearTimeout(toastTimer.current);
@@ -219,9 +221,11 @@ export function CartProvider({ user, children }) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const checkout = async (event) => {
     event.preventDefault();
+    if (submittingCheckout.current) return;
+    submittingCheckout.current = true;
     setBusy(true);
     setStatus('');
-    const whatsappWindow = window.open('', '_blank');
+
     const form = new FormData(event.currentTarget);
     const payload = {
       couponCode: String(form.get('couponCode') || '').trim(),
@@ -233,25 +237,19 @@ export function CartProvider({ user, children }) {
         email: String(form.get('guestEmail') || '').trim(),
       };
     try {
-      const result = await requestJson('/api/orders/checkout', {
-        method: 'POST',
-        body: JSON.stringify(payload),
+      await submitWhatsappCheckout({
+        payload,
+        storage: sessionStorage,
+        newId: () => crypto.randomUUID(),
+        openWindow: () => window.open('', '_blank'),
+        request: (body) => requestJson('/api/orders/checkout', { method: 'POST', body: JSON.stringify(body) }),
+        navigate: (url) => location.assign(url),
       });
-      if (!result.whatsappUrl) throw new Error('No se pudo preparar el mensaje de WhatsApp.');
-      await reconcileGuestItems(payload.items.map((item) => ({ ...item })));
-      if (whatsappWindow) {
-        whatsappWindow.opener = null;
-        whatsappWindow.location = result.whatsappUrl;
-      } else {
-        location.assign(result.whatsappUrl);
-        return;
-      }
-      location.assign(`/pedido-enviado?orderId=${encodeURIComponent(result.orderId)}`);
     } catch (error) {
-      whatsappWindow?.close();
       setStatus(error.message);
     } finally {
       setBusy(false);
+      submittingCheckout.current = false;
     }
   };
 

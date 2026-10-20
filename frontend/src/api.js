@@ -32,6 +32,7 @@ export async function requestJson(url, options = {}) {
       result?.error || `El servidor respondió con el estado ${response.status}.`,
     );
     error.status = response.status;
+    error.checkoutRetryAllowed = result?.checkoutRetryAllowed === true;
     throw error;
   }
   return result;

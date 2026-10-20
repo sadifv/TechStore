@@ -186,8 +186,10 @@ if (require.main === module) {
     if (!process.env.MONGO_URI) {
       startupErrors.push('MONGO_URI es obligatorio en producción.');
     }
-    if (!/^\d{8,15}$/.test((process.env.WHATSAPP_BUSINESS_PHONE || '').replace(/\D/g, ''))) {
-      startupErrors.push('WHATSAPP_BUSINESS_PHONE debe incluir el código de país y solo dígitos.');
+    try {
+      require('./config/whatsapp').getWhatsappPhone();
+    } catch (error) {
+      startupErrors.push(error.message);
     }
     if (Buffer.byteLength(process.env.SESSION_SECRET || '', 'utf8') < 32) {
       startupErrors.push('SESSION_SECRET debe contener al menos 32 bytes en producción.');
@@ -222,6 +224,7 @@ if (require.main === module) {
 
   const start = async () => {
     await connectDB();
+    await require('./models/Order').init();
     scheduleMaintenanceJobs();
 
     const PORT = process.env.PORT || 3001;

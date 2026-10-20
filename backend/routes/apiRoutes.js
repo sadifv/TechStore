@@ -33,7 +33,11 @@ const {
   getPackingSlip,
   getAdminUsers,
 } = require('../controllers/adminController');
-const { markWhatsappOrderPaid } = require('../controllers/orderController');
+const { getWhatsappPhone } = require('../config/whatsapp');
+router.get('/store/config', (req, res) => {
+  const phone = getWhatsappPhone();
+  res.json({ success: true, whatsappPhone: phone, whatsappUrl: `https://wa.me/${phone}` });
+});
 const { getAdminMarketing } = require('../controllers/marketingController');
 const { recordHeartbeat } = require('../controllers/presenceController');
 
@@ -61,7 +65,7 @@ router.get('/admin/marketing', requireAdmin, getAdminMarketing);
 router.get('/admin/orders', requireAdmin, getAdminOrders);
 router.get('/admin/orders/:id/packing-slip', requireAdmin, getPackingSlip);
 router.get('/admin/orders/:id', requireAdmin, getAdminOrderDetail);
-router.post('/admin/orders/:id/confirm-payment', requireAdmin, markWhatsappOrderPaid);
+router.use('/admin/orders', require('./orderAdminRoutes'));
 router.get('/admin/users', requireAdmin, getAdminUsers);
 
 // ==========================================

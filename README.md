@@ -1,6 +1,6 @@
 # 🛒 TechStore - Dropshipping E-Commerce & Admin Panel
 
-TechStore es una plataforma e-commerce full-stack moderna y accesible orientada al comercio electrónico y dropshipping. Incluye catálogo dinámico con filtros, ofertas relámpago con temporizador (*Flash Sales*), asistente virtual interactivo potenciado por IA (OpenAI), gestión de carrito persistente y panel de administración para control de catálogo y pedidos.
+TechStore es una plataforma e-commerce full-stack moderna y accesible orientada al comercio electrónico y dropshipping. Incluye catálogo dinámico con filtros, ofertas relámpago con temporizador (_Flash Sales_), asistente virtual interactivo potenciado por IA (OpenAI), gestión de carrito persistente y panel de administración para control de catálogo y pedidos.
 
 ---
 
@@ -17,6 +17,7 @@ TechStore es una plataforma e-commerce full-stack moderna y accesible orientada 
 ## 📋 Requisitos Previos
 
 Asegúrate de tener instalado en tu sistema:
+
 - **Node.js** (v18.0.0 o superior)
 - **npm** (v9.0.0 o superior)
 - **MongoDB** (Instancia local corriendo en `mongodb://127.0.0.1:27017/` o URI de MongoDB Atlas)
@@ -26,6 +27,7 @@ Asegúrate de tener instalado en tu sistema:
 ## 🚀 Instalación y Puesta en Marcha
 
 1. **Clonar el repositorio:**
+
    ```bash
    git clone https://github.com/sadifv/TechStore.git
    cd TechStore
@@ -61,6 +63,11 @@ Asegúrate de tener instalado en tu sistema:
 - `backend/.env` y las variantes `.env.*` (excepto `backend/.env.example`) se excluyen de Git. Si una captura, log o commit revela una contraseña o clave, revócala o rótala desde el proveedor correspondiente; cambiar el archivo local no invalida la credencial expuesta.
 - `WHATSAPP_BUSINESS_PHONE` debe incluir el código de país y solo dígitos, por ejemplo `593963976623`. El checkout crea un pedido pendiente, reserva temporalmente el inventario y abre WhatsApp con el resumen listo para que el cliente lo envíe. Si el cliente no termina el contacto en 24 horas, el pedido vence y el inventario se libera.
 - El pago no se confirma al abrir WhatsApp. Un administrador debe verificarlo con el cliente y usar **Confirmar pago recibido** en el detalle del pedido antes de prepararlo o enviarlo.
+- El número de contacto, los enlaces de WhatsApp y el checkout comparten `WHATSAPP_BUSINESS_PHONE`, expuesto como configuración pública en `/api/store/config`. No es necesario recompilar React para cambiar el número; reinicia el backend y recarga la página.
+- En el detalle administrativo, **Registrar contacto recibido** deja constancia de que la tienda recibió el mensaje; no se detecta automáticamente desde el enlace. El historial conserva fechas y responsables de contacto, pago, cancelación y avance del envío. Las órdenes anteriores pueden no tener historial.
+- Los pedidos pendientes se pueden cancelar desde el panel, liberando inventario y cupón. El plazo de 24 horas se cuenta desde la creación, aunque se registre contacto. Después de ese plazo no se acepta la confirmación de pago, incluso antes de la siguiente ejecución del cron.
+- El navegador conserva una clave por intento de checkout para recuperar una respuesta perdida sin crear otra orden. El backend espera la inicialización del índice único de `checkoutKey` antes de aceptar tráfico. Si el navegador bloquea la ventana, la página del pedido permite abrir WhatsApp de nuevo.
+- Las pruebas cubren checkout, reintentos, permisos de administrador, confirmaciones, cancelaciones, inventario y ventanas bloqueadas. Usan persistencia simulada y no envían mensajes reales a WhatsApp.
 - GitHub Actions comprueba backend y frontend en Node.js 22 y 24 y audita las dependencias de producción del backend en cada push y pull request.
 
 ## Boletín, campañas y cupones

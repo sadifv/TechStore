@@ -27,6 +27,9 @@ router.get('/success', async (req, res, next) => {
         discountAmount: order.discountAmount,
         couponCode: order.couponCode,
         paymentStatus: order.paymentStatus,
+        status: order.status,
+        contactConfirmed: Boolean(order.contactConfirmedAt),
+        expiresAt: new Date(order.createdAt.getTime() + 24 * 60 * 60 * 1000),
         items: order.items.map((item) => ({
           productId: String(item.product),
           quantity: item.quantity,

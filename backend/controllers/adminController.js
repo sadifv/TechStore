@@ -178,6 +178,7 @@ const getAdminOrderDetail = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('user', 'name email')
+      .populate('events.actor', 'name')
       .populate('items.product', 'name price image')
       .lean();
 

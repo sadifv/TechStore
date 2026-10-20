@@ -13,6 +13,10 @@ const matches = (document, filter) => {
     if (expected && typeof expected === 'object' && !Array.isArray(expected)) {
       if ('$ne' in expected && actual === expected.$ne) return false;
       if ('$in' in expected && !expected.$in.includes(actual)) return false;
+      if ('$gt' in expected && !(actual > expected.$gt)) return false;
+      if ('$gte' in expected && !(actual >= expected.$gte)) return false;
+      if ('$lte' in expected && !(actual <= expected.$lte)) return false;
+      if ('$exists' in expected && (actual !== undefined) !== expected.$exists) return false;
     } else if (String(actual) !== String(expected)) {
       return false;
     }
@@ -30,10 +34,24 @@ const addCoupon = (couponId, redemptionCount = 1) => {
 };
 
 const Order = {
+  async create(data) {
+    if (data.checkoutKey && state.orders.some((order) => order.checkoutKey === data.checkoutKey)) {
+      throw Object.assign(new Error('Duplicate checkout'), { code: 11000 });
+    }
+    return addOrder({
+      ...data,
+      _id: `order-${state.orders.length + 1}`,
+      save: async () => undefined,
+    });
+  },
+  findById(id) {
+    return { select: async () => state.orders.find((order) => order._id === id) };
+  },
   async findOneAndUpdate(filter, update) {
     const order = state.orders.find((candidate) => matches(candidate, filter));
     if (!order) return null;
     Object.assign(order, update.$set || {});
+    if (update.$push?.events) order.events.push(update.$push.events);
     return order;
   },
   async findOne(filter) {
@@ -56,17 +74,20 @@ const Order = {
     Object.assign(order, update.$set || {});
     return { modifiedCount: 1 };
   },
-  find() {
+  find(filter) {
     return {
       sort() {
         return this;
       },
-      limit: async () => (state.expiredOrders.length ? state.expiredOrders : state.unprunedOrders),
+      limit: async () => state.orders.filter((order) => matches(order, filter)),
     };
   },
 };
 
 const Product = {
+  findById(id) {
+    return { lean: async () => state.products.get(String(id)) };
+  },
   async updateOne(filter, update) {
     const productId = String(filter._id);
     const restorationKey = filter.inventoryRestorationKeys?.$ne;
@@ -88,6 +109,7 @@ const Product = {
 
     const product = state.products.get(productId);
     if (!product) return { modifiedCount: 0 };
+    if (filter.stock && product.stock < filter.stock.$gte) return { modifiedCount: 0 };
     if (update.$pull?.inventoryRestorationKeys) {
       markers.delete(update.$pull.inventoryRestorationKeys);
       return { modifiedCount: 1 };
@@ -169,6 +191,7 @@ const acquireFakeProductLocks = async (productIds) => {
 };
 
 const reset = () => {
+  process.env.WHATSAPP_BUSINESS_PHONE = '593963976623';
   state.orders = [];
   state.products = new Map();
   state.restorationKeys = new Map();
@@ -193,6 +216,8 @@ const addOrder = (overrides = {}) => {
     inventoryRestorationKeysPruned: false,
     couponReservationStatus: 'none',
     items: [],
+    events: [],
+    createdAt: new Date(),
     couponReservationManaged: true,
     ...overrides,
   };
@@ -201,23 +226,31 @@ const addOrder = (overrides = {}) => {
 };
 
 const addProduct = (productId, stock) => {
-  state.products.set(productId, { stock });
+  state.products.set(productId, { _id: productId, name: 'Teclado & ratón', price: 25, stock });
   state.restorationKeys.set(productId, new Set());
 };
 
 const responseHarness = () => ({
   statusCode: 200,
   body: null,
-  status(code) { this.statusCode = code; return this; },
-  json(body) { this.body = body; return this; },
+  status(code) {
+    this.statusCode = code;
+    return this;
+  },
+  json(body) {
+    this.body = body;
+    return this;
+  },
 });
 
 const confirmPayment = async (order) => {
   const response = responseHarness();
   await controller.markWhatsappOrderPaid(
-    { params: { id: order._id } },
+    { params: { id: order._id }, session: { user: { id: 'admin-1' } } },
     response,
-    (error) => { throw error; },
+    (error) => {
+      throw error;
+    },
   );
   return response;
 };
@@ -232,12 +265,25 @@ const expireOrders = async (...orders) => {
 };
 
 Module._load = function (request, parent, isMain) {
-  if (parent?.filename === controllerPath) {
+  if (
+    parent &&
+    [
+      'orderController.js',
+      'orderCheckoutController.js',
+      'orderInventory.js',
+      'orderPayment.js',
+    ].includes(path.basename(parent.filename))
+  ) {
     if (request === '../models/Order') return Order;
     if (request === '../models/Product') return Product;
-    if (request === '../models/Reservation') return {};
+    if (request === '../models/Reservation')
+      return {
+        getReservedStock: async () => 0,
+        findOne: () => ({ lean: async () => null }),
+        updateMany: async () => ({ modifiedCount: 0 }),
+      };
     if (request === '../models/Cart') return Cart;
-    if (request === '../services/productReservationLock') {
+    if (request.endsWith('/productReservationLock')) {
       return {
         withProductReservationLock: async (productId, operation) => {
           const release = await acquireFakeProductLock(productId);
@@ -251,7 +297,7 @@ Module._load = function (request, parent, isMain) {
       };
     }
     if (request === '../config/logger') return logger;
-    if (request === '../services/couponService') {
+    if (request.endsWith('/couponService')) {
       return {
         getCouponDiscount() {},
         reserveCoupon: async (coupon, orderId) => {
@@ -293,4 +339,5 @@ module.exports = {
   expireOrders,
   state,
   controller,
+  responseHarness,
 };

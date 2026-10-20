@@ -1,4 +1,5 @@
 import { useState } from 'react';
+const eventLabels = { created: 'Pedido creado', contact_confirmed: 'Contacto por WhatsApp recibido', payment_confirmed: 'Pago confirmado; preparación iniciada', cancelled: 'Cancelado por la tienda', expired: 'Reserva vencida', checkout_failed: 'Pedido fallido', processing: 'En preparación', shipped: 'Enviado', delivered: 'Entregado', completed: 'Completado' };
 import {
   AdminNotice,
   AdminPagination,
@@ -87,7 +88,7 @@ export function AdminOrdersPage() {
                   <span
                     className={`badge badge-${order.paymentStatus === 'paid' ? 'success' : 'warning'}`}
                   >
-                    {order.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
+                    {order.paymentStatus === 'paid' ? 'Pagado' : order.paymentStatus === 'failed' ? 'Cancelado / vencido' : order.contactConfirmedAt ? 'Contacto recibido; pendiente de pago' : 'Pendiente de contacto'}
                   </span>
                 </td>
                 <td>
@@ -118,6 +119,16 @@ export function AdminOrderDetailPage({ orderId }) {
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState('');
   const order = data?.order;
+  const recordAction = async (action, message) => {
+    setConfirmingPayment(true);
+    setPaymentMessage('');
+    try {
+      await adminMutation(`/api/admin/orders/${orderId}/${action}`, { method: 'POST' });
+      setPaymentMessage(message);
+      refresh();
+    } catch (mutationError) { setPaymentMessage(mutationError.message); }
+    finally { setConfirmingPayment(false); }
+  };
   if (error) return <AdminNotice error={error} />;
   if (!order)
     return (
@@ -164,8 +175,11 @@ export function AdminOrderDetailPage({ orderId }) {
         </article>
         <article className="order-card">
           <h2>Estado del Pedido</h2>
+          <p>{order.paymentStatus === 'paid' ? 'Pago confirmado; pedido en proceso de entrega.' : order.paymentStatus === 'failed' ? 'Pedido cancelado o vencido.' : order.contactConfirmedAt ? 'Contacto recibido; esperando pago.' : 'Esperando contacto por WhatsApp.'}</p>
           {order.paymentMethod === 'whatsapp' && order.paymentStatus === 'pending' && (
             <>
+              {!order.contactConfirmedAt && <button type="button" className="btn btn-secondary" disabled={confirmingPayment} onClick={() => recordAction('confirm-contact', 'Contacto registrado.')}>Registrar contacto recibido</button>}
+              <button type="button" className="btn btn-outline" disabled={confirmingPayment} onClick={() => recordAction('cancel', 'Pedido cancelado; inventario liberado.')}>Cancelar pedido sin pago</button>
               <p>Confirma el pago solo después de verificarlo directamente con el cliente.</p>
               <button
                 type="button"
@@ -175,7 +189,7 @@ export function AdminOrderDetailPage({ orderId }) {
                   setConfirmingPayment(true);
                   setPaymentMessage('');
                   try {
-                    await adminMutation(`/admin/orders/${order._id}/confirm-payment`, {
+                    await adminMutation(`/api/admin/orders/${order._id}/confirm-payment`, {
                       method: 'POST',
                     });
                     setPaymentMessage('Pago confirmado; el pedido pasó a preparación.');
@@ -189,10 +203,16 @@ export function AdminOrderDetailPage({ orderId }) {
               >
                 {confirmingPayment ? 'Confirmando…' : 'Confirmar pago recibido'}
               </button>
-              {paymentMessage && <p role="status">{paymentMessage}</p>}
             </>
           )}
+          {paymentMessage && <p role="status">{paymentMessage}</p>}
           <OrderStatusSelect order={order} onUpdated={refresh} />
+          <h3>Historial del pedido</h3>
+          <ol>
+            {(order.events || []).map((event, index) => (
+              <li key={index}>{eventLabels[event.type] || event.type} — {date(event.at, { dateStyle: 'medium', timeStyle: 'short' })}{event.actor ? ` · Responsable: ${event.actor.name || event.actor}` : ' · Sistema / cliente'}</li>
+            ))}
+          </ol>
         </article>
       </div>
       <section className="order-items-section">

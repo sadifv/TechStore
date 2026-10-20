@@ -66,6 +66,34 @@ const orderSchema = new mongoose.Schema(
       default: undefined,
     },
     cartSnapshotUpdatedAt: Date,
+    checkoutKey: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    checkoutRequestHash: String,
+    checkoutState: {
+      type: String,
+      enum: ['creating', 'ready', 'failed'],
+    },
+    contactConfirmedAt: Date,
+    contactConfirmedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    paymentConfirmedAt: Date,
+    paymentConfirmedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    events: [
+      {
+        _id: false,
+        type: { type: String, required: true },
+        actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        at: { type: Date, required: true },
+      },
+    ],
     paymentMethod: {
       type: String,
       enum: ['whatsapp'],
