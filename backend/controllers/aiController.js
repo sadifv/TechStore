@@ -59,10 +59,10 @@ ${catalogContext}`;
     ];
 
     const completion = await aiClient.chat.completions.create({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-3.5-flash-lite',
       messages,
       reasoning_effort: 'low',
-      max_tokens: 500,
+      max_tokens: 300,
       temperature: 0.7,
     });
 
