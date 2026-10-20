@@ -1,7 +1,7 @@
 import { submitWhatsappCheckout } from '../whatsappCheckout.js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../api.js';
-import { CartContext } from './CartContext.js';
+import { CartActionsContext, CartStateContext } from './CartContext.js';
 import {
   readGuestCart,
   removeGuestQuantity,
@@ -21,6 +21,11 @@ export function CartProvider({ user, children }) {
   const toastTimer = useRef(null);
   const checkoutDialog = useRef(null);
   const submittingCheckout = useRef(false);
+  const itemsRef = useRef(items);
+  const pendingQuantityUpdates = useRef(new Map());
+  useLayoutEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
   const notify = useCallback((message, type = 'info') => {
     setToast({ message, type });
     clearTimeout(toastTimer.current);
@@ -150,7 +155,9 @@ export function CartProvider({ user, children }) {
   const remove = useCallback(
     async (id, cartItemId) => {
       if (user) {
-        const removedItem = items.find((item) =>
+        const pendingUpdate = pendingQuantityUpdates.current.get(String(id));
+        if (pendingUpdate) await pendingUpdate.promise;
+        const removedItem = itemsRef.current.find((item) =>
           cartItemId ? item.cartItemId === String(cartItemId) : item.id === String(id),
         );
         setItems((current) =>
@@ -182,28 +189,71 @@ export function CartProvider({ user, children }) {
       saveGuestCart(remaining);
       setItems((current) => current.filter((item) => item.id !== String(id)));
     },
-    [items, refresh, user, notify],
+    [refresh, user, notify],
   );
 
   const setQuantity = useCallback(
     async (item, quantity) => {
-      if (quantity < 1) return remove(item.id, item.cartItemId);
-      if (user)
-        await requestJson(`/api/cart/quantity/${encodeURIComponent(item.id)}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ quantity }),
-        });
-      else {
+      const id = String(item.id);
+      if (quantity < 1) {
+        const pendingUpdate = pendingQuantityUpdates.current.get(id);
+        if (pendingUpdate) await pendingUpdate.promise;
+        return remove(id, item.cartItemId);
+      }
+      const currentQuantity =
+        itemsRef.current.find((entry) => entry.id === id)?.quantity ?? item.quantity;
+      setItems((current) =>
+        current.map((entry) => (entry.id === id ? { ...entry, quantity } : entry)),
+      );
+      if (user) {
+        let update = pendingQuantityUpdates.current.get(id);
+        if (update) {
+          update.quantity = quantity;
+          return update.promise;
+        }
+
+        update = { quantity, originalQuantity: currentQuantity, promise: null };
+        pendingQuantityUpdates.current.set(id, update);
+        update.promise = (async () => {
+          try {
+            let savedQuantity;
+            while (true) {
+              savedQuantity = update.quantity;
+              await requestJson(`/api/cart/quantity/${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ quantity: savedQuantity }),
+              });
+              if (savedQuantity === update.quantity) {
+                await refresh();
+                if (savedQuantity === update.quantity) break;
+              }
+            }
+          } catch (error) {
+            const refreshed = await refresh();
+            if (!refreshed) {
+              setItems((current) =>
+                current.map((entry) =>
+                  entry.id === id ? { ...entry, quantity: update.originalQuantity } : entry,
+                ),
+              );
+            }
+            notify(error.message, 'error');
+          } finally {
+            if (pendingQuantityUpdates.current.get(id) === update)
+              pendingQuantityUpdates.current.delete(id);
+          }
+        })();
+        return update.promise;
+      } else {
         const cart = readGuestCart().map((entry) =>
-          String(entry.id || entry.productId || entry._id) === item.id
+          String(entry.id || entry.productId || entry._id) === id
             ? { ...entry, quantity }
             : entry,
         );
         saveGuestCart(cart);
       }
-      await refresh();
     },
-    [refresh, user, remove],
+    [refresh, user, remove, notify],
   );
 
   const reconcileGuestItems = useCallback(
@@ -253,38 +303,33 @@ export function CartProvider({ user, children }) {
     }
   };
 
-  const value = useMemo(
+  const stateValue = useMemo(
     () => ({
       items,
       count: items.reduce((total, item) => total + item.quantity, 0),
       subtotal,
+      drawerOpen,
+      checkoutOpen,
+    }),
+    [items, subtotal, drawerOpen, checkoutOpen],
+  );
+  const actionsValue = useMemo(
+    () => ({
       add,
       setQuantity,
       remove,
       refresh,
       reconcileGuestItems,
-      drawerOpen,
       setDrawerOpen,
-      checkoutOpen,
       setCheckoutOpen,
       notify,
     }),
-    [
-      items,
-      subtotal,
-      add,
-      setQuantity,
-      remove,
-      refresh,
-      reconcileGuestItems,
-      drawerOpen,
-      checkoutOpen,
-      notify,
-    ],
+    [add, setQuantity, remove, refresh, reconcileGuestItems, notify],
   );
   return (
-    <CartContext.Provider value={value}>
-      {children}
+    <CartStateContext.Provider value={stateValue}>
+      <CartActionsContext.Provider value={actionsValue}>
+        {children}
       <aside
         id="cart-drawer"
         className={`cart-drawer${drawerOpen ? ' open' : ''}`}
@@ -499,6 +544,7 @@ export function CartProvider({ user, children }) {
           </output>
         </section>
       )}
-    </CartContext.Provider>
+      </CartActionsContext.Provider>
+    </CartStateContext.Provider>
   );
 }

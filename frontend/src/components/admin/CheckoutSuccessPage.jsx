@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useCart } from '../CartContext.js';
+import { useCartActions } from '../CartContext.js';
 import { money, useAdminData } from './shared.jsx';
 import { finishCheckoutAttempt } from '../../whatsappCheckout.js';
 
@@ -8,7 +8,7 @@ export function CheckoutSuccessPage() {
   const { data, error } = useAdminData(
     `/api/orders/success?orderId=${encodeURIComponent(orderId || '')}`,
   );
-  const { reconcileGuestItems } = useCart();
+  const { reconcileGuestItems } = useCartActions();
   const reconciled = useRef(false);
   useEffect(() => {
     if (!data || reconciled.current) return;

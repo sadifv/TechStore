@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { requestJson } from '../api.js';
-import { useCart } from './CartContext.js';
+import { useCartActions, useCartState } from './CartContext.js';
 
 export default function SiteHeader({ user }) {
   const [open, setOpen] = useState(false);
   const [logoutError, setLogoutError] = useState('');
-  const { count, setDrawerOpen } = useCart();
+  const { count } = useCartState();
+  const { setDrawerOpen } = useCartActions();
   async function logout(event) {
     event.preventDefault();
     setLogoutError('');

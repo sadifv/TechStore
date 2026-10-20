@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../api.js';
-import { useCart } from '../components/CartContext.js';
+import { useCartActions } from '../components/CartContext.js';
 
 export default function ProductPage({ productId }) {
-  const { add, notify } = useCart();
+  const { add, notify } = useCartActions();
   const [product, setProduct] = useState(null);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);

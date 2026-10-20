@@ -1,33 +1,61 @@
 import { useEffect, useRef, useState } from 'react';
 import { requestJson } from '../api.js';
 
+const MAX_VISIBLE_MESSAGES = 20;
+
+function appendMessage(current, message) {
+  return [...current, message].slice(-MAX_VISIBLE_MESSAGES);
+}
+
 export default function AiAssistant({ user }) {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const sectionRef = useRef(null);
   const historyRef = useRef(null);
   useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return undefined;
+    if (!('IntersectionObserver' in window)) {
+      setHistoryVisible(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHistoryVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!user) {
+      setMessages([]);
+      return undefined;
+    }
+    if (!historyVisible) return undefined;
     let active = true;
-    if (user)
-      requestJson('/api/ai/history')
-        .then((result) => {
-          if (active && Array.isArray(result.history))
-            setMessages(
-              result.history.map((item) => ({
-                role: item.role === 'user' ? 'user' : 'bot',
-                content: item.content,
-              })),
-            );
-        })
-        .catch((requestError) => {
-          if (active) setError(requestError.message);
-        });
-    else setMessages([]);
+    requestJson('/api/ai/history')
+      .then((result) => {
+        if (active && Array.isArray(result.history))
+          setMessages(result.history.slice(-MAX_VISIBLE_MESSAGES).map((item) => ({
+            role: item.role === 'user' ? 'user' : 'bot',
+            content: item.content,
+          })));
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      });
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, historyVisible]);
   useEffect(() => {
     if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight;
   }, [messages, busy]);
@@ -36,22 +64,21 @@ export default function AiAssistant({ user }) {
     if (!content || busy) return;
     setMessage('');
     setError('');
-    setMessages((current) => [...current, { role: 'user', content }]);
+    setMessages((current) => appendMessage(current, { role: 'user', content }));
     setBusy(true);
     try {
       const result = await requestJson('/api/ai/chat', {
         method: 'POST',
         body: JSON.stringify({ message: content }),
       });
-      setMessages((current) => [...current, { role: 'bot', content: result.reply }]);
+      setMessages((current) => appendMessage(current, { role: 'bot', content: result.reply }));
     } catch (requestError) {
-      setMessages((current) => [
-        ...current,
-        {
+      setMessages((current) =>
+        appendMessage(current, {
           role: 'bot',
           content: requestError.message || 'Ocurrió un error de conexión con el servidor.',
-        },
-      ]);
+        }),
+      );
     } finally {
       setBusy(false);
     }
@@ -67,7 +94,7 @@ export default function AiAssistant({ user }) {
     }
   }
   return (
-    <section id="ai-assistant" className="ai-section" aria-labelledby="ai-title">
+    <section ref={sectionRef} id="ai-assistant" className="ai-section" aria-labelledby="ai-title">
       <header className="ai-header">
         <figure className="ai-avatar" aria-hidden="true">
           <svg
