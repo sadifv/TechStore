@@ -76,6 +76,27 @@ const getProducts = async (req, res, next) => {
   }
 };
 
+const getHomeProducts = async (req, res, next) => {
+  try {
+    const now = new Date();
+    const productFields = '_id name price image stock flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';
+    const [products, sales] = await Promise.all([
+      Product.find({}).select(productFields).sort({ createdAt: -1 }).limit(8).lean(),
+      Product.find({ flashSale: true, flashSaleEndsAt: { $gt: now } })
+        .select(productFields).sort({ flashSaleEndsAt: 1 }).limit(1).lean(),
+    ]);
+    const reservedByProduct = await Reservation.getReservedStockByProducts(products.map((product) => product._id));
+    const productsWithAvailability = products.map((product) => ({
+      ...product,
+      availableStock: Math.max(0, product.stock - (reservedByProduct.get(String(product._id)) || 0)),
+    }));
+    return res.status(200).json({ success: true, products: productsWithAvailability, flashSale: sales[0] || null });
+  } catch (error) {
+    logger.error('Error al obtener los productos del inicio.', { errorCode: error.code || error.name });
+    return next(error);
+  }
+};
+
 const getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id).lean();
@@ -214,6 +235,7 @@ const deactivateFlashSale = async (req, res, next) => {
 
 module.exports = {
   getProducts,
+  getHomeProducts,
   getProductById,
   createProduct,
   updateProduct,

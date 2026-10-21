@@ -16,3 +16,16 @@ export function trapTabKey(event, focusableElements, activeElement) {
   }
   return false;
 }
+
+export function focusVisibleElement(element) {
+  if (!element?.isConnected || element.closest?.('[inert], [aria-hidden="true"]')) return false;
+  if (typeof element.getClientRects === 'function' && element.getClientRects().length === 0)
+    return false;
+  element.focus();
+  return true;
+}
+
+export function restoreCartFocus(documentRef = document) {
+  const cartButton = documentRef.getElementById('cart-btn');
+  return focusVisibleElement(cartButton);
+}

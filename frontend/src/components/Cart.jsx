@@ -2,7 +2,7 @@ import { submitWhatsappCheckout } from '../whatsappCheckout.js';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../api.js';
 import { CartActionsContext, CartStateContext } from './CartContext.js';
-import { trapTabKey } from './modalFocus.js';
+import { trapTabKey, restoreCartFocus } from './modalFocus.js';
 import {
   readGuestCart,
   removeGuestQuantity,
@@ -118,7 +118,8 @@ export function CartProvider({ user, children }) {
     const drawer = cartDrawer.current;
     if (!drawer) return undefined;
     if (drawerOpen) {
-      if (!drawer.contains(document.activeElement)) drawerReturnFocus.current = document.activeElement;
+      if (!drawer.contains(document.activeElement))
+        drawerReturnFocus.current = document.activeElement;
       drawer.querySelector('#cart-close-btn')?.focus();
       const handleKeyDown = (event) => {
         if (event.key === 'Escape') {
@@ -474,7 +475,10 @@ export function CartProvider({ user, children }) {
           ref={checkoutDialog}
           className="checkout-modal"
           aria-labelledby="checkout-modal-title"
-          onClose={() => setCheckoutOpen(false)}
+          onClose={() => {
+            setCheckoutOpen(false);
+            requestAnimationFrame(() => restoreCartFocus());
+          }}
           onClick={(event) => {
             if (event.target === event.currentTarget) setCheckoutOpen(false);
           }}

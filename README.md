@@ -62,6 +62,9 @@ Asegúrate de tener instalado en tu sistema:
 
 ## Seguridad y despliegue
 
+- El acceso administrativo requiere una aplicación autenticadora TOTP. En el primer inicio de sesión, guarda los diez códigos de recuperación que se muestran una sola vez. `SESSION_SECRET` debe mantenerse estable: al rotarlo, inicia sesión con un código de recuperación para volver a enrolar MFA; si se pierden el autenticador y todos los códigos, un operador debe restablecer MFA desde la base de datos tras verificar la identidad del administrador.
+- El límite de login (5 intentos/10 min) y el de checkout (10 solicitudes/15 min por IP) se comparten entre instancias mediante MongoDB. Si falla MongoDB, esas rutas fallan cerradas.
+- El índice heredado de Stripe se puede revisar con `npm run db:remove-legacy-stripe-index` desde `backend/`; el comando solo hace una vista previa. La aplicación requiere `npm run db:remove-legacy-stripe-index -- --apply` y aborta si encuentra documentos con `stripeExpiresAt`.
 - `backend/.env` y las variantes `.env.*` (excepto `backend/.env.example`) se excluyen de Git. Si una captura, log o commit revela una contraseña o clave, revócala o rótala desde el proveedor correspondiente; cambiar el archivo local no invalida la credencial expuesta.
 - `WHATSAPP_BUSINESS_PHONE` debe incluir el código de país y solo dígitos, por ejemplo `593963976623`. El checkout crea un pedido pendiente, reserva temporalmente el inventario y abre WhatsApp con el resumen listo para que el cliente lo envíe. Si el cliente no termina el contacto en 24 horas, el pedido vence y el inventario se libera.
 - El pago no se confirma al abrir WhatsApp. Un administrador debe verificarlo con el cliente y usar **Confirmar pago recibido** en el detalle del pedido antes de prepararlo o enviarlo.

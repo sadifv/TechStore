@@ -2,6 +2,17 @@
 const isApiRequest = require('./isApiRequest');
 const User = require('../models/User');
 
+const requireAdminMfaPreauth = (req, res, next) => {
+  const preauth = req.session?.adminMfaPreauth;
+  if (!preauth || preauth.expiresAt <= Date.now() || !['enroll', 'verify'].includes(preauth.mode)) {
+    return res
+      .status(401)
+      .json({ success: false, error: 'La sesión de verificación expiró. Inicia sesión de nuevo.' });
+  }
+  req.adminMfaPreauth = preauth;
+  next();
+};
+
 const destroySession = (req, res) =>
   new Promise((resolve) => {
     if (!req.session) return resolve();
@@ -110,4 +121,5 @@ module.exports = {
   requireAdmin,
   requireAuth,
   redirectIfAuthenticated,
+  requireAdminMfaPreauth,
 };

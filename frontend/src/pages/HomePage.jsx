@@ -4,6 +4,7 @@ const HomeBelowFold = lazy(() => import('../components/HomeBelowFold.jsx'));
 import FlashSaleSection from '../components/FlashSaleSection.jsx';
 import HeroSection from '../components/HeroSection.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import { normalizeHomeProducts } from './homeProducts.js';
 
 function DeferredHomeContent({ user }) {
   const sectionRef = useRef(null);
@@ -74,18 +75,12 @@ export default function HomePage({ user }) {
 
   useEffect(() => {
     let active = true;
-    requestJson('/api/products?limit=100&sort=recent')
+    requestJson('/api/products/home')
       .then((result) => {
         if (!active) return;
-        const allProducts = result.products || [];
-        setProducts(allProducts.slice(0, 8));
-        const now = Date.now();
-        const activeSales = allProducts
-          .filter(
-            (product) => product.flashSale && new Date(product.flashSaleEndsAt).getTime() > now,
-          )
-          .sort((a, b) => new Date(a.flashSaleEndsAt) - new Date(b.flashSaleEndsAt));
-        setFlashSale(activeSales[0] || null);
+        const homeCatalog = normalizeHomeProducts(result);
+        setProducts(homeCatalog.products);
+        setFlashSale(homeCatalog.flashSale);
         setError('');
       })
       .catch((requestError) => {

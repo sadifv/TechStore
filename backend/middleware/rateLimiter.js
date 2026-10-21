@@ -5,14 +5,19 @@ const logger = require('../config/logger');
 const isApiRequest = require('./isApiRequest');
 const getSafeRequestTarget = require('./safeRequestTarget');
 const { MongoRateLimitStore } = require('./mongoRateLimitStore');
+const loginRateLimitConfig = Object.freeze({ windowMs: 10 * 60 * 1000, max: 5 });
+const checkoutRateLimitConfig = Object.freeze({ windowMs: 15 * 60 * 1000, max: 10 });
+const adminMfaRateLimitConfig = Object.freeze({ windowMs: 10 * 60 * 1000, max: 5 });
 
 /**
  * Limitador estricto para el login.
  * 5 intentos cada 10 minutos.
  */
+const loginRateLimitStore = new MongoRateLimitStore('login');
 const loginLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: 5,
+  ...loginRateLimitConfig,
+  passOnStoreError: false,
+  store: loginRateLimitStore,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -50,9 +55,7 @@ const adminLimiter = rateLimit({
     error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.',
   },
   handler: (req, res, next) => {
-    logger.warn(
-      `Límite de solicitudes excedido en /admin - Ruta: ${getSafeRequestTarget(req)}.`,
-    );
+    logger.warn(`Límite de solicitudes excedido en /admin - Ruta: ${getSafeRequestTarget(req)}.`);
     if (isApiRequest(req)) {
       return res.status(429).json({
         success: false,
@@ -123,28 +126,40 @@ const registerLimiter = rateLimit({
   },
 });
 
-/** Crea un cupo de 10 solicitudes por IP y operación, compartido entre instancias. */
-const createSensitiveLimiter = (bucket) =>
+/** Crea un cupo persistente por IP y operación, compartido entre instancias. */
+const createSensitiveLimiter = (bucket, { windowMs = 15 * 60 * 1000, max = 10, store } = {}) =>
   rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 10,
+    windowMs,
+    max,
+    passOnStoreError: false,
     standardHeaders: true,
     legacyHeaders: false,
-    store: new MongoRateLimitStore(bucket),
+    store: store || new MongoRateLimitStore(bucket),
     handler: (req, res) => {
+      const errorMessage = `Demasiadas solicitudes. Inténtalo de nuevo en ${Math.ceil(windowMs / 60_000)} minutos.`;
       logger.warn(
         `Límite de solicitudes excedido en ruta sensible - Ruta: ${getSafeRequestTarget(req)}.`,
       );
       if (isApiRequest(req)) {
         return res.status(429).json({
           success: false,
-          error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.',
+          error: errorMessage,
         });
       }
-      return res.status(429).send('Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.');
+      return res.status(429).send(errorMessage);
     },
   });
 
+const checkoutRateLimitStore = new MongoRateLimitStore('checkout');
+const checkoutLimiter = createSensitiveLimiter('checkout', {
+  ...checkoutRateLimitConfig,
+  store: checkoutRateLimitStore,
+});
+const adminMfaRateLimitStore = new MongoRateLimitStore('admin-mfa');
+const adminMfaLimiter = createSensitiveLimiter('admin-mfa', {
+  ...adminMfaRateLimitConfig,
+  store: adminMfaRateLimitStore,
+});
 const contactLimiter = createSensitiveLimiter('contact');
 const newsletterLimiter = createSensitiveLimiter('newsletter');
 const passwordRecoveryLimiter = createSensitiveLimiter('password-recovery');
@@ -156,6 +171,19 @@ module.exports = {
   aiLimiter,
   aiSlowDown,
   registerLimiter,
+  checkoutLimiter,
+  adminMfaLimiter,
+  // Exposed for deterministic verification of the configured distributed buckets.
+  rateLimitStores: {
+    login: loginRateLimitStore,
+    checkout: checkoutRateLimitStore,
+    adminMfa: adminMfaRateLimitStore,
+  },
+  rateLimitConfig: {
+    login: loginRateLimitConfig,
+    checkout: checkoutRateLimitConfig,
+    adminMfa: adminMfaRateLimitConfig,
+  },
   contactLimiter,
   newsletterLimiter,
   passwordRecoveryLimiter,

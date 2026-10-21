@@ -29,3 +29,49 @@ test('stores rate-limit counters under a shared, expiring Mongo key', async () =
   assert.deepEqual(calls[1].options, { upsert: true, returnDocument: 'after' });
   assert.deepEqual(calls[0].options, { expireAfterSeconds: 0, name: 'rate_limit_expiry' });
 });
+
+function sharedCollection() {
+  const counters = new Map();
+  return {
+    counters,
+    async createIndex() { return 'rate_limit_expiry'; },
+    async findOneAndUpdate({ _id }) {
+      const now = new Date();
+      const previous = counters.get(_id);
+      const active = previous && previous.expiresAt > now;
+      const counter = {
+        totalHits: active ? previous.totalHits + 1 : 1,
+        expiresAt: active ? previous.expiresAt : new Date(now.getTime() + windowMsFor(_id)),
+      };
+      counters.set(_id, counter);
+      return { ...counter };
+    },
+    async updateOne() {},
+    async deleteOne({ _id }) { counters.delete(_id); },
+  };
+}
+
+const windows = new Map();
+function windowMsFor(key) { return windows.get(key.split(':')[0]); }
+function createStore(bucket, collection, windowMs) {
+  windows.set(bucket, windowMs);
+  const instance = new MongoRateLimitStore(bucket, { getCollection: () => collection });
+  instance.init({ windowMs });
+  return instance;
+}
+
+test('separate store instances share a bucket but independent operations do not', async () => {
+  const collection = sharedCollection();
+  const firstInstance = createStore('checkout', collection, 900_000);
+  const secondInstance = createStore('checkout', collection, 900_000);
+  const login = createStore('login', collection, 600_000);
+  assert.equal((await firstInstance.increment('ip')).totalHits, 1);
+  assert.equal((await secondInstance.increment('ip')).totalHits, 2);
+  assert.equal((await login.increment('ip')).totalHits, 1);
+});
+
+test('store errors propagate so callers can fail closed', async () => {
+  const broken = { createIndex: async () => { throw new Error('Mongo indisponible'); } };
+  const limiter = createStore('checkout', broken, 900_000);
+  await assert.rejects(limiter.increment('ip'), /Mongo indisponible/);
+});

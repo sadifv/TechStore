@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { createOrder, getUserOrders } = require('../controllers/orderController');
 const { requireAuth } = require('../middleware/authMiddleware');
+const { checkoutLimiter } = require('../middleware/rateLimiter');
 const { isOrderSuccessAccessible } = require('../services/orderSuccessAccess');
 
-router.post('/checkout', createOrder);
+router.post('/checkout', checkoutLimiter, createOrder);
 
 // Confirmación de que el pedido quedó registrado antes de abrir WhatsApp.
 router.post('/success', async (req, res, next) => {

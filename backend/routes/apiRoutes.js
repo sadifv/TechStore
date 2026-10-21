@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { sendContactMessage } = require('../controllers/contactController');
-const { getProducts, getProductById } = require('../controllers/productController');
+const {
+  getProducts,
+  getProductById,
+  getHomeProducts,
+} = require('../controllers/productController');
 const { processAiChat, getChatHistory, clearChatHistory } = require('../controllers/aiController');
 const {
   subscribeNewsletter,
@@ -15,6 +19,9 @@ const {
   getMe,
   forgotPassword,
   resetPassword,
+  beginAdminMfaEnrollment,
+  confirmAdminMfaEnrollment,
+  verifyAdminMfa,
 } = require('../controllers/authController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const {
@@ -26,7 +33,9 @@ const {
   passwordRecoveryLimiter,
   passwordResetLimiter,
   loginLimiter,
+  adminMfaLimiter,
 } = require('../middleware/rateLimiter');
+const { requireAdminMfaPreauth } = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
 const { requireAdmin } = require('../middleware/authMiddleware');
 const {
@@ -60,6 +69,7 @@ router
   .post(unsubscribeCampaignMarketing);
 router.post('/presence/heartbeat', requireAuth, recordHeartbeat);
 router.get('/products', getProducts);
+router.get('/products/home', getHomeProducts);
 router.get('/products/:id', getProductById);
 
 // APIs JSON del panel administrativo React.
@@ -85,6 +95,19 @@ router.delete('/ai/history', requireAuth, clearChatHistory);
 
 router.post('/auth/register', registerLimiter, validate, registerUser);
 router.post('/auth/login', loginLimiter, validate, loginUser);
+router.post(
+  '/auth/admin/mfa/enroll',
+  adminMfaLimiter,
+  requireAdminMfaPreauth,
+  beginAdminMfaEnrollment,
+);
+router.post(
+  '/auth/admin/mfa/confirm',
+  adminMfaLimiter,
+  requireAdminMfaPreauth,
+  confirmAdminMfaEnrollment,
+);
+router.post('/auth/admin/mfa/verify', adminMfaLimiter, requireAdminMfaPreauth, verifyAdminMfa);
 router.post('/auth/logout', logoutUser);
 router.get('/auth/me', requireAuth, getMe);
 

@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema(
       default: 0,
       select: false,
     },
+    adminMfaSecret: { type: String, select: false },
+    adminMfaEnabledAt: { type: Date, select: false },
+    adminMfaLastTotpStep: { type: Number, select: false },
+    adminMfaRecoveryHashes: { type: [String], select: false, default: undefined },
     lastLoginAt: Date,
     // Campos para Verificación de Email y Reset de Contraseña
     isVerified: {

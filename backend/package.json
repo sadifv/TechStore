@@ -8,7 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
-    "db:ensure-reservation-ttl": "node scripts/ensureReservationTtlIndex.js"
+    "db:ensure-reservation-ttl": "node scripts/ensureReservationTtlIndex.js",
+    "db:remove-legacy-stripe-index": "node scripts/removeLegacyStripeIndex.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
