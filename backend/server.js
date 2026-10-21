@@ -137,9 +137,7 @@ app.use(
   }),
 );
 
-// El frontend vive en la aplicación React. Express solo sirve imágenes
-// dinámicas que el administrador sube al backend.
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+// Las imágenes que sube el administrador se guardan en MongoDB.
 app.get('/uploads/products/:imageId', require('./controllers/productImageController').serveProductImage);
 
 // 8. Middleware global para res.locals.user
