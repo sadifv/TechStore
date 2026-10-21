@@ -8,6 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test",
+    "test:integration": "node scripts/runIntegrationTests.js",
+    "db:ensure-catalog-indexes": "node scripts/ensureCatalogIndexes.js",
     "db:ensure-reservation-ttl": "node scripts/ensureReservationTtlIndex.js",
     "db:remove-legacy-stripe-index": "node scripts/removeLegacyStripeIndex.js"
   },

@@ -38,7 +38,7 @@ const scheduleMaintenanceJobs = () => {
       const {
         expirePendingWhatsappOrders,
         pruneCompletedInventoryRestorationKeys,
-      } = require('../controllers/orderController');
+      } = require('./orderInventory');
       const expiredOrders = await expirePendingWhatsappOrders();
       if (expiredOrders > 0) logger.info(`Pedidos de WhatsApp vencidos: ${expiredOrders}`);
       const prunedOrders = await pruneCompletedInventoryRestorationKeys();

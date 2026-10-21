@@ -36,6 +36,7 @@ const saveSession = (req) =>
 const authenticateAfterMfa = async (req, res, user, method) => {
   await regenerateSession(req);
   req.session.user = mfaSessionUser(user);
+  req.session.authLevel = 'mfa';
   await saveSession(req);
   logger.info('Autenticación administrativa MFA completada.', {
     event: 'admin_mfa_login_success',
@@ -123,6 +124,7 @@ const loginUser = async (req, res) => {
       await regenerateSession(req);
       req.session.adminMfaPreauth = {
         userId: String(user._id),
+        authVersion: user.authVersion || 0,
         mode: user.adminMfaEnabledAt ? 'verify' : 'enroll',
         expiresAt: Date.now() + 10 * 60 * 1000,
       };
@@ -183,9 +185,14 @@ const beginAdminMfaEnrollment = async (req, res) => {
   }
 };
 
+// Legacy accounts without a stored version have always represented version zero.
+const authVersionFilter = (version) => version === 0
+  ? { $and: [{ $or: [{ authVersion: 0 }, { authVersion: { $exists: false } }] }] }
+  : { authVersion: version };
+
 const confirmAdminMfaEnrollment = async (req, res) => {
   try {
-    const { pendingSecret, userId } = req.adminMfaPreauth;
+    const { pendingSecret, userId, authVersion } = req.adminMfaPreauth;
     const verified = pendingSecret && adminMfa.verifyTotp(pendingSecret, req.body?.code);
     if (!verified) {
       logger.warn('Falló la confirmación de enrolamiento MFA.', {
@@ -197,7 +204,7 @@ const confirmAdminMfaEnrollment = async (req, res) => {
     }
     const recoveryCodes = adminMfa.generateRecoveryCodes();
     const user = await User.findOneAndUpdate(
-      { _id: userId, role: 'admin', adminMfaEnabledAt: { $exists: false } },
+      { _id: userId, role: 'admin', ...authVersionFilter(authVersion), adminMfaEnabledAt: { $exists: false } },
       {
         $set: {
           adminMfaSecret: adminMfa.encryptSecret(pendingSecret),
@@ -215,6 +222,7 @@ const confirmAdminMfaEnrollment = async (req, res) => {
         .json({ success: false, error: 'No se pudo activar MFA para esta cuenta.' });
     await regenerateSession(req);
     req.session.user = mfaSessionUser(user);
+    req.session.authLevel = 'mfa';
     await saveSession(req);
     logger.info('MFA administrativa activada.', { event: 'admin_mfa_enrollment_success' });
     return res.json({ success: true, user: req.session.user, recoveryCodes });
@@ -228,9 +236,10 @@ const confirmAdminMfaEnrollment = async (req, res) => {
 
 const verifyAdminMfa = async (req, res) => {
   try {
-    const { userId } = req.adminMfaPreauth;
+    const { userId, authVersion } = req.adminMfaPreauth;
     const user = await User.findOne({
       _id: userId,
+      ...authVersionFilter(authVersion),
       role: 'admin',
       adminMfaEnabledAt: { $exists: true },
     }).select('+authVersion +adminMfaSecret +adminMfaLastTotpStep +adminMfaRecoveryHashes');
@@ -239,10 +248,7 @@ const verifyAdminMfa = async (req, res) => {
     let verified = null;
     let secretDecryptionFailed = false;
     try {
-      verified = adminMfa.verifyTotp(
-        adminMfa.decryptSecret(user.adminMfaSecret),
-        req.body?.code,
-      );
+      verified = adminMfa.verifyTotp(adminMfa.decryptSecret(user.adminMfaSecret), req.body?.code);
     } catch {
       // Si rotó SESSION_SECRET, todavía se puede recuperar la cuenta con un código de un uso.
       secretDecryptionFailed = true;
@@ -251,6 +257,7 @@ const verifyAdminMfa = async (req, res) => {
       const updated = await User.findOneAndUpdate(
         {
           _id: user._id,
+          ...authVersionFilter(authVersion),
           role: 'admin',
           adminMfaEnabledAt: { $exists: true },
           $or: [
@@ -268,7 +275,7 @@ const verifyAdminMfa = async (req, res) => {
       const hash = adminMfa.hashRecoveryCode(recoveryCode);
       if (secretDecryptionFailed) {
         const recovered = await User.findOneAndUpdate(
-          { _id: user._id, role: 'admin', adminMfaRecoveryHashes: hash },
+          { _id: user._id, role: 'admin', ...authVersionFilter(authVersion), adminMfaRecoveryHashes: hash },
           {
             $pull: { adminMfaRecoveryHashes: hash },
             $unset: { adminMfaSecret: '', adminMfaEnabledAt: '', adminMfaLastTotpStep: '' },
@@ -279,6 +286,7 @@ const verifyAdminMfa = async (req, res) => {
           await regenerateSession(req);
           req.session.adminMfaPreauth = {
             userId: String(recovered._id),
+            authVersion: recovered.authVersion || 0,
             mode: 'enroll',
             expiresAt: Date.now() + 10 * 60 * 1000,
           };
@@ -294,6 +302,7 @@ const verifyAdminMfa = async (req, res) => {
           _id: user._id,
           role: 'admin',
           adminMfaRecoveryHashes: hash,
+          ...authVersionFilter(authVersion),
         },
         { $pull: { adminMfaRecoveryHashes: hash }, $set: { lastLoginAt: new Date() } },
         { new: true },

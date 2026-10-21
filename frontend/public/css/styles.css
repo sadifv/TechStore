@@ -4173,3 +4173,8 @@ dialog#checkout-modal {
     padding: 20px;
   }
 }
+
+/* Semantic controls retain the existing layout. */
+fieldset.cart-item-controls { border: 0; padding: 0; min-width: 0; margin-inline: 0; }
+ul.orders-list { list-style: none; padding: 0; }
+h3.order-id { margin: 0; font-size: inherit; }

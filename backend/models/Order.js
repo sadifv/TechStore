@@ -91,6 +91,7 @@ const orderSchema = new mongoose.Schema(
         _id: false,
         type: { type: String, required: true },
         actor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        product: { type: mongoose.Schema.Types.ObjectId },
         at: { type: Date, required: true },
       },
     ],

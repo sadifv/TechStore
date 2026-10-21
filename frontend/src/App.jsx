@@ -5,6 +5,7 @@ import SiteFooter from './components/SiteFooter.jsx';
 import SiteHeader from './components/SiteHeader.jsx';
 import NewsletterUnsubscribePage from './components/NewsletterUnsubscribePage.jsx';
 import HomePage from './pages/HomePage.jsx';
+import { decodeRouteSegment } from './routeSegments.js';
 import usePresenceHeartbeat from './hooks/usePresenceHeartbeat.js';
 
 const CatalogPage = lazy(() => import('./pages/CatalogPage.jsx'));
@@ -117,10 +118,12 @@ export default function App() {
   const unsubscribeMatch = pathname.match(/^\/(?:api\/)?newsletter\/unsubscribe\/([^/]+)$/);
   const orderDetailMatch = pathname.match(/^\/admin\/orders\/([^/]+)$/);
   const packingSlipMatch = pathname.match(/^\/admin\/orders\/([^/]+)\/packing-slip$/);
+  const malformedRoute = [productMatch, resetMatch, orderDetailMatch, packingSlipMatch, unsubscribeMatch].some((match) => match && decodeRouteSegment(match[1]) === null);
   let page;
-  if (pathname === '/') page = <HomePage user={user} />;
+  if (malformedRoute) page = <NotFoundPage />;
+  else if (pathname === '/') page = <HomePage user={user} />;
   else if (pathname === '/catalogo') page = <CatalogPage />;
-  else if (productMatch) page = <ProductPage productId={decodeURIComponent(productMatch[1])} />;
+  else if (productMatch) page = <ProductPage productId={decodeRouteSegment(productMatch[1])} />;
   else if (pathname === '/login') page = <LoginPage />;
   else if (pathname === '/register') page = <RegisterPage />;
   else if (pathname === '/profile')
@@ -142,7 +145,7 @@ export default function App() {
     );
   else if (pathname === '/legal') page = <LegalPage />;
   else if (pathname === '/forgot-password') page = <ForgotPasswordPage />;
-  else if (resetMatch) page = <ResetPasswordPage token={decodeURIComponent(resetMatch[1])} />;
+  else if (resetMatch) page = <ResetPasswordPage token={decodeRouteSegment(resetMatch[1])} />;
   else if (
     unsubscribeMatch ||
     pathname === '/api/marketing/unsubscribe' ||
@@ -155,9 +158,9 @@ export default function App() {
   else if (pathname === '/admin/marketing') page = <AdminMarketingPage />;
   else if (pathname === '/admin/orders') page = <AdminOrdersPage />;
   else if (packingSlipMatch)
-    page = <AdminPackingSlipPage orderId={decodeURIComponent(packingSlipMatch[1])} />;
+    page = <AdminPackingSlipPage orderId={decodeRouteSegment(packingSlipMatch[1])} />;
   else if (orderDetailMatch)
-    page = <AdminOrderDetailPage orderId={decodeURIComponent(orderDetailMatch[1])} />;
+    page = <AdminOrderDetailPage orderId={decodeRouteSegment(orderDetailMatch[1])} />;
   else if (pathname === '/admin/users') page = <AdminUsersPage />;
   else page = <NotFoundPage />;
 

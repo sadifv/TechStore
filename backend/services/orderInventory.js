@@ -4,114 +4,51 @@ const logger = require('../config/logger');
 const { releaseCouponReservation } = require('./couponService');
 const { acquireProductReservationLocks } = require('./productReservationLock');
 const { orderEvent } = require('./orderAudit');
+const { withInventoryTransaction, inSession } = require('./inventoryTransaction');
 
 const restoreOrderInventory = async (orderId, items, reason = 'checkout_failed', actor) => {
-  let order = await Order.findOneAndUpdate(
-    { _id: orderId, paymentStatus: 'pending', inventoryRestored: { $ne: true } },
-    {
-      $set: { paymentStatus: 'failed', status: 'cancelled', checkoutState: 'failed' },
-      $push: { events: orderEvent(reason, actor) },
-    },
-    { returnDocument: 'after' },
-  );
-
-  if (!order) {
-    order = await Order.findOne({
-      _id: orderId,
-      paymentStatus: 'failed',
-      inventoryRestored: { $ne: true },
-    });
-  }
-  if (!order) return false;
-
-  const itemsToRestore = items || order.items.filter((item) => item.inventoryReserved);
-  const releaseProductLocks = await acquireProductReservationLocks(
-    itemsToRestore.map((item) => item.product),
-  );
+  const initial = await Order.findOne({ _id: orderId, paymentStatus: { $in: ['pending', 'failed'] }, inventoryRestored: { $ne: true } });
+  if (!initial) return false;
+  const itemsToRestore = items || initial.items.filter((item) => item.inventoryReserved);
+  const lease = await acquireProductReservationLocks(itemsToRestore.map((item) => item.product));
+  let completed;
   try {
-    const completedOrder = await Order.exists({
-      _id: order._id,
-      paymentStatus: 'failed',
-      inventoryRestored: true,
-    });
-    if (completedOrder) return false;
-
-    for (const item of itemsToRestore) {
-      // The marker and stock increment share one product update for safe retry handling.
-      const restorationKey = `${order._id}:${item.product}`;
-      const result = await Product.updateOne(
-        { _id: item.product, inventoryRestorationKeys: { $ne: restorationKey } },
-        {
-          $inc: { stock: item.quantity },
-          $addToSet: { inventoryRestorationKeys: restorationKey },
-        },
-      );
-
-      if (result.modifiedCount !== 1) {
-        const alreadyRestored = await Product.exists({
-          _id: item.product,
-          inventoryRestorationKeys: restorationKey,
-        });
-        if (!alreadyRestored) {
-          throw new Error(
-            `No se pudo restituir el inventario del producto ${item.product} para la orden ${order._id}.`,
-          );
+    completed = await withInventoryTransaction(async (session) => {
+      const order = await Order.findOneAndUpdate(
+        { _id: orderId, paymentStatus: { $in: ['pending', 'failed'] }, inventoryRestored: { $ne: true } },
+        { $set: { paymentStatus: 'failed', status: 'cancelled', checkoutState: 'failed' }, $push: { events: orderEvent(reason, actor) } },
+        { returnDocument: 'after', ...(session ? { session } : {}) });
+      if (!order) return false;
+      for (const item of itemsToRestore) {
+        const key = `${order._id}:${item.product}`;
+        const result = await Product.updateOne(
+          { _id: item.product, inventoryRestorationKeys: { $ne: key } },
+          { $inc: { stock: item.quantity }, $addToSet: { inventoryRestorationKeys: key } },
+          session ? { session } : {});
+        if (result.modifiedCount !== 1) {
+          const product = await inSession(Product.findById(item.product), session).lean();
+          if (!product) {
+            await Order.updateOne({ _id: orderId }, { $push: { events: { ...orderEvent('inventory_product_missing', actor), product: item.product } } }, session ? { session } : {});
+          } else if (!(await inSession(Product.exists({ _id: item.product, inventoryRestorationKeys: key }), session))) {
+            throw new Error('No se pudo restituir el inventario del pedido.');
+          }
         }
       }
-    }
-
-    if (order.couponReservationStatus === 'reserved' && order.coupon) {
-      await releaseCouponReservation(
-        order.coupon,
-        order._id,
-        order.couponReservationManaged === undefined,
-      );
-      await Order.updateOne(
-        { _id: orderId, couponReservationStatus: 'reserved' },
-        { $set: { couponReservationStatus: 'released' } },
-      );
-    }
-
-    const finalized = await Order.updateOne(
-      { _id: order._id, paymentStatus: 'failed', inventoryRestored: { $ne: true } },
-      { $set: { inventoryRestored: true } },
-    );
-    if (finalized.modifiedCount !== 1) {
-      const currentOrder = await Order.findOne({
-        _id: order._id,
-        paymentStatus: 'failed',
-        inventoryRestored: true,
-      }).lean();
-      if (!currentOrder) {
-        throw new Error(
-          `No se pudo confirmar la restitución de inventario para la orden ${order._id}.`,
-        );
+      if (order.couponReservationStatus === 'reserved' && order.coupon) {
+        await releaseCouponReservation(order.coupon, order._id, order.couponReservationManaged === undefined, { session });
+        await Order.updateOne({ _id: orderId, couponReservationStatus: 'reserved' }, { $set: { couponReservationStatus: 'released' } }, session ? { session } : {});
       }
+      await Order.updateOne({ _id: orderId }, { $set: { inventoryRestored: true } }, session ? { session } : {});
+      return true;
+    }, { lease });
+    if (completed) {
+      try {
+        for (const item of itemsToRestore) await Product.updateOne({ _id: item.product }, { $pull: { inventoryRestorationKeys: `${orderId}:${item.product}` } });
+        await Order.updateOne({ _id: orderId, inventoryRestored: true }, { $set: { inventoryRestorationKeysPruned: true } });
+      } catch (error) { logger.error('No se pudieron limpiar marcadores de restitución.', { errorCode: error.code || error.name }); }
     }
-
-    try {
-      for (const item of itemsToRestore) {
-        await Product.updateOne(
-          { _id: item.product },
-          { $pull: { inventoryRestorationKeys: `${order._id}:${item.product}` } },
-        );
-      }
-      await Order.updateOne(
-        { _id: order._id, paymentStatus: 'failed', inventoryRestored: true },
-        { $set: { inventoryRestorationKeysPruned: true } },
-      );
-    } catch (cleanupError) {
-      logger.error(
-        `La orden ${order._id} fue restituida, pero no se pudieron limpiar sus claves de idempotencia: ${cleanupError.message}`,
-        {
-          stack: cleanupError.stack,
-        },
-      );
-    }
-    return true;
-  } finally {
-    await releaseProductLocks();
-  }
+    return completed;
+  } finally { await lease.release(); }
 };
 
 const pruneCompletedInventoryRestorationKeys = async () => {
@@ -150,7 +87,7 @@ const pruneCompletedInventoryRestorationKeys = async () => {
         },
       );
     } finally {
-      if (releaseLocks) await releaseLocks();
+      if (releaseLocks) await releaseLocks.release();
     }
   }
   return prunedCount;

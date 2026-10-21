@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { requestJson } from '../../api.js';
+import { getOrderItemName } from './orderItemDisplay.js';
 import { formatCurrency } from './utils.js';
 
 export function ProfilePage({ user }) {
@@ -44,7 +45,7 @@ export function ProfilePage({ user }) {
           </p>
         )}
         {orders?.length === 0 && <p className="empty-msg">Aún no has realizado ninguna compra.</p>}
-        <div className="orders-list">
+        <ul className="orders-list">
           {orders?.map((order) => {
             const total =
               order.totalAmount ??
@@ -55,10 +56,10 @@ export function ProfilePage({ user }) {
                 0,
               );
             return (
-              <article className="order-card" key={order._id}>
+              <li key={order._id}><article className="order-card">
                 <header className="order-header">
-                  <hgroup>
-                    <strong className="order-id">Orden #{String(order._id).slice(0, 8)}</strong>
+                  <section aria-label="Referencia del pedido">
+                    <h3 className="order-id">Orden #{String(order._id).slice(0, 8)}</h3>
                     <time className="order-date" dateTime={order.createdAt}>
                       {new Date(order.createdAt).toLocaleDateString('es-EC', {
                         year: 'numeric',
@@ -66,7 +67,7 @@ export function ProfilePage({ user }) {
                         day: 'numeric',
                       })}
                     </time>
-                  </hgroup>
+                  </section>
                   <span className={`order-status status-${order.status || 'completed'}`}>
                     {order.status === 'pending'
                       ? 'Pendiente'
@@ -82,7 +83,7 @@ export function ProfilePage({ user }) {
                       key={`${item.product?._id || item.product || index}-${index}`}
                     >
                       <span>
-                        {item.product?.name || item.name || 'Producto'} (×{item.quantity || 1})
+                        {getOrderItemName(item)} (×{item.quantity || 1})
                       </span>
                       <span>
                         {formatCurrency(
@@ -101,10 +102,10 @@ export function ProfilePage({ user }) {
                     Total: <strong>{formatCurrency(total)}</strong>
                   </span>
                 </footer>
-              </article>
+              </article></li>
             );
           })}
-        </div>
+        </ul>
       </section>
     </section>
   );

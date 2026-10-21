@@ -2,6 +2,8 @@
 const aiClient = require('../config/ai');
 const logger = require('../config/logger');
 const Product = require('../models/Product');
+const { activeProductFilter } = require('../services/productAvailability');
+const { toPublicProduct } = require('../services/productPricing');
 
 const processAiChat = async (req, res) => {
   try {
@@ -24,7 +26,10 @@ const processAiChat = async (req, res) => {
     }
     const normalizedMessage = message.trim();
 
-    const products = await Product.find({}, 'name price category stock')
+    const products = await Product.find(
+      activeProductFilter(),
+      'name price category stock flashSale flashSaleEndsAt originalPrice',
+    )
       .sort({ createdAt: -1 })
       .limit(30)
       .lean();
@@ -32,6 +37,7 @@ const processAiChat = async (req, res) => {
     const catalogContext =
       products.length > 0
         ? products
+            .map((product) => toPublicProduct(product))
             .map(
               (p) => `- ${p.name} (${p.category}): $${p.price}${p.stock > 0 ? '' : ' [AGOTADO]'}`,
             )

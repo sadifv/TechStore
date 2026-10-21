@@ -21,8 +21,7 @@ function getVisiblePages(currentPage, totalPages) {
   const end = Math.min(totalPages - 1, currentPage + 2);
   const pages = [1];
   if (start > 2) pages.push('start-ellipsis');
-  for (let pageNumber = start; pageNumber <= end; pageNumber += 1)
-    pages.push(pageNumber);
+  for (let pageNumber = start; pageNumber <= end; pageNumber += 1) pages.push(pageNumber);
   if (end < totalPages - 1) pages.push('end-ellipsis');
   if (totalPages > 1) pages.push(totalPages);
   return pages;
@@ -74,9 +73,7 @@ export default function CatalogPage() {
   }, [query]);
 
   const loading = data.key !== query;
-  const visiblePages = data.pagination
-    ? getVisiblePages(page, data.pagination.totalPages)
-    : [];
+  const visiblePages = data.pagination ? getVisiblePages(page, data.pagination.totalPages) : [];
   return (
     <section id="catalogo" className="products-section" aria-labelledby="catalog-heading">
       <header className="section-header">

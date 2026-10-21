@@ -414,7 +414,8 @@ export function CartProvider({ user, children }) {
                       ) : (
                         <span className="cart-item-price">${item.price.toFixed(2)}</span>
                       )}
-                      <nav className="cart-item-controls" aria-label={`Cantidad de ${item.name}`}>
+                      <fieldset className="cart-item-controls">
+                        <legend className="sr-only">{`Cantidad de ${item.name}`}</legend>
                         <button
                           type="button"
                           className="btn-qty-minus"
@@ -434,7 +435,7 @@ export function CartProvider({ user, children }) {
                         >
                           +
                         </button>
-                      </nav>
+                      </fieldset>
                     </section>
                     <button
                       type="button"

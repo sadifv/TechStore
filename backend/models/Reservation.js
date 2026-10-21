@@ -36,8 +36,8 @@ const reservationSchema = new mongoose.Schema(
 reservationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Método estático: obtener stock reservado para un producto
-reservationSchema.statics.getReservedStock = async function (productId) {
-  const result = await this.aggregate([
+reservationSchema.statics.getReservedStock = async function (productId, { session } = {}) {
+  const query = this.aggregate([
     {
       $match: {
         product: productId,
@@ -52,6 +52,7 @@ reservationSchema.statics.getReservedStock = async function (productId) {
       },
     },
   ]);
+  const result = await (session ? query.session(session) : query);
   return result.length > 0 ? result[0].totalReserved : 0;
 };
 

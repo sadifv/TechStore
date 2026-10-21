@@ -5,14 +5,22 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
+const { isProductArchived } = require('../services/productAvailability');
+const { toPublicProduct } = require('../services/productPricing');
 const { withProductReservationLock } = require('../services/productReservationLock');
 const { requireAuth } = require('../middleware/authMiddleware');
+const { inSession } = require('../services/inventoryTransaction');
 
 const RESERVATION_EXPIRY_MINUTES = 60;
 
 const MAX_QUANTITY_PER_PRODUCT = 99;
 
 const getUserId = (req) => req.session?.user?._id || req.session?.user?.id || req.user?._id;
+const publicCartItems = (items = []) => items.map((entry) => {
+  const item = entry.toObject ? entry.toObject() : entry;
+  return { ...item, product: item.product && !isProductArchived(item.product)
+    ? toPublicProduct(item.product) : null };
+});
 
 // ✅ Validar y normalizar la cantidad
 const parseQuantity = (raw) => {
@@ -22,20 +30,17 @@ const parseQuantity = (raw) => {
   return qty;
 };
 
-const getAvailableStockForUser = async (product, userId) => {
-  const now = new Date();
-  const [reservedStock, ownReservation] = await Promise.all([
-    Reservation.getReservedStock(product._id),
+const getAvailableStockForUser = async (product, userId, session) => {
+  const reservedStock = await Reservation.getReservedStock(product._id, { session });
+  const ownReservation = await inSession(
     Reservation.findOne({
       user: userId,
       product: product._id,
       status: 'active',
-      expiresAt: { $gt: now },
-    })
-      .select('quantity')
-      .lean(),
-  ]);
-
+      expiresAt: { $gt: new Date() },
+    }).select('quantity'),
+    session,
+  ).lean();
   return Math.max(0, product.stock - reservedStock + (ownReservation?.quantity || 0));
 };
 
@@ -53,7 +58,11 @@ router.get('/', requireAuth, async (req, res, next) => {
     const items = cart.items.map((item) => ({
       _id: item._id,
       productId: item.product ? String(item.product) : null,
-      product: productsById.get(String(item.product)) || null,
+      product: isProductArchived(productsById.get(String(item.product)))
+        ? null
+        : productsById.has(String(item.product))
+          ? toPublicProduct(productsById.get(String(item.product)))
+          : null,
       quantity: item.quantity,
     }));
     res.status(200).json({ success: true, items });
@@ -85,17 +94,21 @@ router.post('/add', requireAuth, async (req, res, next) => {
     }
 
     const productObjectId = new mongoose.Types.ObjectId(productId);
-    const response = await withProductReservationLock(productObjectId, async () => {
-      const product = await Product.findById(productObjectId).select('stock name').lean();
-      if (!product) {
+    const response = await withProductReservationLock(productObjectId, async (_lease, session) => {
+      const product = await inSession(
+        Product.findById(productObjectId).select('stock name archivedAt'),
+        session,
+      ).lean();
+      if (!product || isProductArchived(product)) {
         return { status: 404, body: { success: false, error: 'Producto no encontrado.' } };
       }
 
       const userId = getUserId(req);
-      const [existingCart, availableStock] = await Promise.all([
-        Cart.findOne({ user: userId }).select('items').lean(),
-        getAvailableStockForUser(product, userId),
-      ]);
+      const existingCart = await inSession(
+        Cart.findOne({ user: userId }).select('items'),
+        session,
+      ).lean();
+      const availableStock = await getAvailableStockForUser(product, userId, session);
       const existingItem = existingCart?.items.find(
         (item) => item.product.toString() === productObjectId.toString(),
       );
@@ -120,7 +133,7 @@ router.post('/add', requireAuth, async (req, res, next) => {
       await Cart.findOneAndUpdate(
         { user: userId },
         { $setOnInsert: { user: userId } },
-        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true },
+        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true, session },
       );
 
       let cart = await Cart.findOneAndUpdate(
@@ -134,14 +147,14 @@ router.post('/add', requireAuth, async (req, res, next) => {
           },
         },
         { $inc: { 'items.$.quantity': qtyNum } },
-        { returnDocument: 'after' },
+        { returnDocument: 'after', session },
       );
 
       if (!cart) {
         cart = await Cart.findOneAndUpdate(
           { user: userId, items: { $not: { $elemMatch: { product: productObjectId } } } },
           { $push: { items: { product: productObjectId, quantity: qtyNum } } },
-          { returnDocument: 'after' },
+          { returnDocument: 'after', session },
         );
       }
 
@@ -157,7 +170,10 @@ router.post('/add', requireAuth, async (req, res, next) => {
       }
 
       const item = cart.items.find((i) => i.product.toString() === productObjectId.toString());
-      const populatedCart = await Cart.findById(cart._id).populate('items.product');
+      const populatedCart = await inSession(
+        Cart.findById(cart._id).populate('items.product'),
+        session,
+      );
       await Reservation.findOneAndUpdate(
         { user: userId, product: productObjectId, status: 'active' },
         {
@@ -167,7 +183,7 @@ router.post('/add', requireAuth, async (req, res, next) => {
           expiresAt: new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000),
           status: 'active',
         },
-        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true },
+        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true, session },
       );
       logger.info('Carrito actualizado.');
 
@@ -176,7 +192,7 @@ router.post('/add', requireAuth, async (req, res, next) => {
         body: {
           success: true,
           message: 'Producto agregado al carrito.',
-          items: populatedCart?.items || [],
+          items: publicCartItems(populatedCart?.items),
         },
       };
     });
@@ -204,12 +220,15 @@ router.patch('/quantity/:productId', requireAuth, async (req, res, next) => {
       });
     }
 
-    const response = await withProductReservationLock(productId, async () => {
-      const product = await Product.findById(productId).select('stock name').lean();
-      if (!product) {
+    const response = await withProductReservationLock(productId, async (_lease, session) => {
+      const product = await inSession(
+        Product.findById(productId).select('stock name archivedAt'),
+        session,
+      ).lean();
+      if (!product || isProductArchived(product)) {
         return { status: 404, body: { success: false, error: 'Producto no encontrado.' } };
       }
-      const availableStock = await getAvailableStockForUser(product, userId);
+      const availableStock = await getAvailableStockForUser(product, userId, session);
       const maxAllowedQuantity = Math.min(availableStock, MAX_QUANTITY_PER_PRODUCT);
       if (quantity > maxAllowedQuantity) {
         return {
@@ -224,7 +243,7 @@ router.patch('/quantity/:productId', requireAuth, async (req, res, next) => {
       const cart = await Cart.findOneAndUpdate(
         { user: userId, 'items.product': productId },
         { $set: { 'items.$.quantity': quantity } },
-        { returnDocument: 'after' },
+        { returnDocument: 'after', session },
       ).populate('items.product');
 
       if (!cart) {
@@ -241,12 +260,12 @@ router.patch('/quantity/:productId', requireAuth, async (req, res, next) => {
           expiresAt: new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000),
           status: 'active',
         },
-        { upsert: true, setDefaultsOnInsert: true },
+        { upsert: true, setDefaultsOnInsert: true, session },
       );
 
       return {
         status: 200,
-        body: { success: true, message: 'Cantidad actualizada.', items: cart.items },
+        body: { success: true, message: 'Cantidad actualizada.', items: publicCartItems(cart.items) },
       };
     });
     return res.status(response.status).json(response.body);
@@ -276,14 +295,20 @@ router.delete('/item/:itemId', requireAuth, async (req, res, next) => {
     }
 
     const productId = item.product;
-    item.deleteOne();
-    await cart.save();
-    if (productId && mongoose.isObjectIdOrHexString(String(productId))) {
-      await Reservation.updateMany(
-        { user: getUserId(req), product: productId, status: 'active' },
-        { $set: { status: 'cancelled' } },
+    await withProductReservationLock(String(productId || cart._id), async (_lease, session) => {
+      await Cart.updateOne(
+        { _id: cart._id, user: getUserId(req) },
+        { $pull: { items: { _id: itemId } } },
+        { session },
       );
-    }
+      if (productId && mongoose.isObjectIdOrHexString(String(productId))) {
+        await Reservation.updateMany(
+          { user: getUserId(req), product: productId, status: 'active' },
+          { $set: { status: 'cancelled' } },
+          { session },
+        );
+      }
+    });
     return res.json({ success: true, message: 'Producto eliminado del carrito.' });
   } catch (error) {
     logger.error(`Error al eliminar artículo del carrito: ${error.message}`, {
@@ -303,16 +328,17 @@ router.delete('/remove/:productId', requireAuth, async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'ID de producto inválido.' });
     }
 
-    const removeItem = async () => {
+    const removeItem = async (_lease, session) => {
       const updatedCart = await Cart.findOneAndUpdate(
         { user: userId },
         { $pull: { items: { product: productId } } },
-        { returnDocument: 'after' },
+        { returnDocument: 'after', session },
       ).populate('items.product');
 
       await Reservation.updateMany(
         { user: userId, product: productId, status: 'active' },
         { $set: { status: 'cancelled' } },
+        { session },
       );
 
       return {
@@ -320,15 +346,12 @@ router.delete('/remove/:productId', requireAuth, async (req, res, next) => {
         body: {
           success: true,
           message: 'Producto eliminado del carrito.',
-          items: updatedCart ? updatedCart.items : [],
+          items: publicCartItems(updatedCart?.items),
         },
       };
     };
 
-    const productExists = await Product.exists({ _id: productId });
-    const response = productExists
-      ? await withProductReservationLock(productId, removeItem)
-      : await removeItem();
+    const response = await withProductReservationLock(productId, removeItem);
     return res.status(response.status).json(response.body);
   } catch (error) {
     logger.error(`Error al eliminar producto del carrito: ${error.message}`, {

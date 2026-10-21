@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    archivedAt: { type: Date, default: null },
     price: {
       type: Number,
       required: [true, 'El precio es obligatorio'],

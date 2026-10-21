@@ -42,9 +42,11 @@ export function NewsletterSection() {
           </p>
           <form id="newsletter-form" onSubmit={subscribe} className="newsletter-form">
             <p className="form-field">
+              <label htmlFor="newsletter-email">Correo electrónico</label>
               <input
                 type="email"
                 id="newsletter-email"
+                autoComplete="email"
                 name="email"
                 placeholder="Ingresa tu correo electrónico"
                 required

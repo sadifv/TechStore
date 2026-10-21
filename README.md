@@ -20,7 +20,7 @@ Asegúrate de tener instalado en tu sistema:
 
 - **Node.js** (v20.19.0 o superior, o v22.12.0 o superior)
 - **npm** (v9.0.0 o superior)
-- **MongoDB** (Instancia local corriendo en `mongodb://127.0.0.1:27017/` o URI de MongoDB Atlas)
+- **MongoDB** en replica set (local) o MongoDB Atlas. Checkout, carrito y cambios de inventario requieren transacciones; una instancia standalone no es suficiente.
 
 ---
 
@@ -53,11 +53,15 @@ Asegúrate de tener instalado en tu sistema:
 ## Pruebas
 
 - Ejecuta `npm test` desde `backend/` para las pruebas automatizadas del servidor.
+- Ejecuta `npm run test:integration` desde `backend/` para las pruebas con un replica set temporal real. Requiere `mongod` disponible (en Windows busca MongoDB Server 9.0; puedes indicar su ejecutable con `MONGOD_BINARY`). Crea y elimina su propia base temporal; no utiliza `MONGO_URI` ni datos de Atlas. La suite normal omite estos casos.
 - Ejecuta `npm test`, `npm run lint` y `npm run build` desde `frontend/` para comprobar React.
 - `npm run db:ensure-reservation-ttl` desde `backend/` muestra una vista previa del índice TTL de `reservations`; no cambia nada por defecto. Para aplicarlo explícitamente, ejecuta `npm run db:ensure-reservation-ttl -- --apply`. MongoDB eliminará automáticamente documentos con `expiresAt` vencido; revisa el conteo antes de aplicar.
+- `npm run db:ensure-catalog-indexes` desde `backend/` muestra los índices propuestos para productos activos y reservas. Solo `npm run db:ensure-catalog-indexes -- --apply` los crea en la base configurada. No borra índices existentes; si un nombre está ocupado por otra definición, aborta. Su aplicación en Atlas es una operación posterior al release.
 
 ## Seguridad y despliegue
 
+- Las sesiones administrativas anteriores sin evidencia de MFA deben volver a iniciar sesión. Restablecer la contraseña revoca también los desafíos MFA pendientes.
+- Eliminar un producto desde administración ahora lo archiva: desaparece del catálogo y no admite nuevos checkouts. Los pedidos conservan nombre/precio originales y las cancelaciones restituyen inventario incluso si el producto está archivado. Si ya fue borrado físicamente, se registra la referencia ausente y se procesan los otros artículos y el cupón.
 - El acceso administrativo requiere una aplicación autenticadora TOTP. En el primer inicio de sesión, guarda los diez códigos de recuperación que se muestran una sola vez. `SESSION_SECRET` debe mantenerse estable: al rotarlo, inicia sesión con un código de recuperación para volver a enrolar MFA; si se pierden el autenticador y todos los códigos, un operador debe restablecer MFA desde la base de datos tras verificar la identidad del administrador.
 - El límite de login (5 intentos/10 min) y el de checkout (10 solicitudes/15 min por IP) se comparten entre instancias mediante MongoDB. Si falla MongoDB, esas rutas fallan cerradas.
 - El índice heredado de Stripe se puede revisar con `npm run db:remove-legacy-stripe-index` desde `backend/`; el comando solo hace una vista previa. La aplicación requiere `npm run db:remove-legacy-stripe-index -- --apply` y aborta si encuentra documentos con `stripeExpiresAt`.
@@ -68,7 +72,7 @@ Asegúrate de tener instalado en tu sistema:
 - En el detalle administrativo, **Registrar contacto recibido** deja constancia de que la tienda recibió el mensaje; no se detecta automáticamente desde el enlace. El historial conserva fechas y responsables de contacto, pago, cancelación y avance del envío. Las órdenes anteriores pueden no tener historial.
 - Los pedidos pendientes se pueden cancelar desde el panel, liberando inventario y cupón. El plazo de 24 horas se cuenta desde la creación, aunque se registre contacto. Después de ese plazo no se acepta la confirmación de pago, incluso antes de la siguiente ejecución del cron.
 - El navegador conserva una clave por intento de checkout para recuperar una respuesta perdida sin crear otra orden. El backend espera la inicialización del índice único de `checkoutKey` antes de aceptar tráfico. Si el navegador bloquea la ventana, la página del pedido permite abrir WhatsApp de nuevo.
-- Las pruebas cubren checkout, reintentos, permisos de administrador, confirmaciones, cancelaciones, inventario y ventanas bloqueadas. Usan persistencia simulada y no envían mensajes reales a WhatsApp.
+- Las pruebas cubren checkout, reintentos, permisos de administrador, confirmaciones, cancelaciones, inventario y ventanas bloqueadas. Combinan persistencia simulada con integración opcional en MongoDB temporal y no envían mensajes reales a WhatsApp.
 - GitHub Actions comprueba backend y frontend en Node.js 22 y 24, y ejecuta `npm audit` en ambos proyectos en cada push y pull request.
 
 ## Boletín, campañas y cupones

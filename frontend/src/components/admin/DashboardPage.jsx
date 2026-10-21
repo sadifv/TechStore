@@ -68,7 +68,7 @@ export function AdminDashboardPage() {
     }
   }
   async function deleteProduct(item) {
-    if (!window.confirm(`¿Eliminar el producto “${item.name}”?`)) return;
+    if (!window.confirm(`¿Archivar el producto “${item.name}”?`)) return;
     try {
       await adminMutation(`/admin/products/${item._id}`, { method: 'DELETE' });
       refresh();

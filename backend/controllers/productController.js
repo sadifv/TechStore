@@ -1,13 +1,15 @@
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
+const { activeProductFilter, isProductArchived } = require('../services/productAvailability');
+const { toPublicProduct } = require('../services/productPricing');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const getProducts = async (req, res, next) => {
   try {
     const { category, search, limit = 50, page = 1, sort = 'recent' } = req.query;
-    const query = {};
+    const query = activeProductFilter();
 
     if (typeof category === 'string' && category.length <= 80 && category !== 'all') {
       query.category = category;
@@ -38,9 +40,25 @@ const getProducts = async (req, res, next) => {
     const pageNum = Math.max(1, Math.min(1000, parseInt(page, 10) || 1));
     const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 50));
     const skip = (pageNum - 1) * limitNum;
+    const now = Date.now();
+    const productQuery = ['price_asc', 'price_desc'].includes(sort)
+      ? Product.aggregate([
+          { $match: query },
+          { $set: { effectivePrice: { $cond: [
+            { $and: [
+              { $eq: ['$flashSale', true] },
+              { $lte: ['$flashSaleEndsAt', new Date(now)] },
+              { $ne: [{ $ifNull: ['$originalPrice', null] }, null] },
+            ] },
+            '$originalPrice', '$price',
+          ] } } },
+          { $sort: { effectivePrice: sort === 'price_asc' ? 1 : -1, _id: 1 } },
+          { $skip: skip }, { $limit: limitNum }, { $unset: 'effectivePrice' },
+        ])
+      : Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean();
 
     const [products, totalCount] = await Promise.all([
-      Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean(),
+      productQuery,
       Product.countDocuments(query),
     ]);
 
@@ -49,7 +67,7 @@ const getProducts = async (req, res, next) => {
       products.map((product) => product._id),
     );
     const productsWithAvailability = products.map((product) => ({
-      ...product,
+      ...toPublicProduct(product, now),
       availableStock: Math.max(
         0,
         product.stock - (reservedByProduct.get(String(product._id)) || 0),
@@ -79,20 +97,37 @@ const getProducts = async (req, res, next) => {
 const getHomeProducts = async (req, res, next) => {
   try {
     const now = new Date();
-    const productFields = '_id name price image stock flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';
+    const productFields =
+      '_id name price image stock flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';
     const [products, sales] = await Promise.all([
-      Product.find({}).select(productFields).sort({ createdAt: -1 }).limit(8).lean(),
-      Product.find({ flashSale: true, flashSaleEndsAt: { $gt: now } })
-        .select(productFields).sort({ flashSaleEndsAt: 1 }).limit(1).lean(),
+      Product.find(activeProductFilter())
+        .select(productFields)
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+      Product.find({ ...activeProductFilter(), flashSale: true, flashSaleEndsAt: { $gt: now } })
+        .select(`${productFields} description`)
+        .sort({ flashSaleEndsAt: 1 })
+        .limit(1)
+        .lean(),
     ]);
-    const reservedByProduct = await Reservation.getReservedStockByProducts(products.map((product) => product._id));
+    const reservedByProduct = await Reservation.getReservedStockByProducts(
+      products.map((product) => product._id),
+    );
     const productsWithAvailability = products.map((product) => ({
-      ...product,
-      availableStock: Math.max(0, product.stock - (reservedByProduct.get(String(product._id)) || 0)),
+      ...toPublicProduct(product),
+      availableStock: Math.max(
+        0,
+        product.stock - (reservedByProduct.get(String(product._id)) || 0),
+      ),
     }));
-    return res.status(200).json({ success: true, products: productsWithAvailability, flashSale: sales[0] || null });
+    return res
+      .status(200)
+      .json({ success: true, products: productsWithAvailability, flashSale: sales[0] || null });
   } catch (error) {
-    logger.error('Error al obtener los productos del inicio.', { errorCode: error.code || error.name });
+    logger.error('Error al obtener los productos del inicio.', {
+      errorCode: error.code || error.name,
+    });
     return next(error);
   }
 };
@@ -100,12 +135,12 @@ const getHomeProducts = async (req, res, next) => {
 const getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id).lean();
-    if (!product) {
+    if (!product || isProductArchived(product)) {
       return res.status(404).json({ success: false, error: 'Recurso no encontrado.' });
     }
     const reservedStock = await Reservation.getReservedStock(product._id);
     product.availableStock = Math.max(0, product.stock - reservedStock);
-    res.status(200).json({ success: true, data: product });
+    res.status(200).json({ success: true, data: toPublicProduct(product) });
   } catch (error) {
     if (error.name === 'CastError') {
       return res.status(404).json({ success: false, error: 'Recurso no encontrado.' });
@@ -143,7 +178,7 @@ const updateProduct = async (req, res, next) => {
   try {
     const { name, description, price, category, stock, image } = req.body;
     const product = await Product.findById(req.params.id);
-    if (!product) {
+    if (!product || isProductArchived(product)) {
       return res.status(404).json({ success: false, error: 'Producto no encontrado' });
     }
 
@@ -170,11 +205,15 @@ const updateProduct = async (req, res, next) => {
 
 const deleteProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, ...activeProductFilter() },
+      { $set: { archivedAt: new Date() } },
+      { new: true },
+    );
     if (!product) {
       return res.status(404).json({ success: false, error: 'Producto no encontrado' });
     }
-    res.status(200).json({ success: true, message: 'Producto eliminado correctamente.' });
+    res.status(200).json({ success: true, message: 'Producto archivado correctamente.' });
   } catch (error) {
     next(error);
   }
@@ -184,7 +223,7 @@ const activateFlashSale = async (req, res, next) => {
   try {
     const { discount, durationHours } = req.body;
     const product = await Product.findById(req.params.id);
-    if (!product) {
+    if (!product || isProductArchived(product)) {
       return res.status(404).json({ success: false, error: 'Producto no encontrado' });
     }
 
@@ -211,7 +250,7 @@ const activateFlashSale = async (req, res, next) => {
 const deactivateFlashSale = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) {
+    if (!product || isProductArchived(product)) {
       return res.status(404).json({ success: false, error: 'Producto no encontrado' });
     }
 

@@ -16,7 +16,9 @@ function AccountForm({
   return (
     <section className="login-container container" aria-label={title}>
       <article className="login-card">
-        <h1 ref={headingRef} tabIndex={headingRef ? -1 : undefined}>{title}</h1>
+        <h1 ref={headingRef} tabIndex={headingRef ? -1 : undefined}>
+          {title}
+        </h1>
         {description && <p className="auth-description">{description}</p>}
         <form className="auth-form" onSubmit={onSubmit}>
           {children}
@@ -102,7 +104,10 @@ function AuthPage({ register = false }) {
     try {
       const result = await requestJson(endpoint, { method: 'POST', body: JSON.stringify(data) });
       if (getAdminMfaStep(result) === 'enroll') {
-        const setup = await requestJson('/api/auth/admin/mfa/enroll', { method: 'POST', body: '{}' });
+        const setup = await requestJson('/api/auth/admin/mfa/enroll', {
+          method: 'POST',
+          body: '{}',
+        });
         setMfaSetup(setup);
         setMfaStep('enroll');
         setStatus('Vuelve a configurar la aplicación autenticadora y confirma el nuevo código.');
@@ -204,7 +209,9 @@ function AuthPage({ register = false }) {
         <button
           className="link-secondary"
           type="button"
-          onClick={() => location.assign(`/login${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`)}
+          onClick={() =>
+            location.assign(`/login${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`)
+          }
         >
           Volver al inicio de sesión
         </button>

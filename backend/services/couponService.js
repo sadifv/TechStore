@@ -1,17 +1,18 @@
 const Coupon = require('../models/Coupon');
+const { inSession } = require('./inventoryTransaction');
 
-const getCouponDiscount = async ({ code, subtotal }) => {
+const getCouponDiscount = async ({ code, subtotal }, { session } = {}) => {
   const normalizedCode = typeof code === 'string' ? code.trim().toUpperCase() : '';
   if (!normalizedCode) return null;
 
   const now = new Date();
-  const coupon = await Coupon.findOne({
+  const coupon = await inSession(Coupon.findOne({
     code: normalizedCode,
     type: 'campaign',
     active: true,
     startsAt: { $lte: now },
     $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
-  }).lean();
+  }), session).lean();
 
   if (!coupon) {
     const error = new Error('El cupón no existe, venció o ya no está disponible.');
@@ -48,7 +49,7 @@ const getCouponDiscount = async ({ code, subtotal }) => {
   return { coupon, discountAmount };
 };
 
-const reserveCoupon = async (coupon, orderId) => {
+const reserveCoupon = async (coupon, orderId, { session } = {}) => {
   if (!orderId) throw new Error('Se requiere el ID de la orden para reservar el cupón.');
   const filter = {
     _id: coupon._id,
@@ -66,14 +67,14 @@ const reserveCoupon = async (coupon, orderId) => {
       $inc: { redemptionCount: 1 },
       $addToSet: { reservationOrderIds: orderId },
     },
-    { returnDocument: 'after' },
+    { returnDocument: 'after', ...(session ? { session } : {}) },
   );
 
   if (!reserved) {
-    const existingReservation = await Coupon.exists({
+    const existingReservation = await inSession(Coupon.exists({
       _id: coupon._id,
       reservationOrderIds: orderId,
-    });
+    }), session);
     if (existingReservation) return;
     const error = new Error(
       'El cupón acaba de alcanzar su límite de usos. Intenta con otro código.',
@@ -83,17 +84,18 @@ const reserveCoupon = async (coupon, orderId) => {
   }
 };
 
-const ensureLegacyCouponReservation = async (couponId, orderId) => {
+const ensureLegacyCouponReservation = async (couponId, orderId, session) => {
   await Coupon.updateOne(
     { _id: couponId, reservationOrderIds: { $ne: orderId } },
     { $addToSet: { reservationOrderIds: orderId } },
+    session ? { session } : {},
   );
 };
 
-const releaseCouponReservation = async (couponId, orderId, legacyReservation = false) => {
+const releaseCouponReservation = async (couponId, orderId, legacyReservation = false, { session } = {}) => {
   if (!couponId || !orderId)
     throw new Error('Se requieren el cupón y la orden para liberar la reserva.');
-  if (legacyReservation) await ensureLegacyCouponReservation(couponId, orderId);
+  if (legacyReservation) await ensureLegacyCouponReservation(couponId, orderId, session);
   const result = await Coupon.updateOne(
     {
       _id: couponId,
@@ -104,13 +106,14 @@ const releaseCouponReservation = async (couponId, orderId, legacyReservation = f
       $inc: { redemptionCount: -1 },
       $pull: { reservationOrderIds: orderId },
     },
+    session ? { session } : {},
   );
 
   if (result.modifiedCount === 0) {
-    const inconsistentReservation = await Coupon.exists({
+    const inconsistentReservation = await inSession(Coupon.exists({
       _id: couponId,
       reservationOrderIds: orderId,
-    });
+    }), session);
     if (inconsistentReservation) {
       throw new Error(
         `La reserva del cupón ${couponId} para la orden ${orderId} no pudo liberarse.`,
@@ -119,13 +122,14 @@ const releaseCouponReservation = async (couponId, orderId, legacyReservation = f
   }
 };
 
-const consumeCouponReservation = async (couponId, orderId, legacyReservation = false) => {
+const consumeCouponReservation = async (couponId, orderId, legacyReservation = false, { session } = {}) => {
   if (!couponId || !orderId)
     throw new Error('Se requieren el cupón y la orden para confirmar la reserva.');
-  if (legacyReservation) await ensureLegacyCouponReservation(couponId, orderId);
+  if (legacyReservation) await ensureLegacyCouponReservation(couponId, orderId, session);
   await Coupon.updateOne(
     { _id: couponId, reservationOrderIds: orderId },
     { $pull: { reservationOrderIds: orderId } },
+    session ? { session } : {},
   );
 };
 

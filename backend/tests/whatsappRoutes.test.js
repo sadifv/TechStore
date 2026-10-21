@@ -40,7 +40,11 @@ test('flujo HTTP de checkout, contacto y pago exige administrador y permite rein
   const app = express();
   app.use(express.json());
   app.use((req, res, next) => {
-    if (req.headers['x-test-user']) req.session = { user: { id: req.headers['x-test-user'] } };
+    if (req.headers['x-test-user'])
+      req.session = {
+        authLevel: req.headers['x-test-user'] === 'admin' ? 'mfa' : 'password',
+        user: { id: req.headers['x-test-user'] },
+      };
     next();
   });
   app.use('/api/orders', orderRoutes);

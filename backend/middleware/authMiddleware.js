@@ -2,15 +2,35 @@
 const isApiRequest = require('./isApiRequest');
 const User = require('../models/User');
 
-const requireAdminMfaPreauth = (req, res, next) => {
+const requireAdminMfaPreauth = async (req, res, next) => {
   const preauth = req.session?.adminMfaPreauth;
-  if (!preauth || preauth.expiresAt <= Date.now() || !['enroll', 'verify'].includes(preauth.mode)) {
+  const reject = () => {
+    if (req.session) delete req.session.adminMfaPreauth;
     return res
       .status(401)
       .json({ success: false, error: 'La sesión de verificación expiró. Inicia sesión de nuevo.' });
+  };
+  if (
+    !preauth ||
+    !Number.isFinite(preauth.expiresAt) ||
+    preauth.expiresAt <= Date.now() ||
+    !['enroll', 'verify'].includes(preauth.mode)
+  )
+    return reject();
+  try {
+    const user = await User.findById(preauth.userId).select('role +authVersion').lean();
+    if (
+      !user ||
+      user.role !== 'admin' ||
+      !Number.isInteger(preauth.authVersion) ||
+      preauth.authVersion !== (user.authVersion || 0)
+    )
+      return reject();
+    req.adminMfaPreauth = preauth;
+    return next();
+  } catch (error) {
+    return next(error);
   }
-  req.adminMfaPreauth = preauth;
-  next();
 };
 
 const destroySession = (req, res) =>
@@ -70,7 +90,7 @@ const requireAdmin = (req, res, next) => {
 
   loadCurrentUser(req, res)
     .then((currentUser) => {
-      if (currentUser?.role === 'admin') return next();
+      if (currentUser?.role === 'admin' && req.session?.authLevel === 'mfa') return next();
       if (isApiRequest(req)) {
         return res.status(403).json({
           success: false,
@@ -116,10 +136,23 @@ const redirectIfAuthenticated = (req, res, next) => {
   next();
 };
 
+const requireOptionalAuth = async (req, res, next) => {
+  if (!req.session?.user) return next();
+  try {
+    if (await loadCurrentUser(req, res)) return next();
+    return res
+      .status(401)
+      .json({ success: false, error: 'La sesión expiró. Inicia sesión de nuevo.' });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   setUserLocals,
   requireAdmin,
   requireAuth,
   redirectIfAuthenticated,
   requireAdminMfaPreauth,
+  requireOptionalAuth,
 };

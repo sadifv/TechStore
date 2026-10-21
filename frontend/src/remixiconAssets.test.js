@@ -29,7 +29,11 @@ test('vendors only used Remix Icon glyphs and loads their font locally', () => {
 
   assert.ok(usedIcons.size > 0);
   for (const icon of usedIcons)
-    assert.match(css, new RegExp(`\\.${icon}:before\\s*\\{\\s*content:`), `${icon} has a local glyph`);
+    assert.match(
+      css,
+      new RegExp(`\\.${icon}:before\\s*\\{\\s*content:`),
+      `${icon} has a local glyph`,
+    );
   assert.match(css, /url\(['"]?\/fonts\/remixicon\.woff2['"]?\)/);
   assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /https?:\/\//);
   assert.match(readFileSync(indexHtml, 'utf8'), /href="\/css\/remixicon\.css"/);

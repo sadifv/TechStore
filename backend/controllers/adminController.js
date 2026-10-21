@@ -7,6 +7,7 @@ const Cart = require('../models/Cart');
 const Presence = require('../models/Presence');
 const { isOnline } = require('../services/presenceService');
 const logger = require('../config/logger');
+const { activeProductFilter } = require('../services/productAvailability');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -37,7 +38,7 @@ const getAdminDashboard = async (req, res, next) => {
       users,
       messages,
     ] = await Promise.all([
-      Product.countDocuments(),
+      Product.countDocuments(activeProductFilter()),
       Order.countDocuments(),
       User.countDocuments(),
       Contact.countDocuments(),
@@ -91,13 +92,9 @@ const getAdminDashboard = async (req, res, next) => {
           },
         },
       ]),
-      Product.find().sort({ createdAt: -1 }).limit(100).lean(),
+      Product.find(activeProductFilter()).sort({ createdAt: -1 }).limit(100).lean(),
       Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(10).lean(),
-      User.find()
-        .select('name email role createdAt')
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .lean(),
+      User.find().select('name email role createdAt').sort({ createdAt: -1 }).limit(10).lean(),
       Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
     ]);
 

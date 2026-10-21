@@ -66,6 +66,8 @@ test('home API returns at most eight recent products and the soonest active sale
   assert.ok(calls[1].query.flashSaleEndsAt.$gt instanceof Date);
   assert.deepEqual(calls[1].sort, { flashSaleEndsAt: 1 });
   assert.equal(calls[1].limit, 1);
-  assert.ok(calls.every((call) => call.fields.includes('name') && !call.fields.includes('description')));
+  assert.ok(calls.every((call) => call.fields.includes('name')));
+  assert.ok(calls[1].fields.includes('description'));
+  assert.equal(calls[0].query.archivedAt, null);
   assert.deepEqual(response.flashSale, saleProduct);
 });

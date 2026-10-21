@@ -1,110 +1,65 @@
-const crypto = require('crypto');
-const Product = require('../models/Product');
-
-const LOCK_LEASE_MS = 30000;
-const LOCK_WAIT_MS = 2000;
-const LOCK_RETRY_MS = 25;
-const LOCK_RENEW_MS = Math.floor(LOCK_LEASE_MS / 3);
-
-const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
-
-const acquireLock = async (productId) => {
-  const token = crypto.randomUUID();
-  const deadline = Date.now() + LOCK_WAIT_MS;
+const crypto = require('node:crypto');
+const MaintenanceLock = require('../models/MaintenanceLock');
+const { withInventoryTransaction } = require('./inventoryTransaction');
+const LEASE_MS = 30000;
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const conflict = () => Object.assign(new Error('El stock se está actualizando. Inténtalo nuevamente.'), { statusCode: 409 });
+async function acquireLock(productId) {
+  const _id = `product-reservation:${productId}`;
+  const ownerToken = crypto.randomUUID();
+  const deadline = Date.now() + 2000;
   let acquired = false;
-
-  while (!acquired && Date.now() < deadline) {
+  do {
     const now = new Date();
-    const lock = await Product.findOneAndUpdate(
-      {
-        _id: productId,
-        $or: [
-          { reservationLockExpiresAt: { $exists: false } },
-          { reservationLockExpiresAt: { $lte: now } },
-        ],
-      },
-      {
-        $set: {
-          reservationLockToken: token,
-          reservationLockExpiresAt: new Date(now.getTime() + LOCK_LEASE_MS),
-        },
-      },
-      { returnDocument: 'after' },
-    );
-    acquired = Boolean(lock);
-    if (!acquired) await delay(LOCK_RETRY_MS);
-  }
-
-  if (!acquired) {
-    const error = new Error(
-      'El stock se está actualizando. Inténtalo nuevamente en unos segundos.',
-    );
-    error.statusCode = 409;
-    throw error;
-  }
-
-  let renewalError;
-  let renewalPromise = Promise.resolve();
-  const heartbeat = setInterval(() => {
-    renewalPromise = renewalPromise
-      .then(async () => {
-        const now = new Date();
-        const result = await Product.updateOne(
-          { _id: productId, reservationLockToken: token },
-          { $set: { reservationLockExpiresAt: new Date(now.getTime() + LOCK_LEASE_MS) } },
-        );
-        if (result.modifiedCount !== 1) {
-          renewalError = new Error(
-            `Se perdió el bloqueo de reserva para el producto ${productId}.`,
-          );
-        }
-      })
-      .catch((error) => {
-        renewalError = error;
-      });
-  }, LOCK_RENEW_MS);
-  heartbeat.unref?.();
-
-  return async () => {
-    clearInterval(heartbeat);
-    await renewalPromise;
-    const result = await Product.updateOne(
-      { _id: productId, reservationLockToken: token },
-      { $unset: { reservationLockToken: 1, reservationLockExpiresAt: 1 } },
-    );
-    if (result.modifiedCount !== 1) {
-      throw (
-        renewalError ||
-        new Error(`No se pudo liberar el bloqueo de reserva para el producto ${productId}.`)
-      );
-    }
+    try {
+      const lock = await MaintenanceLock.findOneAndUpdate(
+        { _id, $or: [{ leaseUntil: { $lte: now } }, { leaseUntil: { $exists: false } }] },
+        { $set: { ownerToken, leaseUntil: new Date(now.getTime() + LEASE_MS) } },
+        { upsert: true, returnDocument: 'after' });
+      acquired = lock?.ownerToken === ownerToken;
+    } catch (error) { if (error.code !== 11000) throw error; }
+    if (!acquired) await delay(25);
+  } while (!acquired && Date.now() < deadline);
+  if (!acquired) throw conflict();
+  let lost = false;
+  let pending = Promise.resolve();
+  let released = false;
+  const assertOwned = async ({ session } = {}) => {
+    if (lost || released) throw conflict();
+    const result = await MaintenanceLock.updateOne(
+      { _id, ownerToken, leaseUntil: { $gt: new Date() } },
+      { $set: { leaseUntil: new Date(Date.now() + LEASE_MS) } },
+      session ? { session } : {});
+    if (result.matchedCount !== 1) { lost = true; throw conflict(); }
   };
-};
-
-const acquireProductReservationLocks = async (productIds) => {
-  const uniqueProductIds = [...new Set(productIds.map(String))].sort();
-  const releases = [];
-  try {
-    for (const productId of uniqueProductIds) {
-      releases.push(await acquireLock(productId));
-    }
-  } catch (error) {
-    for (const release of releases.reverse()) await release();
-    throw error;
-  }
-
-  return async () => {
-    for (const release of releases.reverse()) await release();
+  const timer = setInterval(() => {
+    pending = pending.then(() => assertOwned()).catch(() => { lost = true; });
+  }, 10000);
+  timer.unref();
+  return {
+    assertOwned,
+    async release() {
+      if (released) return;
+      clearInterval(timer); await pending; released = true;
+      await MaintenanceLock.deleteOne({ _id, ownerToken });
+    },
   };
-};
-
-const withProductReservationLock = async (productId, operation) => {
-  const release = await acquireProductReservationLocks([productId]);
+}
+async function acquireProductReservationLocks(productIds) {
+  const leases = [];
+  const release = async () => {
+    const results = await Promise.allSettled([...leases].reverse().map((lease) => lease.release()));
+    const failure = results.find((result) => result.status === 'rejected');
+    if (failure) throw failure.reason;
+  };
   try {
-    return await operation();
-  } finally {
-    await release();
-  }
-};
-
-module.exports = { withProductReservationLock, acquireProductReservationLocks };
+    for (const id of [...new Set(productIds.map(String))].sort()) leases.push(await acquireLock(id));
+  } catch (error) { await release(); throw error; }
+  return { async assertOwned(options) { for (const lease of leases) await lease.assertOwned(options); }, release };
+}
+async function withProductReservationLock(productId, operation) {
+  const lease = await acquireProductReservationLocks([productId]);
+  try { await lease.assertOwned(); return await withInventoryTransaction((session) => operation(lease, session), { lease }); }
+  finally { await lease.release(); }
+}
+module.exports = { acquireProductReservationLocks, withProductReservationLock };

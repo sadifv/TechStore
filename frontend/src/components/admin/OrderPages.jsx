@@ -1,5 +1,6 @@
 import { useState } from 'react';
-const eventLabels = { created: 'Pedido creado', contact_confirmed: 'Contacto por WhatsApp recibido', payment_confirmed: 'Pago confirmado; preparación iniciada', cancelled: 'Cancelado por la tienda', expired: 'Reserva vencida', checkout_failed: 'Pedido fallido', processing: 'En preparación', shipped: 'Enviado', delivered: 'Entregado', completed: 'Completado' };
+import { getOrderItemName } from '../account/orderItemDisplay.js';
+const eventLabels = { inventory_product_missing: 'Producto eliminado previamente; revisar referencia de inventario', created: 'Pedido creado', contact_confirmed: 'Contacto por WhatsApp recibido', payment_confirmed: 'Pago confirmado; preparación iniciada', cancelled: 'Cancelado por la tienda', expired: 'Reserva vencida', checkout_failed: 'Pedido fallido', processing: 'En preparación', shipped: 'Enviado', delivered: 'Entregado', completed: 'Completado' };
 import {
   AdminNotice,
   AdminPagination,
@@ -230,7 +231,7 @@ export function AdminOrderDetailPage({ orderId }) {
             <tbody>
               {order.items.map((item, index) => (
                 <tr key={`${item._id || index}`}>
-                  <td>{item.product?.name || <em>Producto no disponible o eliminado</em>}</td>
+                  <td>{getOrderItemName(item)}</td>
                   <td>{money(item.price)}</td>
                   <td>{item.quantity}</td>
                   <td>{money(item.price * item.quantity)}</td>
@@ -343,7 +344,7 @@ export function AdminPackingSlipPage({ orderId }) {
             <tbody>
               {order.items.map((item, index) => (
                 <tr key={item._id || index}>
-                  <td>{item.product?.name || item.productName || 'Producto'}</td>
+                  <td>{getOrderItemName(item)}</td>
                   <td>{item.quantity}</td>
                   <td>{money(item.price)}</td>
                   <td>{money(Number(item.price) * Number(item.quantity))}</td>
