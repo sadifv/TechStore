@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ADMIN_REFRESH_INTERVAL_MS } from '../../requestCadence.js';
 import {
   AdminNotice,
   AdminPagination,
@@ -34,7 +35,7 @@ export function AdminUsersPage() {
   const [filter, setFilter] = useState({ search, role });
   const { data, error, refresh } = useAdminData(
     `/api/admin/users?page=${page}&search=${encodeURIComponent(filter.search)}&role=${encodeURIComponent(filter.role)}`,
-    { refreshIntervalMs: 15000 },
+    { refreshIntervalMs: ADMIN_REFRESH_INTERVAL_MS },
   );
   async function remove(user) {
     if (!window.confirm(`¿Eliminar la cuenta de ${user.name}?`)) return;
@@ -59,7 +60,9 @@ export function AdminUsersPage() {
           <h1>
             <i className="ri-user-settings-line" /> Gestión de Usuarios
           </h1>
-          <p className="text-muted">La presencia se actualiza automáticamente cada 15 segundos.</p>
+          <p className="text-muted">
+            La presencia se actualiza automáticamente cada {ADMIN_REFRESH_INTERVAL_MS / 1000} segundos.
+          </p>
         </div>
         <a href="/admin/dashboard" className="btn btn-outline btn-sm">
           ← Volver al Dashboard
@@ -184,7 +187,7 @@ export function AdminUsersPage() {
 
 export function AdminMarketingPage() {
   const { data, error, refresh } = useAdminData('/api/admin/marketing', {
-    refreshIntervalMs: 15000,
+    refreshIntervalMs: ADMIN_REFRESH_INTERVAL_MS,
   });
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);

@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { requestJson } from '../api.js';
-
-const HEARTBEAT_INTERVAL_MS = 20 * 1000;
+import { PRESENCE_HEARTBEAT_INTERVAL_MS } from '../requestCadence.js';
 
 export default function usePresenceHeartbeat(user) {
   useEffect(() => {
@@ -13,7 +12,7 @@ export default function usePresenceHeartbeat(user) {
     };
 
     sendHeartbeat();
-    const intervalId = window.setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+    const intervalId = window.setInterval(sendHeartbeat, PRESENCE_HEARTBEAT_INTERVAL_MS);
     document.addEventListener('visibilitychange', sendHeartbeat);
 
     return () => {
