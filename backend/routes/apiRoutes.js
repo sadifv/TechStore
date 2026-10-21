@@ -21,7 +21,10 @@ const {
   aiLimiter,
   aiSlowDown,
   registerLimiter,
-  sensitiveLimiter,
+  contactLimiter,
+  newsletterLimiter,
+  passwordRecoveryLimiter,
+  passwordResetLimiter,
   loginLimiter,
 } = require('../middleware/rateLimiter');
 const { validate } = require('../middleware/validate');
@@ -45,8 +48,8 @@ const { recordHeartbeat } = require('../controllers/presenceController');
 // RUTAS PÚBLICAS
 // ==========================================
 
-router.post('/contact', sensitiveLimiter, validate, sendContactMessage);
-router.post('/newsletter', sensitiveLimiter, validate, subscribeNewsletter);
+router.post('/contact', contactLimiter, validate, sendContactMessage);
+router.post('/newsletter', newsletterLimiter, validate, subscribeNewsletter);
 router
   .route('/newsletter/unsubscribe/:token')
   .get(unsubscribeNewsletter)
@@ -89,7 +92,7 @@ router.get('/auth/me', requireAuth, getMe);
 // RECUPERACIÓN DE CONTRASEÑA
 // ==========================================
 
-router.post('/auth/forgot-password', sensitiveLimiter, validate, forgotPassword);
-router.post('/auth/reset-password/:token', sensitiveLimiter, validate, resetPassword);
+router.post('/auth/forgot-password', passwordRecoveryLimiter, validate, forgotPassword);
+router.post('/auth/reset-password/:token', passwordResetLimiter, validate, resetPassword);
 
 module.exports = router;

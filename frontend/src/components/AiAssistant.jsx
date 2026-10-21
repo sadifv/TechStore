@@ -12,16 +12,17 @@ export default function AiAssistant({ user }) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [historyVisible, setHistoryVisible] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const [historyVisible, setHistoryVisible] = useState(
+    () => typeof window === 'undefined' || !('IntersectionObserver' in window),
+  );
   const sectionRef = useRef(null);
   const historyRef = useRef(null);
+  const followLatestMessage = useRef(false);
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return undefined;
-    if (!('IntersectionObserver' in window)) {
-      setHistoryVisible(true);
-      return undefined;
-    }
+    if (!('IntersectionObserver' in window)) return undefined;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -36,7 +37,6 @@ export default function AiAssistant({ user }) {
   }, []);
   useEffect(() => {
     if (!user) {
-      setMessages([]);
       return undefined;
     }
     if (!historyVisible) return undefined;
@@ -57,13 +57,17 @@ export default function AiAssistant({ user }) {
     };
   }, [user, historyVisible]);
   useEffect(() => {
-    if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight;
-  }, [messages, busy]);
+    if (!followLatestMessage.current || !historyRef.current) return;
+    historyRef.current.scrollTop = historyRef.current.scrollHeight;
+    followLatestMessage.current = false;
+  }, [messages]);
   async function send(value = message) {
     const content = value.trim();
     if (!content || busy) return;
     setMessage('');
     setError('');
+    setAnnouncement('');
+    followLatestMessage.current = true;
     setMessages((current) => appendMessage(current, { role: 'user', content }));
     setBusy(true);
     try {
@@ -71,12 +75,17 @@ export default function AiAssistant({ user }) {
         method: 'POST',
         body: JSON.stringify({ message: content }),
       });
+      followLatestMessage.current = true;
+      setAnnouncement(result.reply);
       setMessages((current) => appendMessage(current, { role: 'bot', content: result.reply }));
     } catch (requestError) {
+      const reply = requestError.message || 'Ocurrió un error de conexión con el servidor.';
+      followLatestMessage.current = true;
+      setAnnouncement(reply);
       setMessages((current) =>
         appendMessage(current, {
           role: 'bot',
-          content: requestError.message || 'Ocurrió un error de conexión con el servidor.',
+          content: reply,
         }),
       );
     } finally {
@@ -89,6 +98,7 @@ export default function AiAssistant({ user }) {
       await requestJson('/api/ai/history', { method: 'DELETE' });
       setMessages([]);
       setError('');
+      setAnnouncement('Conversación eliminada.');
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -156,12 +166,13 @@ export default function AiAssistant({ user }) {
           </section>
         ) : (
           <>
+            <p className="ai-sr-only" role="status" aria-live="polite" aria-atomic="true">
+              {announcement}
+            </p>
             <section
               id="ai-chat-messages"
               ref={historyRef}
               className="ai-history"
-              aria-live="polite"
-              aria-atomic="false"
             >
               {messages.length === 0 && (
                 <section

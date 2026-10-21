@@ -5,7 +5,7 @@ import { useCartActions, useCartState } from './CartContext.js';
 export default function SiteHeader({ user }) {
   const [open, setOpen] = useState(false);
   const [logoutError, setLogoutError] = useState('');
-  const { count } = useCartState();
+  const { count, drawerOpen } = useCartState();
   const { setDrawerOpen } = useCartActions();
   async function logout(event) {
     event.preventDefault();
@@ -60,6 +60,8 @@ export default function SiteHeader({ user }) {
             id="cart-btn"
             className="cart-btn-nav"
             aria-label={`Ver carrito, ${count} productos`}
+            aria-controls="cart-drawer"
+            aria-expanded={drawerOpen}
             onClick={() => setDrawerOpen(true)}
           >
             <i className="ri-shopping-cart-2-line" aria-hidden="true" />

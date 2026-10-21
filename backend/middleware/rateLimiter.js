@@ -4,6 +4,7 @@ const slowDown = require('express-slow-down');
 const logger = require('../config/logger');
 const isApiRequest = require('./isApiRequest');
 const getSafeRequestTarget = require('./safeRequestTarget');
+const { MongoRateLimitStore } = require('./mongoRateLimitStore');
 
 /**
  * Limitador estricto para el login.
@@ -122,28 +123,32 @@ const registerLimiter = rateLimit({
   },
 });
 
-/**
- * Limitador para rutas sensibles.
- * 10 peticiones cada 15 minutos.
- */
-const sensitiveLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res, next) => {
-    logger.warn(
-      `Límite de solicitudes excedido en ruta sensible - Ruta: ${getSafeRequestTarget(req)}.`,
-    );
-    if (isApiRequest(req)) {
-      return res.status(429).json({
-        success: false,
-        error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.',
-      });
-    }
-    return res.status(429).send('Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.');
-  },
-});
+/** Crea un cupo de 10 solicitudes por IP y operación, compartido entre instancias. */
+const createSensitiveLimiter = (bucket) =>
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: new MongoRateLimitStore(bucket),
+    handler: (req, res) => {
+      logger.warn(
+        `Límite de solicitudes excedido en ruta sensible - Ruta: ${getSafeRequestTarget(req)}.`,
+      );
+      if (isApiRequest(req)) {
+        return res.status(429).json({
+          success: false,
+          error: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.',
+        });
+      }
+      return res.status(429).send('Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.');
+    },
+  });
+
+const contactLimiter = createSensitiveLimiter('contact');
+const newsletterLimiter = createSensitiveLimiter('newsletter');
+const passwordRecoveryLimiter = createSensitiveLimiter('password-recovery');
+const passwordResetLimiter = createSensitiveLimiter('password-reset');
 
 module.exports = {
   loginLimiter,
@@ -151,5 +156,8 @@ module.exports = {
   aiLimiter,
   aiSlowDown,
   registerLimiter,
-  sensitiveLimiter,
+  contactLimiter,
+  newsletterLimiter,
+  passwordRecoveryLimiter,
+  passwordResetLimiter,
 };

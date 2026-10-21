@@ -133,7 +133,14 @@ const processCampaign = async (campaignId) => {
           unsubscribeUrl: buildUnsubscribeUrl(recipient.unsubscribeToken),
         });
         const status = result.simulated ? 'simulated' : 'sent';
-        const update = { $set: { 'results.$.status': status } };
+        const update = {
+          $set: { 'results.$.status': status },
+          $unset: {
+            'results.$.email': 1,
+            'results.$.name': 1,
+            'results.$.unsubscribeToken': 1,
+          },
+        };
         if (status === 'sent') update.$inc = { sentCount: 1 };
         if (status === 'simulated') update.$set.simulated = true;
         await Campaign.updateOne(
@@ -150,6 +157,11 @@ const processCampaign = async (campaignId) => {
             $set: {
               'results.$.status': 'failed',
               'results.$.errorCode': error.code || error.name || 'EMAIL_SEND_FAILED',
+            },
+            $unset: {
+              'results.$.email': 1,
+              'results.$.name': 1,
+              'results.$.unsubscribeToken': 1,
             },
             $inc: { failedCount: 1 },
           },
@@ -234,6 +246,11 @@ const recoverInterruptedCampaigns = async () => {
         campaign.errorCode = 'DELIVERY_OUTCOME_UNKNOWN';
         campaign.failedCount = (campaign.failedCount || 0) + 1;
       }
+      if (['sent', 'failed', 'simulated'].includes(result.status)) {
+        result.email = undefined;
+        result.name = undefined;
+        result.unsubscribeToken = undefined;
+      }
     }
 
     if (!campaign.results?.length) {
@@ -250,7 +267,33 @@ const recoverInterruptedCampaigns = async () => {
   }
 };
 
+const redactCompletedCampaigns = () =>
+  Campaign.updateMany(
+    {
+      status: { $in: ['sent', 'simulated', 'partial', 'failed'] },
+      $or: [
+        { 'results.email': { $exists: true } },
+        { 'results.name': { $exists: true } },
+        { 'results.unsubscribeToken': { $exists: true } },
+      ],
+    },
+    {
+      $unset: {
+        'results.$[].email': 1,
+        'results.$[].name': 1,
+        'results.$[].unsubscribeToken': 1,
+      },
+    },
+  );
+
 const resumeCampaignQueue = async () => {
+  try {
+    await redactCompletedCampaigns();
+  } catch (error) {
+    logger.error('No se pudieron eliminar datos personales de campañas finalizadas.', {
+      errorCode: error.code || error.name,
+    });
+  }
   await recoverInterruptedCampaigns();
   const queued = await Campaign.find({ status: 'queued' }).select('_id').lean();
   queued.forEach(({ _id }) => enqueueCampaign(_id));
@@ -269,4 +312,10 @@ const startCampaignQueue = async () => {
   pollTimer.unref();
 };
 
-module.exports = { enqueueCampaign, processCampaign, resumeCampaignQueue, startCampaignQueue };
+module.exports = {
+  enqueueCampaign,
+  processCampaign,
+  redactCompletedCampaigns,
+  resumeCampaignQueue,
+  startCampaignQueue,
+};

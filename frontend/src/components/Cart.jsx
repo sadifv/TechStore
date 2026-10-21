@@ -2,6 +2,7 @@ import { submitWhatsappCheckout } from '../whatsappCheckout.js';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../api.js';
 import { CartActionsContext, CartStateContext } from './CartContext.js';
+import { trapTabKey } from './modalFocus.js';
 import {
   readGuestCart,
   removeGuestQuantity,
@@ -20,6 +21,8 @@ export function CartProvider({ user, children }) {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   const checkoutDialog = useRef(null);
+  const cartDrawer = useRef(null);
+  const drawerReturnFocus = useRef(null);
   const submittingCheckout = useRef(false);
   const itemsRef = useRef(items);
   const pendingQuantityUpdates = useRef(new Map());
@@ -111,6 +114,34 @@ export function CartProvider({ user, children }) {
     if (checkoutOpen && !dialog.open) dialog.showModal();
     if (!checkoutOpen && dialog.open) dialog.close();
   }, [checkoutOpen]);
+  useEffect(() => {
+    const drawer = cartDrawer.current;
+    if (!drawer) return undefined;
+    if (drawerOpen) {
+      if (!drawer.contains(document.activeElement)) drawerReturnFocus.current = document.activeElement;
+      drawer.querySelector('#cart-close-btn')?.focus();
+      const handleKeyDown = (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setDrawerOpen(false);
+          return;
+        }
+        const focusable = drawer
+          .querySelector('.cart-drawer-content')
+          ?.querySelectorAll(
+            'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          );
+        trapTabKey(event, Array.from(focusable || []), document.activeElement);
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+    if (!checkoutOpen && drawerReturnFocus.current?.isConnected) {
+      drawerReturnFocus.current.focus();
+      drawerReturnFocus.current = null;
+    }
+    return undefined;
+  }, [drawerOpen, checkoutOpen]);
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const add = useCallback(
@@ -330,17 +361,20 @@ export function CartProvider({ user, children }) {
       <CartActionsContext.Provider value={actionsValue}>
         {children}
         <aside
+          ref={cartDrawer}
           id="cart-drawer"
           className={`cart-drawer${drawerOpen ? ' open' : ''}`}
+          role="dialog"
+          aria-modal={drawerOpen ? 'true' : undefined}
           aria-hidden={!drawerOpen}
           aria-labelledby="cart-drawer-heading"
           inert={!drawerOpen}
+          tabIndex={-1}
         >
-          <button
-            type="button"
+          <div
             className="cart-drawer-overlay"
             id="cart-overlay"
-            aria-label="Cerrar carrito"
+            aria-hidden="true"
             onClick={() => setDrawerOpen(false)}
           />
           <section className="cart-drawer-content">

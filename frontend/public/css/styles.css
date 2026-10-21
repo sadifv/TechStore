@@ -2966,7 +2966,8 @@ dialog#checkout-modal {
 
 .product-detail-actions input[type='number']:focus {
   border-color: var(--color-primary);
-  outline: none;
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .product-detail-actions .btn {

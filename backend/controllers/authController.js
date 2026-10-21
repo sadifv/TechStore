@@ -161,42 +161,40 @@ const getMe = (req, res) => {
 // ==========================================
 // FORGOT PASSWORD
 // ==========================================
-const forgotPassword = async (req, res, next) => {
-  try {
-    const { email } = req.body;
+const forgotPassword = (req, res) => {
+  const email = String(req.body?.email || '')
+    .trim()
+    .toLowerCase();
+  const frontendUrl = getFrontendBaseUrl() || `${req.protocol}://${req.get('host')}`;
 
-    const user = await User.findOne({ email }).select('+resetPasswordToken +resetPasswordExpires');
+  res.status(200).json({
+    success: true,
+    message:
+      'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.',
+  });
 
-    if (!user) {
-      logger.warn('Solicitud de recuperación recibida para una cuenta inexistente.');
-      return res.status(200).json({
-        success: true,
-        message:
-          'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.',
+  // Resolve accounts and send email after the generic response so account lookup,
+  // database writes, and SMTP latency cannot distinguish registered addresses.
+  Promise.resolve()
+    .then(async () => {
+      const user = await User.findOne({ email }).select(
+        '+resetPasswordToken +resetPasswordExpires',
+      );
+      if (!user) return;
+
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      user.resetPasswordExpires = Date.now() + 3600000;
+      await user.save();
+
+      await sendPasswordResetEmail(user.email, `${frontendUrl}/reset-password/${resetToken}`);
+      logger.info('Correo de recuperación enviado.');
+    })
+    .catch((error) => {
+      logger.warn('No se pudo procesar una solicitud de recuperación.', {
+        errorCode: error.code || error.name,
       });
-    }
-
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpires = Date.now() + 3600000;
-
-    await user.save();
-
-    const frontendUrl = getFrontendBaseUrl() || `${req.protocol}://${req.get('host')}`;
-    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
-
-    await sendPasswordResetEmail(user.email, resetUrl);
-
-    logger.info('Correo de recuperación enviado.');
-
-    res.status(200).json({
-      success: true,
-      message:
-        'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.',
     });
-  } catch (error) {
-    next(error);
-  }
 };
 
 // ==========================================

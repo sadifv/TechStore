@@ -1,11 +1,70 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { requestJson } from '../api.js';
-import AiAssistant from '../components/AiAssistant.jsx';
-import { BlogSection, TestimonialsSection } from '../components/EditorialSections.jsx';
+const HomeBelowFold = lazy(() => import('../components/HomeBelowFold.jsx'));
 import FlashSaleSection from '../components/FlashSaleSection.jsx';
-import { ContactSection, NewsletterSection } from '../components/FormsSections.jsx';
 import HeroSection from '../components/HeroSection.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+
+function DeferredHomeContent({ user }) {
+  const sectionRef = useRef(null);
+  const [visible, setVisible] = useState(
+    () =>
+      typeof window === 'undefined' ||
+      !('IntersectionObserver' in window) ||
+      ['#ai-assistant', '#contacto'].includes(window.location.hash),
+  );
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return undefined;
+    const loadForAnchor = () => {
+      if (['#ai-assistant', '#contacto'].includes(window.location.hash)) setVisible(true);
+    };
+    window.addEventListener('hashchange', loadForAnchor);
+    if (!('IntersectionObserver' in window))
+      return () => window.removeEventListener('hashchange', loadForAnchor);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setVisible(true);
+        observer.disconnect();
+      },
+      { rootMargin: '400px' },
+    );
+    observer.observe(section);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('hashchange', loadForAnchor);
+    };
+  }, []);
+
+  if (visible) {
+    return (
+      <Suspense
+        fallback={
+          <section id="ai-assistant" className="ai-section" aria-busy="true">
+            <h2>Asistente TechBot</h2>
+            <p role="status">Cargando el asistente…</p>
+          </section>
+        }
+      >
+        <HomeBelowFold user={user} />
+      </Suspense>
+    );
+  }
+
+  return (
+    <section
+      ref={sectionRef}
+      id="ai-assistant"
+      className="ai-section"
+      aria-labelledby="ai-assistant-placeholder-title"
+    >
+      <h2 id="ai-assistant-placeholder-title">Asistente TechBot</h2>
+      <p>¿Tienes dudas? TechBot puede ayudarte a encontrar el producto ideal.</p>
+    </section>
+  );
+}
 
 export default function HomePage({ user }) {
   const [products, setProducts] = useState([]);
@@ -66,11 +125,7 @@ export default function HomePage({ user }) {
           )}
         </ul>
       </section>
-      <AiAssistant user={user} />
-      <BlogSection />
-      <TestimonialsSection />
-      <NewsletterSection />
-      <ContactSection />
+      <DeferredHomeContent user={user} />
     </>
   );
 }
