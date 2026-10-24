@@ -109,8 +109,11 @@ test('owner migration, MFA and user management enforce the privilege boundary in
   await t.test('owner cannot be assigned via API, demoted or deleted by any administrator', async () => {
     assert.equal((await call(roleUrl(customer), 'PATCH', { role: 'owner' }, owner, 1)).status, 400);
     assert.equal((await call(roleUrl(owner), 'PATCH', { role: 'user' }, owner, 1)).status, 409);
-    for (const actor of [admin, owner]) assert.equal((await call(`/admin/users/${owner._id}`, 'DELETE', null, actor, actor === owner ? 1 : 0)).status, 409);
-    assert.equal((await call(`/admin/users/${admin._id}`, 'DELETE', null, admin)).status, 409);
+    for (const prefix of ['/admin', '/api/admin']) {
+      for (const actor of [admin, owner]) assert.equal((await call(`${prefix}/users/${owner._id}`, 'DELETE', null, actor, actor === owner ? 1 : 0)).status, 409);
+      assert.equal((await call(`${prefix}/users/${admin._id}`, 'DELETE', null, admin)).status, 409);
+    }
+    for (const actor of [null, customer]) assert.equal((await call(`/api/admin/users/${customer._id}`, 'DELETE', null, actor)).status, 403);
   });
   await t.test('owner promotes and demotes, revoking existing sessions and MFA preauthentication', async () => {
     assert.equal((await call(roleUrl(customer), 'PATCH', { role: 'admin' }, owner, 1)).status, 200);
@@ -127,6 +130,6 @@ test('owner migration, MFA and user management enforce the privilege boundary in
     const req = { session: { adminMfaPreauth: { userId: String(customer._id), authVersion: 1, mode: 'enroll', expiresAt: Date.now() + 60000 } } };
     const res = response(); await requireAdminMfaPreauth(req, res, () => assert.fail('stale preauth accepted'));
     assert.equal(res.statusCode, 401);
-    assert.equal((await call(`/admin/users/${customer._id}`, 'DELETE', null, admin)).status, 200);
+    assert.equal((await call(`/api/admin/users/${customer._id}`, 'DELETE', null, admin)).status, 200);
   });
 });

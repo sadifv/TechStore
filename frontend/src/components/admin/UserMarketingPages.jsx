@@ -44,7 +44,7 @@ export function AdminUsersPage() {
     if (!window.confirm(`¿Eliminar la cuenta de ${user.name}?`)) return;
     setBusy(true);
     try {
-      await adminMutation(`/admin/users/${user._id}`, { method: 'DELETE' });
+      await adminMutation(`/api/admin/users/${user._id}`, { method: 'DELETE' });
       refresh();
     } catch (cause) {
       window.alert(cause.message);
@@ -258,7 +258,7 @@ export function AdminMarketingPage() {
     const target = event.currentTarget;
     const form = new FormData(target);
     try {
-      const result = await adminMutation('/admin/coupons', {
+      const result = await adminMutation('/api/admin/coupons', {
         method: 'POST',
         body: JSON.stringify(Object.fromEntries(form.entries())),
       });
@@ -283,7 +283,7 @@ export function AdminMarketingPage() {
     setBusy(true);
     setStatus('Agregando campaña a la cola…');
     try {
-      const result = await adminMutation('/admin/campaigns', {
+      const result = await adminMutation('/api/admin/campaigns', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
@@ -297,7 +297,7 @@ export function AdminMarketingPage() {
   }
   async function toggleCoupon(coupon) {
     try {
-      await adminMutation(`/admin/coupons/${coupon._id}/status`, { method: 'PATCH' });
+      await adminMutation(`/api/admin/coupons/${coupon._id}/status`, { method: 'PATCH' });
       refresh();
     } catch (cause) {
       setStatus(cause.message);

@@ -44,6 +44,8 @@ const validationRules = {
   },
   '/admin/products': productValidationRules,
   '/admin/products/:id': productValidationRules,
+  '/api/admin/products': productValidationRules,
+  '/api/admin/products/:id': productValidationRules,
 };
 
 // ==========================================

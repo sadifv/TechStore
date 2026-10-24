@@ -134,7 +134,7 @@ export function OrderStatusSelect({ order, onUpdated }) {
     const next = event.target.value;
     setBusy(true);
     try {
-      await adminMutation(`/admin/orders/${order._id}/status`, {
+      await adminMutation(`/api/admin/orders/${order._id}/status`, {
         method: 'PUT',
         body: JSON.stringify({ status: next }),
       });

@@ -54,7 +54,7 @@ export function AdminDashboardPage() {
     const form = new FormData(event.currentTarget);
     const id = form.get('id');
     try {
-      await adminMutation(id ? `/admin/products/${id}` : '/admin/products', {
+      await adminMutation(id ? `/api/admin/products/${id}` : '/api/admin/products', {
         method: id ? 'PUT' : 'POST',
         body: form,
       });
@@ -70,7 +70,7 @@ export function AdminDashboardPage() {
   async function deleteProduct(item) {
     if (!window.confirm(`¿Archivar el producto “${item.name}”?`)) return;
     try {
-      await adminMutation(`/admin/products/${item._id}`, { method: 'DELETE' });
+      await adminMutation(`/api/admin/products/${item._id}`, { method: 'DELETE' });
       refresh();
     } catch (cause) {
       window.alert(cause.message);
@@ -80,7 +80,7 @@ export function AdminDashboardPage() {
     if (item.flashSale) {
       if (!window.confirm('Se detendrá la oferta y el precio volverá a su valor original.')) return;
       try {
-        await adminMutation(`/admin/products/${item._id}/flash-sale`, { method: 'DELETE' });
+        await adminMutation(`/api/admin/products/${item._id}/flash-sale`, { method: 'DELETE' });
         refresh();
       } catch (cause) {
         window.alert(cause.message);
@@ -95,7 +95,7 @@ export function AdminDashboardPage() {
     event.preventDefault();
     setBusy(true);
     try {
-      await adminMutation(`/admin/products/${flashProduct._id}/flash-sale`, {
+      await adminMutation(`/api/admin/products/${flashProduct._id}/flash-sale`, {
         method: 'POST',
         body: JSON.stringify({
           discount: Number(flashDiscount),
@@ -121,7 +121,7 @@ export function AdminDashboardPage() {
     )
       return;
     try {
-      await adminMutation(`/admin/${kind}/${id}`, { method: 'DELETE' });
+      await adminMutation(`/api/admin/${kind}/${id}`, { method: 'DELETE' });
       refresh();
     } catch (cause) {
       window.alert(cause.message);

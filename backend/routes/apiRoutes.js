@@ -86,6 +86,9 @@ router.patch(
   require('../controllers/userManagementController').updateUserRole,
 );
 
+// Administrative writes must be reachable through Netlify's /api proxy.
+router.use('/admin', require('../middleware/rateLimiter').adminLimiter, require('./adminMutationRoutes'));
+
 // ==========================================
 // RUTAS DE LA IA
 // ==========================================
