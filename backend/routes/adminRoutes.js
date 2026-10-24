@@ -16,8 +16,6 @@ const { validate } = require('../middleware/validate');
 
 const Contact = require('../models/Contact');
 const Newsletter = require('../models/Newsletter');
-const User = require('../models/User');
-const Presence = require('../models/Presence');
 const logger = require('../config/logger');
 const {
   createAdminCoupon,
@@ -81,28 +79,10 @@ router.delete('/subscribers/:id', requireAdmin, async (req, res) => {
   }
 });
 
-router.delete('/users/:id', requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (req.session && req.session.user && req.session.user.id === id) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'No puedes eliminar tu propia cuenta de administrador.' });
-    }
-
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'Usuario no encontrado.' });
-    }
-
-    await User.findByIdAndDelete(id);
-    await Presence.deleteOne({ user: id });
-    res.json({ success: true, message: 'Usuario eliminado correctamente.' });
-  } catch (error) {
-    logger.error(`Error al eliminar usuario: ${error.message}`, { stack: error.stack });
-    res.status(500).json({ success: false, error: 'Error al eliminar el usuario.' });
-  }
-});
+router.delete(
+  '/users/:id',
+  requireAdmin,
+  require('../controllers/userManagementController').deleteUser,
+);
 
 module.exports = router;

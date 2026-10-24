@@ -1,3 +1,4 @@
+const { STAFF_ROLES, isStaff } = require('../services/userRoles');
 // middleware/authMiddleware.js
 const isApiRequest = require('./isApiRequest');
 const User = require('../models/User');
@@ -21,7 +22,7 @@ const requireAdminMfaPreauth = async (req, res, next) => {
     const user = await User.findById(preauth.userId).select('role +authVersion').lean();
     if (
       !user ||
-      user.role !== 'admin' ||
+      !isStaff(user.role) ||
       !Number.isInteger(preauth.authVersion) ||
       preauth.authVersion !== (user.authVersion || 0)
     )
@@ -77,7 +78,7 @@ const setUserLocals = (req, res, next) => {
 };
 
 // Requiere rol admin
-const requireAdmin = (req, res, next) => {
+const requireRole = (allowedRoles) => (req, res, next) => {
   if (!(req.user || req.session?.user)) {
     if (isApiRequest(req)) {
       return res.status(403).json({
@@ -90,7 +91,8 @@ const requireAdmin = (req, res, next) => {
 
   loadCurrentUser(req, res)
     .then((currentUser) => {
-      if (currentUser?.role === 'admin' && req.session?.authLevel === 'mfa') return next();
+      if (allowedRoles.includes(currentUser?.role) && req.session?.authLevel === 'mfa')
+        return next();
       if (isApiRequest(req)) {
         return res.status(403).json({
           success: false,
@@ -101,6 +103,9 @@ const requireAdmin = (req, res, next) => {
     })
     .catch(next);
 };
+
+const requireAdmin = requireRole(STAFF_ROLES);
+const requireOwner = requireRole(['owner']);
 
 // Requiere autenticación (cualquier rol)
 const requireAuth = (req, res, next) => {
@@ -151,6 +156,7 @@ const requireOptionalAuth = async (req, res, next) => {
 module.exports = {
   setUserLocals,
   requireAdmin,
+  requireOwner,
   requireAuth,
   redirectIfAuthenticated,
   requireAdminMfaPreauth,

@@ -77,7 +77,7 @@ export default function SiteHeader({ user }) {
                 <i className="ri-user-smile-line" aria-hidden="true" /> {user.name}
               </a>
             </li>
-            {user.role === 'admin' && (
+            {['admin', 'owner'].includes(user.role) && (
               <li>
                 <a href="/admin/dashboard" className="btn btn-primary">
                   <i className="ri-user-settings-line" aria-hidden="true" /> Panel Admin

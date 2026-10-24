@@ -33,17 +33,52 @@ export function AdminUsersPage() {
   const [role, setRole] = useState(query.get('role') || '');
   const [page, setPage] = useState(Number(query.get('page')) || 1);
   const [filter, setFilter] = useState({ search, role });
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
   const { data, error, refresh } = useAdminData(
     `/api/admin/users?page=${page}&search=${encodeURIComponent(filter.search)}&role=${encodeURIComponent(filter.role)}`,
     { refreshIntervalMs: ADMIN_REFRESH_INTERVAL_MS },
   );
   async function remove(user) {
+    if (busy) return;
     if (!window.confirm(`¿Eliminar la cuenta de ${user.name}?`)) return;
+    setBusy(true);
     try {
       await adminMutation(`/admin/users/${user._id}`, { method: 'DELETE' });
       refresh();
     } catch (cause) {
       window.alert(cause.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function changeRole(user) {
+    if (busy) return;
+    const nextRole = user.role === 'admin' ? 'user' : 'admin';
+    const action =
+      nextRole === 'admin'
+        ? 'Dar acceso de administrador a'
+        : 'Retirar el acceso de administrador a';
+    if (
+      !window.confirm(
+        `${action} ${user.name}? Sus sesiones se cerrarán y deberá iniciar sesión de nuevo. Los administradores deben usar MFA.`,
+      )
+    )
+      return;
+    setBusy(true);
+    setNotice('');
+    try {
+      const result = await adminMutation(`/api/admin/users/${user._id}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: nextRole }),
+      });
+      setNotice(result.message);
+      refresh();
+    } catch (cause) {
+      setNotice(cause.message);
+      refresh();
+    } finally {
+      setBusy(false);
     }
   }
   if (error) return <AdminNotice error={error} />;
@@ -61,13 +96,19 @@ export function AdminUsersPage() {
             <i className="ri-user-settings-line" /> Gestión de Usuarios
           </h1>
           <p className="text-muted">
-            La presencia se actualiza automáticamente cada {ADMIN_REFRESH_INTERVAL_MS / 1000} segundos.
+            La presencia se actualiza automáticamente cada {ADMIN_REFRESH_INTERVAL_MS / 1000}{' '}
+            segundos.
           </p>
         </div>
         <a href="/admin/dashboard" className="btn btn-outline btn-sm">
           ← Volver al Dashboard
         </a>
       </header>
+      <p>
+        Solo el propietario puede asignar o retirar administradores. La cuenta del propietario está
+        protegida.
+      </p>
+      {notice && <p role="status">{notice}</p>}
       <form
         className="catalog-filters"
         role="search"
@@ -99,6 +140,7 @@ export function AdminUsersPage() {
             <option value="">Todos los roles</option>
             <option value="user">Usuarios</option>
             <option value="admin">Administradores</option>
+            <option value="owner">Propietario</option>
           </select>
         </fieldset>
         <button className="btn btn-primary btn-sm">Filtrar</button>
@@ -140,10 +182,9 @@ export function AdminUsersPage() {
                   <a href={`mailto:${user.email}`}>{user.email}</a>
                 </td>
                 <td>
-                  <span
-                    className={`badge badge-${user.role === 'admin' ? 'primary' : 'secondary'}`}
-                  >
-                    {user.role === 'admin' ? 'Admin' : 'Usuario'}
+                  <span className={`badge badge-${user.role !== 'user' ? 'primary' : 'secondary'}`}>
+                    {{ owner: 'Propietario', admin: 'Admin', user: 'Usuario' }[user.role] ||
+                      user.role}
                   </span>
                 </td>
                 <td>{date(user.createdAt)}</td>
@@ -158,16 +199,33 @@ export function AdminUsersPage() {
                     : 'Sin actividad registrada'}
                 </td>
                 <td>
-                  {user.role === 'admin' ? (
+                  {user.role === 'owner' ? (
                     'Protegido'
                   ) : (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-delete"
-                      onClick={() => remove(user)}
-                    >
-                      Eliminar
-                    </button>
+                    <>
+                      {data.canManageRoles && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline"
+                          disabled={busy}
+                          onClick={() => changeRole(user)}
+                        >
+                          {user.role === 'admin' ? 'Quitar administrador' : 'Hacer administrador'}
+                        </button>
+                      )}
+                      {user.role === 'user' ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-delete"
+                          onClick={() => remove(user)}
+                          disabled={busy}
+                        >
+                          Eliminar
+                        </button>
+                      ) : (
+                        'Cuenta administrativa protegida'
+                      )}
+                    </>
                   )}
                 </td>
               </tr>

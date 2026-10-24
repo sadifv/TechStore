@@ -236,7 +236,7 @@ const getAdminUsers = async (req, res, next) => {
         { email: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
-    if (role && ['user', 'admin'].includes(role)) {
+    if (role && ['user', 'admin', 'owner'].includes(role)) {
       filter.role = role;
     }
 
@@ -268,6 +268,7 @@ const getAdminUsers = async (req, res, next) => {
     respondWithAdminData(res, {
       title: 'Gestión de Usuarios | Admin',
       users: usersWithPresence,
+      canManageRoles: req.user?.role === 'owner',
       currentSearch: normalizedSearch,
       currentRole: role || '',
       pagination: { currentPage: pageNum, totalPages, totalUsers },

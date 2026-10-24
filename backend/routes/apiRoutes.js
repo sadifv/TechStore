@@ -37,7 +37,7 @@ const {
 } = require('../middleware/rateLimiter');
 const { requireAdminMfaPreauth } = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
-const { requireAdmin } = require('../middleware/authMiddleware');
+const { requireAdmin, requireOwner } = require('../middleware/authMiddleware');
 const {
   getAdminDashboard,
   getAdminOrders,
@@ -80,6 +80,11 @@ router.get('/admin/orders/:id/packing-slip', requireAdmin, getPackingSlip);
 router.get('/admin/orders/:id', requireAdmin, getAdminOrderDetail);
 router.use('/admin/orders', require('./orderAdminRoutes'));
 router.get('/admin/users', requireAdmin, getAdminUsers);
+router.patch(
+  '/admin/users/:id/role',
+  requireOwner,
+  require('../controllers/userManagementController').updateUserRole,
+);
 
 // ==========================================
 // RUTAS DE LA IA

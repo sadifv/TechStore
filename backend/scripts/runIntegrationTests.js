@@ -2,7 +2,7 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const child = spawn(
   process.execPath,
-  ['--test', ...process.argv.slice(2), 'tests/orderTransactions.integration.test.js'],
+  ['--test', ...process.argv.slice(2), 'tests/orderTransactions.integration.test.js', 'tests/ownerRoles.integration.test.js'],
   {
     cwd: path.join(__dirname, '..'),
     stdio: 'inherit',

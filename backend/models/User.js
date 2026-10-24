@@ -24,10 +24,10 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'admin', 'owner'],
       default: 'user',
     },
-    // Incrementar al cambiar contraseña para revocar todas las sesiones anteriores.
+    // Incrementar al cambiar contraseña o rol para revocar las sesiones anteriores.
     authVersion: {
       type: Number,
       default: 0,
@@ -51,6 +51,12 @@ const userSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
+);
+
+// At most one owner, including writes from migration tools.
+userSchema.index(
+  { role: 1 },
+  { unique: true, partialFilterExpression: { role: 'owner' }, name: 'singleton_owner' },
 );
 
 // Middleware Mongoose corregido para funciones async (sin parámetro next)

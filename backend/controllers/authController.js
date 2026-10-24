@@ -1,3 +1,4 @@
+const { STAFF_ROLES, isStaff } = require('../services/userRoles');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
@@ -120,7 +121,7 @@ const loginUser = async (req, res) => {
 
     if (!isMatch) return invalidCredentials(res);
 
-    if (user.role === 'admin') {
+    if (isStaff(user.role)) {
       await regenerateSession(req);
       req.session.adminMfaPreauth = {
         userId: String(user._id),
@@ -166,7 +167,7 @@ const beginAdminMfaEnrollment = async (req, res) => {
         .json({ success: false, error: 'El administrador ya tiene MFA configurado.' });
     }
     const user = await User.findById(req.adminMfaPreauth.userId).select('email role').lean();
-    if (!user || user.role !== 'admin')
+    if (!user || !isStaff(user.role))
       return res.status(401).json({ success: false, error: 'Sesión de verificación inválida.' });
     req.session.adminMfaPreauth.pendingSecret ||= adminMfa.generateSecret();
     await saveSession(req);
@@ -186,9 +187,10 @@ const beginAdminMfaEnrollment = async (req, res) => {
 };
 
 // Legacy accounts without a stored version have always represented version zero.
-const authVersionFilter = (version) => version === 0
-  ? { $and: [{ $or: [{ authVersion: 0 }, { authVersion: { $exists: false } }] }] }
-  : { authVersion: version };
+const authVersionFilter = (version) =>
+  version === 0
+    ? { $and: [{ $or: [{ authVersion: 0 }, { authVersion: { $exists: false } }] }] }
+    : { authVersion: version };
 
 const confirmAdminMfaEnrollment = async (req, res) => {
   try {
@@ -204,7 +206,12 @@ const confirmAdminMfaEnrollment = async (req, res) => {
     }
     const recoveryCodes = adminMfa.generateRecoveryCodes();
     const user = await User.findOneAndUpdate(
-      { _id: userId, role: 'admin', ...authVersionFilter(authVersion), adminMfaEnabledAt: { $exists: false } },
+      {
+        _id: userId,
+        role: { $in: STAFF_ROLES },
+        ...authVersionFilter(authVersion),
+        adminMfaEnabledAt: { $exists: false },
+      },
       {
         $set: {
           adminMfaSecret: adminMfa.encryptSecret(pendingSecret),
@@ -240,7 +247,7 @@ const verifyAdminMfa = async (req, res) => {
     const user = await User.findOne({
       _id: userId,
       ...authVersionFilter(authVersion),
-      role: 'admin',
+      role: { $in: STAFF_ROLES },
       adminMfaEnabledAt: { $exists: true },
     }).select('+authVersion +adminMfaSecret +adminMfaLastTotpStep +adminMfaRecoveryHashes');
     if (!user)
@@ -258,7 +265,7 @@ const verifyAdminMfa = async (req, res) => {
         {
           _id: user._id,
           ...authVersionFilter(authVersion),
-          role: 'admin',
+          role: { $in: STAFF_ROLES },
           adminMfaEnabledAt: { $exists: true },
           $or: [
             { adminMfaLastTotpStep: { $lt: verified.step } },
@@ -275,7 +282,12 @@ const verifyAdminMfa = async (req, res) => {
       const hash = adminMfa.hashRecoveryCode(recoveryCode);
       if (secretDecryptionFailed) {
         const recovered = await User.findOneAndUpdate(
-          { _id: user._id, role: 'admin', ...authVersionFilter(authVersion), adminMfaRecoveryHashes: hash },
+          {
+            _id: user._id,
+            role: { $in: STAFF_ROLES },
+            ...authVersionFilter(authVersion),
+            adminMfaRecoveryHashes: hash,
+          },
           {
             $pull: { adminMfaRecoveryHashes: hash },
             $unset: { adminMfaSecret: '', adminMfaEnabledAt: '', adminMfaLastTotpStep: '' },
@@ -300,7 +312,7 @@ const verifyAdminMfa = async (req, res) => {
       const consumed = await User.findOneAndUpdate(
         {
           _id: user._id,
-          role: 'admin',
+          role: { $in: STAFF_ROLES },
           adminMfaRecoveryHashes: hash,
           ...authVersionFilter(authVersion),
         },
