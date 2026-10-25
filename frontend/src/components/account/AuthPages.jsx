@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { requestJson, safeReturnTo } from '../../api.js';
 import { getAdminMfaStep } from './adminMfaFlow.js';
+import PasswordInput from './PasswordInput.jsx';
 
 function AccountForm({
   title,
@@ -256,10 +257,9 @@ function AuthPage({ register = false }) {
       </fieldset>
       <fieldset className="form-group">
         <label htmlFor="auth-password">Contraseña</label>
-        <input
+        <PasswordInput
           id="auth-password"
           name="password"
-          type="password"
           minLength={register ? 12 : undefined}
           maxLength="100"
           required
@@ -391,9 +391,9 @@ export function ResetPasswordPage({ token }) {
     >
       <fieldset className="form-group">
         <label htmlFor="new-password">Nueva Contraseña</label>
-        <input
+        <PasswordInput
           id="new-password"
-          type="password"
+          label="nueva contraseña"
           name="password"
           required
           minLength="12"
@@ -403,9 +403,9 @@ export function ResetPasswordPage({ token }) {
       </fieldset>
       <fieldset className="form-group">
         <label htmlFor="confirm-password">Confirmar Contraseña</label>
-        <input
+        <PasswordInput
           id="confirm-password"
-          type="password"
+          label="confirmación de contraseña"
           name="confirmPassword"
           required
           minLength="12"

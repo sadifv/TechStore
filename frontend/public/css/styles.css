@@ -2010,6 +2010,36 @@ button.login-register-action {
   cursor: pointer;
 }
 
+.password-field {
+  position: relative;
+}
+
+.auth-form .password-field input {
+  padding-right: 6rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  min-height: 44px;
+  min-width: 72px;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
 .auth-redirect {
   text-align: center;
   margin-top: 1.25rem;
