@@ -2,13 +2,31 @@ const nodemailer = require('nodemailer');
 const ejs = require('ejs');
 const path = require('path');
 const logger = require('./logger');
+const { createGmailApiTransport } = require('../services/gmailApiTransport');
 
 // Validar credenciales al arrancar
 const hasSmtpCredentials = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
 
 let transporter = null;
+const transportMode = process.env.EMAIL_TRANSPORT || 'smtp';
+if (!['smtp', 'gmail-api'].includes(transportMode)) {
+  throw new Error('EMAIL_TRANSPORT debe ser smtp o gmail-api.');
+}
+const gmailCredentials = {
+  user: process.env.GMAIL_USER,
+  clientId: process.env.GMAIL_OAUTH_CLIENT_ID,
+  clientSecret: process.env.GMAIL_OAUTH_CLIENT_SECRET,
+  refreshToken: process.env.GMAIL_OAUTH_REFRESH_TOKEN,
+};
+const hasGmailCredentials = Object.values(gmailCredentials).every(
+  (value) => typeof value === 'string' && value.trim(),
+);
+const sender = transportMode === 'gmail-api' ? gmailCredentials.user : process.env.SMTP_USER;
 
-if (hasSmtpCredentials) {
+if (transportMode === 'gmail-api' && hasGmailCredentials) {
+  transporter = createGmailApiTransport(gmailCredentials);
+  logger.info('[Mailer] Gmail API configurada por HTTPS; entrega real pendiente de verificar.');
+} else if (transportMode === 'smtp' && hasSmtpCredentials) {
   transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -18,6 +36,9 @@ if (hasSmtpCredentials) {
     pool: true, // Pool de conexiones
     maxConnections: 5,
     maxMessages: 100,
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    socketTimeout: 30000,
   });
 
   // Verificar conexión SMTP al arrancar
@@ -31,7 +52,7 @@ if (hasSmtpCredentials) {
     }
   });
 } else {
-  logger.warn('[Mailer] ⚠️ SMTP_USER o SMTP_PASS no definidos. Correos simulados.');
+  logger.warn('[Mailer] Configuración de correo incompleta; no hay un transporte disponible.');
 }
 
 // Helper: obtener URL base
@@ -43,9 +64,10 @@ const getAppUrl = () => {
 const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} }) => {
   // Modo simulado si no hay transporter
   if (!transporter) {
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' || transportMode === 'gmail-api') {
       const error = new Error('El envío de correo no está configurado en producción.');
-      error.code = 'SMTP_NOT_CONFIGURED';
+      error.code =
+        transportMode === 'gmail-api' ? 'GMAIL_API_NOT_CONFIGURED' : 'SMTP_NOT_CONFIGURED';
       error.statusCode = 503;
       throw error;
     }
@@ -67,6 +89,7 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
     // Enriquecer datos con appUrl y año actual
     const enrichedData = {
       ...templateData,
+      subject,
       appUrl: getAppUrl(),
       currentYear: new Date().getFullYear(),
     };
@@ -75,7 +98,7 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
     const htmlContent = await ejs.renderFile(templatePath, enrichedData);
 
     const mailOptions = {
-      from: `"TechStore" <${process.env.SMTP_USER}>`,
+      from: { name: 'TechStore', address: sender },
       to,
       subject,
       html: htmlContent,

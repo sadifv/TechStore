@@ -35,7 +35,7 @@ Asegúrate de tener instalado en tu sistema:
 
 2. **Configurar el backend:** copia `backend/.env.example` a `backend/.env` y completa las credenciales necesarias. En producción, `APP_URL` y `FRONTEND_URL` deben ser la URL pública de React, `API_URL` la URL pública de Express y `ALLOWED_ORIGINS` debe incluir el origen exacto de React (por ejemplo, `https://tienda.tu-dominio.com`). Configura `TRUST_PROXY_HOPS=1` si Express solo recibe tráfico desde un Nginx confiable; mantén el puerto de Express inaccesible desde Internet.
 
-   Para enviar correos, configura `SMTP_USER` y `SMTP_PASS` con credenciales válidas de Gmail y una contraseña de aplicación. Si aparece `getaddrinfo ENOTFOUND smtp.gmail.com`, revisa la conexión DNS/red del servidor o utiliza un proveedor SMTP accesible desde ese entorno.
+   Para enviar correos desde Render Free, configura `EMAIL_TRANSPORT=gmail-api` y las credenciales OAuth del remitente siguiendo [docs/gmail-api.md](docs/gmail-api.md). Ese plan bloquea SMTP. En entornos que lo permiten, `EMAIL_TRANSPORT=smtp` usa `SMTP_USER` y `SMTP_PASS` con una contraseña de aplicación Gmail.
 
 3. **Instalar dependencias:** ejecuta `npm ci` dentro de `backend/` y dentro de `frontend/`.
 
@@ -79,5 +79,5 @@ Asegúrate de tener instalado en tu sistema:
 ## Boletín, campañas y cupones
 
 - El boletín es gratuito; la página `/admin/marketing` permite administrar cupones promocionales y enviar campañas a suscriptores que dieron consentimiento. Los mensajes incluyen un enlace de baja.
-- Sin credenciales SMTP, los envíos se registran como simulados y no se envían.
+- Solo en desarrollo, usando el transporte SMTP sin credenciales, se simulan los envíos. En producción o al seleccionar Gmail API, la configuración incompleta falla explícitamente.
 - Los cupones se validan en el servidor y su uso se reserva durante el checkout; si un pedido vence o se cancela, el cupón vuelve a estar disponible.

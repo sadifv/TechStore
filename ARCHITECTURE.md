@@ -43,7 +43,7 @@ El checkout devuelve un pedido pendiente y un enlace a WhatsApp con el resumen. 
 
 ## Integraciones y mantenimiento
 
-- **Correo:** Nodemailer se conecta a Gmail SMTP; EJS genera bienvenida, recuperación y campañas. Las campañas se procesan en una cola persistida en MongoDB. En desarrollo sin SMTP se simula el envío; en producción no se considera un envío exitoso.
+- **Correo:** `EMAIL_TRANSPORT` selecciona Gmail API por HTTPS con OAuth o Gmail SMTP. Nodemailer compone el mensaje y EJS genera bienvenida, recuperación y campañas. Las campañas se procesan en una cola persistida en MongoDB. Gmail API requiere configuración completa y no recurre a SMTP si falla; solo SMTP sin credenciales en desarrollo permite simulación. Véase [docs/gmail-api.md](docs/gmail-api.md).
 - **TechBot:** usa el SDK `openai` para Chat Completions contra la configuración de Gemini. Requiere la clave del proveedor; las pruebas sin proveedor no acreditan respuestas reales.
 - **Imágenes:** el backend valida los archivos y guarda bytes en `ProductImage`; sirve URLs opacas bajo `/uploads/products/`.
 - **Mantenimiento:** las tareas programadas gestionan estados y vencimientos. Sus bloqueos y actualizaciones condicionadas evitan repetir operaciones críticas.
