@@ -42,6 +42,23 @@ test.after(() => {
   }
 });
 
+test('restock templates escape product names and retain explicit confirmation and unsubscribe links', async () => {
+  const links = {
+    to: 'recipient@example.invalid',
+    productName: '<script>unsafe</script>',
+    confirmUrl: 'https://store.example.invalid/avisos/confirmar#test-token',
+    unsubscribeUrl: 'https://store.example.invalid/avisos/baja#test-token',
+    productUrl: 'https://store.example.invalid/producto/test',
+  };
+  await mailer.sendRestockConfirmationEmail(links);
+  assert.ok(messages.at(-1).html.includes(links.confirmUrl));
+  assert.ok(!messages.at(-1).html.includes('<script>'));
+  await mailer.sendRestockAvailableEmail(links);
+  assert.ok(messages.at(-1).html.includes(links.productUrl));
+  assert.ok(messages.at(-1).html.includes(links.unsubscribeUrl));
+  assert.ok(messages.at(-1).html.includes('&lt;script&gt;'));
+});
+
 test('welcome renders the real template with escaped user data and a catalog link', async () => {
   await mailer.sendWelcomeEmail('recipient@example.invalid', '<Example>');
   const message = messages.at(-1);

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../api.js';
 import { useCartActions } from '../components/CartContext.js';
+import FavoriteButton from '../components/favorites/FavoriteButton.jsx';
+import RestockRequest from '../components/RestockRequest.jsx';
 
 export default function ProductPage({ productId }) {
   const { add, notify } = useCartActions();
@@ -72,6 +74,7 @@ export default function ProductPage({ productId }) {
           <i className="ri-price-tag-3-line" aria-hidden="true" /> {product.category}
         </p>
         <h1 className="product-detail-title">{product.name}</h1>
+        <FavoriteButton product={product} />
         {product.description && <p className="product-detail-description">{product.description}</p>}
         <section className="product-detail-price-section" aria-label="Precio">
           {onSale && product.originalPrice != null && (
@@ -96,6 +99,7 @@ export default function ProductPage({ productId }) {
             <span id="stock-unit-label">unidades disponibles</span>
           </p>
         </section>
+        {available === 0 && <RestockRequest productId={product._id} />}
         <form className="product-detail-actions" id="add-to-cart-form" onSubmit={addProduct}>
           <input type="hidden" name="productId" value={product._id} />
           <label htmlFor="quantity" className="sr-only">

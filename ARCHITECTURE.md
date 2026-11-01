@@ -53,6 +53,20 @@ La restitución reutiliza las transacciones y bloqueos existentes, con condicion
 
 ## Integraciones y mantenimiento
 
+### Favoritos y avisos de disponibilidad
+
+`/api/favorites` y `/api/favorites/:productId` requieren sesión vigente. `FavoriteList` usa el ID del usuario como `_id`, admite hasta 100 productos mediante actualización condicional atómica y no duplica favoritos. El listado calcula disponibilidad por lotes y deja removibles los productos retirados. React comparte una consulta por sesión mediante `FavoritesProvider`; catálogo, ficha y Mi cuenta usan el mismo estado privado.
+
+Los invitados y usuarios pueden solicitar un aviso en `/api/restock-alerts` con consentimiento explícito. Se responde 202 genérico antes de consultar cuentas o enviar correo, por lo que no acredita entrega ni revela solicitudes anteriores. El correo de confirmación caduca en 24 horas. `/api/restock-alerts/confirm` y `/unsubscribe` cambian preferencias únicamente por POST con un token aleatorio de 32 bytes; MongoDB almacena su hash. Los enlaces frontend `/avisos/confirmar` y `/avisos/baja` llevan el token en el fragmento, se retira de la barra al abrir y se conserva en sessionStorage para permitir reintentar en la misma pestaña.
+
+`RestockAlert` usa un `_id` determinista a partir del hash del correo y el ObjectId canónico del producto. La cuota de 20 solicitudes confirmadas por correo se reserva y libera mediante transacciones sobre `RestockQuota`; solicitudes sin confirmar no consumen ese cupo. Hay limitadores persistentes por IP y operación, espera de 15 minutos por reenvío y un máximo de 10 confirmaciones por hora por dirección para reducir abuso.
+
+`restockQueue` revisa lotes de hasta 50 solicitudes al arrancar y cada 60 segundos sin bloquear la escucha HTTP. Rota candidatos para que los productos agotados no bloqueen a otros. Comprueba producto activo y stock menos reservas por lote y antes del envío. La reclamación pasa por `claimed`, aún cancelable, y luego por una transición atómica a `sending` inmediatamente antes de entregar al transporte. Un envío incierto o interrumpido queda `delivery_unknown` y no se reenvía automáticamente. El aviso no reserva stock ni garantiza su disponibilidad al abrirlo.
+
+Los avisos vencen a los 90 días; las confirmaciones no completadas a las 24 horas. Los estados terminales eliminan correo y referencias de cuota en una transacción; los metadatos restantes y hashes se eliminan tras 24 horas, y los documentos de cuota vacíos antiguos se limpian. La baja no puede retirar un correo cuyo envío ya comenzó.
+
+Los modelos nuevos tienen `autoIndex:false`; la unicidad crítica depende de `_id` nativo, no de una migración automática. Los índices secundarios de consulta se preparan con `node scripts/ensureRestockIndexes.js` desde backend en modo lectura por defecto. Aplicarlos requiere autorización de destino y `--apply --database=TechStore` (nombre exacto de la base configurada). Este desarrollo solo los verificó/aplicó en MongoDB temporal.
+
 - **Correo:** `EMAIL_TRANSPORT` selecciona Gmail API por HTTPS con OAuth o Gmail SMTP. Nodemailer compone el mensaje y EJS genera bienvenida, recuperación y campañas. Las campañas se procesan en una cola persistida en MongoDB. Gmail API requiere configuración completa y no recurre a SMTP si falla; solo SMTP sin credenciales en desarrollo permite simulación. Véase [docs/gmail-api.md](docs/gmail-api.md).
 - **TechBot:** usa el SDK `openai` para Chat Completions contra la configuración de Gemini. Requiere la clave del proveedor; las pruebas sin proveedor no acreditan respuestas reales.
 - **Imágenes:** el backend valida los archivos y guarda bytes en `ProductImage`; sirve URLs opacas bajo `/uploads/products/`.

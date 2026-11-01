@@ -2717,6 +2717,47 @@ dialog#checkout-modal {
   color: var(--color-primary);
 }
 
+.favorites-section {
+  margin-bottom: var(--space-8);
+}
+.restock-request {
+  margin: var(--space-6) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.restock-request form {
+  display: grid;
+  gap: var(--space-4);
+}
+.restock-request label {
+  display: grid;
+  gap: var(--space-2);
+}
+.restock-request input[type='email'] {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.restock-request .restock-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.restock-consent input {
+  margin-top: 0.3em;
+  flex-shrink: 0;
+}
+.product-card footer {
+  display: grid;
+  gap: var(--space-3);
+}
+.product-card footer .btn {
+  max-width: 100%;
+  white-space: normal;
+}
+
 .order-tracking {
   border-top: 1px solid var(--color-border);
   padding-top: var(--space-4);

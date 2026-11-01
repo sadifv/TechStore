@@ -44,4 +44,8 @@ Revisar móvil, escritorio, zoom, textos largos y estados vacío, cargando, erro
 
 ## Cambios al diseño
 
+Los botones de favoritos usan texto y `aria-pressed` para expresar si un producto está guardado, conservan estados ocupado/error y ofrecen reintento. Al retirar una tarjeta enfocada desde Mi cuenta, el foco vuelve al título de favoritos. Los productos retirados se muestran como no disponibles con una acción para quitarlos.
+
+Los formularios de disponibilidad usan correo etiquetado y casilla obligatoria de consentimiento sin preselección. Las páginas de confirmación y baja requieren acción explícita, anuncian errores/resultados y permiten volver al catálogo. No comunicar una reserva de inventario ni una entrega de correo sin evidencia.
+
 Antes de introducir otro color, tamaño o componente, comprobar si existe un token o patrón equivalente. Si se añade una convención reutilizable, definirla en los estilos compartidos y documentarla aquí. Validar el resultado en el navegador: una compilación correcta no demuestra que el diseño sea legible ni accesible.

@@ -3,6 +3,7 @@ import { requestJson } from '../../api.js';
 import { getOrderItemName } from './orderItemDisplay.js';
 import { formatCurrency } from './utils.js';
 import OrderTracking from './OrderTracking.jsx';
+import FavoritesSection from '../favorites/FavoritesSection.jsx';
 import { orderShippingLabel } from './orderTracking.js';
 
 export function ProfilePage({ user }) {
@@ -40,12 +41,24 @@ export function ProfilePage({ user }) {
         </article>
       </section>
       <section className="orders-section">
+        <FavoritesSection />
         <h2>Historial de Compras</h2>
         {orders === null && !error && <p className="orders-status">Cargando tus pedidos…</p>}
         {error && (
           <section aria-label="Error al cargar pedidos">
-            <p className="orders-status error" role="alert">{error}</p>
-            <button type="button" className="btn btn-outline" onClick={() => { setError(''); setLoadAttempt(current => current + 1); }}>Reintentar carga</button>
+            <p className="orders-status error" role="alert">
+              {error}
+            </p>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => {
+                setError('');
+                setLoadAttempt((current) => current + 1);
+              }}
+            >
+              Reintentar carga
+            </button>
           </section>
         )}
         {orders?.length === 0 && <p className="empty-msg">Aún no has realizado ninguna compra.</p>}

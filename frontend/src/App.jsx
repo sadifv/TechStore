@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { requestJson } from './api.js';
 import { CartProvider } from './components/Cart.jsx';
 import SiteFooter from './components/SiteFooter.jsx';
+import FavoritesProvider from './components/favorites/FavoritesProvider.jsx';
+const RestockPreferencePage = lazy(() => import('./components/RestockPreferencePage.jsx'));
 import SiteHeader from './components/SiteHeader.jsx';
 import NewsletterUnsubscribePage from './components/NewsletterUnsubscribePage.jsx';
 import HomePage from './pages/HomePage.jsx';
@@ -118,7 +120,13 @@ export default function App() {
   const unsubscribeMatch = pathname.match(/^\/(?:api\/)?newsletter\/unsubscribe\/([^/]+)$/);
   const orderDetailMatch = pathname.match(/^\/admin\/orders\/([^/]+)$/);
   const packingSlipMatch = pathname.match(/^\/admin\/orders\/([^/]+)\/packing-slip$/);
-  const malformedRoute = [productMatch, resetMatch, orderDetailMatch, packingSlipMatch, unsubscribeMatch].some((match) => match && decodeRouteSegment(match[1]) === null);
+  const malformedRoute = [
+    productMatch,
+    resetMatch,
+    orderDetailMatch,
+    packingSlipMatch,
+    unsubscribeMatch,
+  ].some((match) => match && decodeRouteSegment(match[1]) === null);
   let page;
   if (malformedRoute) page = <NotFoundPage />;
   else if (pathname === '/') page = <HomePage user={user} />;
@@ -143,6 +151,8 @@ export default function App() {
         <p role="status">Cargando tu cuenta…</p>
       </section>
     );
+  else if (pathname === '/avisos/confirmar' || pathname === '/avisos/baja')
+    page = <RestockPreferencePage />;
   else if (pathname === '/legal') page = <LegalPage />;
   else if (pathname === '/forgot-password') page = <ForgotPasswordPage />;
   else if (resetMatch) page = <ResetPasswordPage token={decodeRouteSegment(resetMatch[1])} />;
@@ -167,14 +177,16 @@ export default function App() {
   if (packingSlipMatch) return <Suspense fallback={<PageLoading />}>{page}</Suspense>;
   return (
     <CartProvider user={user}>
-      <a className="skip-link" href="#main-content">
-        Saltar al contenido principal
-      </a>
-      <SiteHeader user={user} />
-      <main id="main-content" className="main-content">
-        <Suspense fallback={<PageLoading />}>{page}</Suspense>
-      </main>
-      <SiteFooter />
+      <FavoritesProvider key={user?.id || 'guest'} user={user}>
+        <a className="skip-link" href="#main-content">
+          Saltar al contenido principal
+        </a>
+        <SiteHeader user={user} />
+        <main id="main-content" className="main-content">
+          <Suspense fallback={<PageLoading />}>{page}</Suspense>
+        </main>
+        <SiteFooter />
+      </FavoritesProvider>
     </CartProvider>
   );
 }

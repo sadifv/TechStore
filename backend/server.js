@@ -138,7 +138,10 @@ app.use(
 );
 
 // Las imágenes que sube el administrador se guardan en MongoDB.
-app.get('/uploads/products/:imageId', require('./controllers/productImageController').serveProductImage);
+app.get(
+  '/uploads/products/:imageId',
+  require('./controllers/productImageController').serveProductImage,
+);
 
 // 8. Middleware global para res.locals.user
 const { setUserLocals } = require('./middleware/authMiddleware');
@@ -230,6 +233,10 @@ if (require.main === module) {
     await connectDB();
     await require('./models/Order').init();
     await require('./services/campaignQueue').startCampaignQueue();
+    await require('./models/FavoriteList').init();
+    await require('./models/RestockAlert').init();
+    await require('./models/RestockQuota').init();
+    await require('./services/restockQueue').startRestockQueue();
     scheduleMaintenanceJobs();
 
     const PORT = process.env.PORT || 3001;

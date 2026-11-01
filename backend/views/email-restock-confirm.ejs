@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Confirma tu aviso</title>
+  </head>
+  <body>
+    <h1>Confirma tu aviso de disponibilidad</h1>
+    <p>Solicitaste un aviso para <strong><%= productName %></strong>.</p>
+    <p>
+      <a href="<%= confirmUrl %>">Revisar y confirmar el aviso</a>. El enlace caduca en 24 horas.
+    </p>
+    <p>
+      Recibirás un único aviso. No reserva productos ni garantiza disponibilidad. Si no hiciste esta
+      solicitud, puedes ignorarla o <a href="<%= unsubscribeUrl %>">cancelarla</a>.
+    </p>
+  </body>
+</html>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { backendAssetUrl } from '../api.js';
 import { useCartActions } from './CartContext.js';
+import FavoriteButton from './favorites/FavoriteButton.jsx';
 
 export default function ProductCard({ product }) {
   const { add, notify } = useCartActions();
@@ -43,6 +44,7 @@ export default function ProductCard({ product }) {
           <p className="product-price">${Number(product.price).toFixed(2)}</p>
         </a>
         <footer>
+          <FavoriteButton product={product} />
           <button
             type="button"
             className="btn btn-primary add-to-cart-btn"

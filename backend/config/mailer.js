@@ -152,6 +152,20 @@ const sendMarketingCampaignEmail = async ({
 };
 
 module.exports = {
+  sendRestockConfirmationEmail: ({ to, productName, confirmUrl, unsubscribeUrl }) =>
+    sendTemplateEmail({
+      to,
+      subject: 'Confirma tu aviso de disponibilidad | TechStore',
+      templateName: 'email-restock-confirm',
+      templateData: { productName, confirmUrl, unsubscribeUrl },
+    }),
+  sendRestockAvailableEmail: ({ to, productName, productUrl, unsubscribeUrl }) =>
+    sendTemplateEmail({
+      to,
+      subject: 'Un producto vuelve a estar disponible | TechStore',
+      templateName: 'email-restock-available',
+      templateData: { productName, productUrl, unsubscribeUrl },
+    }),
   sendPasswordResetEmail,
   sendWelcomeEmail,
   sendMarketingCampaignEmail,

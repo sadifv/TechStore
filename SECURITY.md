@@ -38,6 +38,10 @@ La cancelación del cliente tiene un límite persistente específico y conserva 
 
 ## Dependencias y verificación
 
+Favoritos y avisos mantienen controles independientes del boletín. Los favoritos solo se consultan y modifican para la sesión actual y tienen un límite atómico de 100. Los avisos requieren consentimiento y verificación del correo por token; no se activan ni cancelan por GET. La cuota de 20 avisos confirmados es transaccional; los límites por IP/operación y por dirección reducen el abuso de correo sin divulgar solicitudes existentes. Las respuestas públicas no prometen que el correo haya sido enviado.
+
+Los tokens de aviso se almacenan como hashes; el navegador los recibe en fragmentos para evitar incluirlos en peticiones HTTP y los retira de la barra. No registrarlos ni incluirlos en capturas. Una baja antes de iniciar el envío cancela la preparación; una entrega ya iniciada no puede retirarse. Ante un resultado ambiguo no se reenvía automáticamente. Las pruebas usan destinatarios ficticios y transporte simulado.
+
 Los lockfiles de `backend/` y `frontend/` forman parte del proyecto; usar `npm ci` para instalaciones reproducibles. Consultar `npm audit` en ambos directorios y revisar notas, compatibilidad y pruebas antes de actualizar. No resolver alertas desactivando la auditoría o usando `--force` sin analizar el cambio.
 
 CI ejecuta pruebas en Node.js 22 y 24; la auditoría de ambos proyectos se ejecuta en el trabajo de Node.js 24. Un trabajo verde de Node.js 22, por sí solo, no confirma el resultado de la auditoría. Consultar [AGENTS.md](AGENTS.md) para los comandos de verificación.
