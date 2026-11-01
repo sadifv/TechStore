@@ -2717,6 +2717,49 @@ dialog#checkout-modal {
   color: var(--color-primary);
 }
 
+.order-tracking {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.order-tracking-states {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-4) 0;
+}
+
+.order-tracking-states dt {
+  font-weight: 600;
+}
+.order-tracking-states dd {
+  margin: 0;
+}
+.order-timeline {
+  padding-left: var(--space-6);
+  margin: var(--space-4) 0;
+}
+.order-timeline li + li {
+  margin-top: var(--space-2);
+}
+.order-tracking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.order-cancel-confirmation {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-top: var(--space-4);
+}
+.order-tracking .form-status:empty {
+  display: none;
+}
+
 /* ========================================
    18. TOASTS
    ======================================== */
@@ -4205,6 +4248,17 @@ dialog#checkout-modal {
 }
 
 /* Semantic controls retain the existing layout. */
-fieldset.cart-item-controls { border: 0; padding: 0; min-width: 0; margin-inline: 0; }
-ul.orders-list { list-style: none; padding: 0; }
-h3.order-id { margin: 0; font-size: inherit; }
+fieldset.cart-item-controls {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  margin-inline: 0;
+}
+ul.orders-list {
+  list-style: none;
+  padding: 0;
+}
+h3.order-id {
+  margin: 0;
+  font-size: inherit;
+}

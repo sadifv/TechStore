@@ -11,7 +11,17 @@ let productQueries = 0;
 const Product = {
   find() {
     productQueries += 1;
-    return { sort() { return this; }, limit() { return this; }, async lean() { return []; } };
+    return {
+      sort() {
+        return this;
+      },
+      limit() {
+        return this;
+      },
+      async lean() {
+        return [];
+      },
+    };
   },
 };
 const mocks = new Map([
@@ -92,7 +102,13 @@ test('returns a client error when the request has no parsed body', async () => {
   let statusCode;
   await processAiChat(
     { session: {} },
-    { status(code) { statusCode = code; return this; }, json() {} },
+    {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json() {},
+    },
   );
   assert.equal(statusCode, 400);
 });

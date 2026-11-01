@@ -23,7 +23,10 @@ try {
       };
     }
     if (parent?.filename.endsWith('orderRoutes.js') && request === '../middleware/rateLimiter') {
-      return { checkoutLimiter: (_req, _res, next) => next() };
+      return {
+        checkoutLimiter: (_req, _res, next) => next(),
+        customerOrderCancelLimiter: (_req, _res, next) => next(),
+      };
     }
     return originalLoad.call(this, request, parent, isMain);
   };

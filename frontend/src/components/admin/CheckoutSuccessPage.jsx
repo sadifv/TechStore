@@ -3,19 +3,21 @@ import { useCartActions } from '../CartContext.js';
 import { money } from './shared.jsx';
 import { finishCheckoutAttempt } from '../../whatsappCheckout.js';
 import { requestJson } from '../../api.js';
+import OrderTracking from '../account/OrderTracking.jsx';
 
 export function CheckoutSuccessPage() {
   const orderId = new URLSearchParams(location.search).get('orderId');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(Boolean(orderId));
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const checkoutKey = orderId ? sessionStorage.getItem(`techstore.orderAccess.${orderId}`) : null;
   const { reconcileGuestItems } = useCartActions();
   const reconciled = useRef(false);
   useEffect(() => {
     if (!orderId) return undefined;
     let active = true;
-    requestJson('/api/orders/success', {
+    requestJson('/api/orders/track', {
       method: 'POST',
       body: JSON.stringify({ orderId, checkoutKey }),
     })
@@ -31,7 +33,7 @@ export function CheckoutSuccessPage() {
     return () => {
       active = false;
     };
-  }, [orderId, checkoutKey]);
+  }, [orderId, checkoutKey, loadAttempt]);
   useEffect(() => {
     if (!data || reconciled.current) return;
     finishCheckoutAttempt(sessionStorage);
@@ -57,6 +59,7 @@ export function CheckoutSuccessPage() {
           {error}
         </p>
         <a href="/catalogo">Volver al catálogo</a>
+        <button type="button" className="btn btn-outline" onClick={() => { setError(''); setLoading(true); setLoadAttempt(current => current + 1); }}>Reintentar carga</button>
       </section>
     );
   if (loading || (!data && !error))
@@ -66,7 +69,7 @@ export function CheckoutSuccessPage() {
       </section>
     );
   const whatsappUrl = sessionStorage.getItem(`techstore.whatsapp.${orderId}`);
-  const expired = data.paymentStatus === 'failed' || new Date(data.expiresAt) <= new Date();
+  const expired = data.paymentStatus === 'failed' || data.expired || data.status === 'cancelled';
   return (
     <section className="checkout-success-container" aria-labelledby="checkout-success-heading">
       <article className="success-card">
@@ -76,7 +79,19 @@ export function CheckoutSuccessPage() {
         </header>
         <section className="order-details">
           <p>
-            Pedido <strong>#{data._id}</strong>: {data.paymentStatus === 'paid' ? 'pago confirmado' : expired ? 'cancelado o vencido' : data.contactConfirmed ? 'contacto recibido; pendiente de pago' : 'pendiente de contacto por WhatsApp'}.
+            Pedido <strong>#{data._id}</strong>:{' '}
+            {data.paymentStatus === 'paid'
+              ? 'pago confirmado'
+              : data.expired
+                ? 'reserva vencida'
+                : data.status === 'cancelled'
+                  ? 'cancelado'
+                  : expired
+                    ? 'no disponible'
+                : data.contactConfirmed
+                  ? 'contacto recibido; pendiente de pago'
+                  : 'pendiente de contacto por WhatsApp'}
+            .
           </p>
           <p>
             Total del pedido: <strong>{money(data.totalAmount)}</strong>
@@ -89,13 +104,20 @@ export function CheckoutSuccessPage() {
           )}
           {data.paymentStatus === 'pending' && !expired && (
             <>
-              <p>Envía el mensaje por WhatsApp para completar la compra. El pago se confirmará cuando la tienda lo verifique. La reserva vence a las {new Date(data.expiresAt).toLocaleString()}.</p>
+              <p>
+                Envía el mensaje por WhatsApp para completar la compra. El pago se confirmará cuando
+                la tienda lo verifique. La reserva vence a las{' '}
+                {new Date(data.expiresAt).toLocaleString()}.
+              </p>
               {/^https:\/\/wa\.me\/\d+\?text=/.test(whatsappUrl || '') && (
-                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="btn btn-primary">Abrir WhatsApp y enviar el pedido</a>
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="btn btn-primary">
+                  Abrir WhatsApp y enviar el pedido
+                </a>
               )}
             </>
           )}
         </section>
+        <OrderTracking order={data} checkoutKey={checkoutKey} onUpdate={setData} headingLevel={2} />
         <footer>
           <a href="/catalogo" className="btn btn-primary">
             Volver al Catálogo

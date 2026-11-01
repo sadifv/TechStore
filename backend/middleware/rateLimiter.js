@@ -164,6 +164,7 @@ const contactLimiter = createSensitiveLimiter('contact');
 const newsletterLimiter = createSensitiveLimiter('newsletter');
 const passwordRecoveryLimiter = createSensitiveLimiter('password-recovery');
 const passwordResetLimiter = createSensitiveLimiter('password-reset');
+const customerOrderCancelLimiter = createSensitiveLimiter('customer-order-cancel', { max: 20 });
 
 module.exports = {
   loginLimiter,
@@ -188,4 +189,5 @@ module.exports = {
   newsletterLimiter,
   passwordRecoveryLimiter,
   passwordResetLimiter,
+  customerOrderCancelLimiter,
 };

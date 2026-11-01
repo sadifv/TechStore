@@ -272,7 +272,8 @@ Module._load = function (request, parent, isMain) {
       'orderController.js',
       'orderCheckoutController.js',
       'orderInventory.js',
-      'orderPayment.js', 'checkoutService.js',
+      'orderPayment.js',
+      'checkoutService.js',
     ].includes(path.basename(parent.filename))
   ) {
     if (request === '../models/Order') return Order;
@@ -284,7 +285,8 @@ Module._load = function (request, parent, isMain) {
         updateMany: async () => ({ modifiedCount: 0 }),
       };
     if (request === '../models/Cart') return Cart;
-    if (request.endsWith('/inventoryTransaction')) return { inSession: (q) => q, withInventoryTransaction: async (operation) => operation() };
+    if (request.endsWith('/inventoryTransaction'))
+      return { inSession: (q) => q, withInventoryTransaction: async (operation) => operation() };
     if (request.endsWith('/productReservationLock')) {
       return {
         withProductReservationLock: async (productId, operation) => {
@@ -295,7 +297,10 @@ Module._load = function (request, parent, isMain) {
             release();
           }
         },
-        acquireProductReservationLocks: async (ids) => ({ release: await acquireFakeProductLocks(ids), assertOwned: async () => {} }),
+        acquireProductReservationLocks: async (ids) => ({
+          release: await acquireFakeProductLocks(ids),
+          assertOwned: async () => {},
+        }),
       };
     }
     if (request === '../config/logger') return logger;

@@ -96,7 +96,11 @@ test('still emails a registered account after returning the generic response', a
   };
 
   forgotPassword(
-    { body: { email: ' REGISTERED@example.test ' }, protocol: 'https', get: () => 'shop.example.test' },
+    {
+      body: { email: ' REGISTERED@example.test ' },
+      protocol: 'https',
+      get: () => 'shop.example.test',
+    },
     response,
     (error) => assert.fail(error),
   );
@@ -108,5 +112,8 @@ test('still emails a registered account after returning the generic response', a
   assert.equal(user.resetPasswordExpires - Date.now() <= 3600000, true);
   assert.equal(sentResetEmails.length, 1);
   assert.equal(sentResetEmails[0].email, 'registered@example.test');
-  assert.match(sentResetEmails[0].url, /^https:\/\/shop\.example\.test\/reset-password\/[a-f0-9]{64}$/);
+  assert.match(
+    sentResetEmails[0].url,
+    /^https:\/\/shop\.example\.test\/reset-password\/[a-f0-9]{64}$/,
+  );
 });

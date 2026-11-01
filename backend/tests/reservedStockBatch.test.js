@@ -15,7 +15,13 @@ test('gets active reservation totals for all products using one grouped aggregat
 
   const totals = await Reservation.getReservedStockByProducts(productIds);
 
-  assert.deepEqual([...totals], [[productIds[0], 2], [productIds[1], 4]]);
+  assert.deepEqual(
+    [...totals],
+    [
+      [productIds[0], 2],
+      [productIds[1], 4],
+    ],
+  );
   assert.deepEqual(pipeline[0].$match.product.$in, productIds);
   assert.equal(pipeline[0].$match.status, 'active');
   assert.ok(pipeline[0].$match.expiresAt.$gt instanceof Date);
@@ -24,7 +30,10 @@ test('gets active reservation totals for all products using one grouped aggregat
 
 test('returns an empty map without querying when the product list is empty', async () => {
   let calls = 0;
-  Reservation.aggregate = async () => { calls += 1; return []; };
+  Reservation.aggregate = async () => {
+    calls += 1;
+    return [];
+  };
   assert.deepEqual(await Reservation.getReservedStockByProducts([]), new Map());
   assert.equal(calls, 0);
 });

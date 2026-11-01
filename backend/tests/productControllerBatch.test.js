@@ -11,15 +11,33 @@ const products = [
 ];
 let reservedQueryIds;
 const Product = {
-  find: () => ({ sort() { return this; }, skip() { return this; }, limit() { return this; }, async lean() { return products; } }),
+  find: () => ({
+    sort() {
+      return this;
+    },
+    skip() {
+      return this;
+    },
+    limit() {
+      return this;
+    },
+    async lean() {
+      return products;
+    },
+  }),
   countDocuments: async () => products.length,
 };
 const Reservation = {
   async getReservedStockByProducts(ids) {
     reservedQueryIds = ids;
-    return new Map([[String(ids[0]), 2], [String(ids[1]), 7]]);
+    return new Map([
+      [String(ids[0]), 2],
+      [String(ids[1]), 7],
+    ]);
   },
-  async getReservedStock() { throw new Error('The catalog must not query each product separately.'); },
+  async getReservedStock() {
+    throw new Error('The catalog must not query each product separately.');
+  },
 };
 const mocks = new Map([
   ['../models/Product', Product],
@@ -41,9 +59,24 @@ test('catalog availability uses one batched reservation query and clamps negativ
   let response;
   await getProducts(
     { query: {} },
-    { status() { return this; }, json(value) { response = value; } },
-    (error) => { throw error; },
+    {
+      status() {
+        return this;
+      },
+      json(value) {
+        response = value;
+      },
+    },
+    (error) => {
+      throw error;
+    },
   );
-  assert.deepEqual(reservedQueryIds, products.map(({ _id }) => _id));
-  assert.deepEqual(response.products.map(({ availableStock }) => availableStock), [4, 0]);
+  assert.deepEqual(
+    reservedQueryIds,
+    products.map(({ _id }) => _id),
+  );
+  assert.deepEqual(
+    response.products.map(({ availableStock }) => availableStock),
+    [4, 0],
+  );
 });

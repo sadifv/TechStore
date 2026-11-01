@@ -15,7 +15,8 @@ const Product = {
     const now = filter.$or[0].leaseUntil.$lte;
     const productId = String(filter._id);
     const lock = locks.get(productId);
-    if (lock?.token && lock.expiresAt > now) throw Object.assign(new Error('busy'), {code:11000});
+    if (lock?.token && lock.expiresAt > now)
+      throw Object.assign(new Error('busy'), { code: 11000 });
     locks.set(productId, {
       token: update.$set.ownerToken,
       expiresAt: update.$set.leaseUntil,
@@ -25,8 +26,9 @@ const Product = {
   },
   async updateOne(filter, update) {
     const lock = locks.get(String(filter._id));
-    if (lock?.token !== filter.ownerToken) return {matchedCount:0};
-    lock.expiresAt = update.$set.leaseUntil; return {matchedCount:1};
+    if (lock?.token !== filter.ownerToken) return { matchedCount: 0 };
+    lock.expiresAt = update.$set.leaseUntil;
+    return { matchedCount: 1 };
   },
   async deleteOne(filter) {
     const productId = String(filter._id);
@@ -37,7 +39,8 @@ const Product = {
 };
 
 Module._load = function (request, parent, isMain) {
-  if (parent?.filename === lockPath && request === './inventoryTransaction') return { withInventoryTransaction: async (op) => op() };
+  if (parent?.filename === lockPath && request === './inventoryTransaction')
+    return { withInventoryTransaction: async (op) => op() };
   if (parent?.filename === lockPath && request === '../models/MaintenanceLock') return Product;
   return originalLoad.call(this, request, parent, isMain);
 };
@@ -74,7 +77,10 @@ test('acquires multiple product locks in stable order and releases all of them',
   acquiredProductIds.length = 0;
   const release = await acquireProductReservationLocks(['product-b', 'product-a', 'product-b']);
 
-  assert.deepEqual(acquiredProductIds, ['product-reservation:product-a', 'product-reservation:product-b']);
+  assert.deepEqual(acquiredProductIds, [
+    'product-reservation:product-a',
+    'product-reservation:product-b',
+  ]);
   await release.release();
   assert.equal(locks.size, 0);
 });

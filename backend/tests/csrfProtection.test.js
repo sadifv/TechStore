@@ -43,10 +43,7 @@ test('rejects an unlisted origin and accepts the configured shop origin', () => 
     runGuard(makeRequest('DELETE', { origin: 'https://evil.example' })).response.statusCode,
     403,
   );
-  assert.equal(
-    runGuard(makeRequest('PATCH', { origin: 'https://shop.example' })).nextCalled,
-    true,
-  );
+  assert.equal(runGuard(makeRequest('PATCH', { origin: 'https://shop.example' })).nextCalled, true);
 });
 
 test('leaves safe methods and originless non-browser requests unaffected', () => {

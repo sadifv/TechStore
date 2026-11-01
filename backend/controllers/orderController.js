@@ -8,9 +8,11 @@ const {
   pruneCompletedInventoryRestorationKeys,
 } = require('../services/orderInventory');
 const { actorId, orderEvent } = require('../services/orderAudit');
+const { customerOrderView } = require('../services/customerOrderView');
 
 const getUserOrders = async (req, res, next) => {
   try {
+    res.set('Cache-Control', 'no-store');
     if (!req.session?.user) {
       return res.status(401).json({
         success: false,
@@ -26,7 +28,7 @@ const getUserOrders = async (req, res, next) => {
     res.status(200).json({
       success: true,
       count: orders.length,
-      orders,
+      orders: orders.map(customerOrderView),
     });
   } catch (error) {
     logger.error(`Error al obtener órdenes del usuario: ${error.message}`, { stack: error.stack });
@@ -97,7 +99,11 @@ const updateOrderStatus = async (req, res, next) => {
       });
     }
 
-    logger.info('Estado de pedido actualizado.', { orderId: String(order._id), status, actorId: actorId(req) });
+    logger.info('Estado de pedido actualizado.', {
+      orderId: String(order._id),
+      status,
+      actorId: actorId(req),
+    });
 
     res.status(200).json({
       success: true,
@@ -132,7 +138,10 @@ const markWhatsappOrderPaid = async (req, res, next) => {
       });
     }
 
-    logger.info('Confirmación manual de pago.', { orderId: String(order._id), actorId: actorId(req) });
+    logger.info('Confirmación manual de pago.', {
+      orderId: String(order._id),
+      actorId: actorId(req),
+    });
     return res.json({ success: true, order });
   } catch (error) {
     next(error);
@@ -156,13 +165,23 @@ const confirmWhatsappContact = async (req, res, next) => {
       { returnDocument: 'after' },
     );
     if (!order) {
-      const existing = await Order.findOne({ _id: req.params.id, contactConfirmedAt: { $exists: true } });
+      const existing = await Order.findOne({
+        _id: req.params.id,
+        contactConfirmedAt: { $exists: true },
+      });
       if (existing) return res.json({ success: true, order: existing });
-      return res.status(409).json({ success: false, error: 'El pedido no está pendiente o ya venció.' });
+      return res
+        .status(409)
+        .json({ success: false, error: 'El pedido no está pendiente o ya venció.' });
     }
-    logger.info('Contacto de WhatsApp confirmado por la tienda.', { orderId: String(order._id), actorId: actorId(req) });
+    logger.info('Contacto de WhatsApp confirmado por la tienda.', {
+      orderId: String(order._id),
+      actorId: actorId(req),
+    });
     return res.json({ success: true, order });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 };
 
 const cancelWhatsappOrder = async (req, res, next) => {
@@ -170,13 +189,21 @@ const cancelWhatsappOrder = async (req, res, next) => {
     const order = await Order.findOne({
       _id: req.params.id,
       paymentMethod: 'whatsapp',
-      paymentStatus: { $in: ['pending', 'failed'] } });
+      paymentStatus: { $in: ['pending', 'failed'] },
+    });
     if (!order)
-      return res.status(409).json({ success: false, error: 'Solo se pueden cancelar pedidos sin pago confirmado.' });
+      return res
+        .status(409)
+        .json({ success: false, error: 'Solo se pueden cancelar pedidos sin pago confirmado.' });
     const restored = await restoreOrderInventory(order._id, undefined, 'cancelled', actorId(req));
-    if (!restored && !order.inventoryRestored) return res.status(409).json({ success: false, error: 'El pedido cambió. Actualiza la página.' });
+    if (!restored && !order.inventoryRestored)
+      return res
+        .status(409)
+        .json({ success: false, error: 'El pedido cambió. Actualiza la página.' });
     return res.json({ success: true });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {

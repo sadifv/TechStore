@@ -25,7 +25,11 @@ try {
 
 test('stores valid image bytes durably in Mongo and returns an opaque public URL', async () => {
   const buffer = Buffer.from([0xff, 0xd8, 0xff, 0x00, 0x01]);
-  const result = await storeProductImage({ buffer, mimetype: 'image/jpeg', originalname: 'photo.jpg' });
+  const result = await storeProductImage({
+    buffer,
+    mimetype: 'image/jpeg',
+    originalname: 'photo.jpg',
+  });
   assert.equal(result.url, '/uploads/products/507f1f77bcf86cd799439011');
   assert.equal(created.contentType, 'image/jpeg');
   assert.deepEqual(created.data, buffer);
@@ -33,11 +37,14 @@ test('stores valid image bytes durably in Mongo and returns an opaque public URL
 
 test('rejects image bytes that do not match their declared content type', async () => {
   await assert.rejects(
-    storeProductImage({ buffer: Buffer.from('not an image'), mimetype: 'image/png', originalname: 'photo.png' }),
+    storeProductImage({
+      buffer: Buffer.from('not an image'),
+      mimetype: 'image/png',
+      originalname: 'photo.png',
+    }),
     { statusCode: 400 },
   );
-  await assert.rejects(
-    storeProductImage({ mimetype: 'image/jpeg', originalname: 'photo.jpg' }),
-    { statusCode: 400 },
-  );
+  await assert.rejects(storeProductImage({ mimetype: 'image/jpeg', originalname: 'photo.jpg' }), {
+    statusCode: 400,
+  });
 });

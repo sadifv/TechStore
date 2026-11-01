@@ -6,7 +6,11 @@ const controllerPath = path.join(__dirname, '..', 'controllers', 'productControl
 const originalLoad = Module._load;
 const calls = [];
 const products = [{ _id: '1', stock: 5, createdAt: new Date() }];
-const saleProduct = { _id: 'sale', flashSale: true, flashSaleEndsAt: new Date(Date.now() + 60_000) };
+const saleProduct = {
+  _id: 'sale',
+  flashSale: true,
+  flashSaleEndsAt: new Date(Date.now() + 60_000),
+};
 const Product = {
   find(query) {
     calls.push({ query });

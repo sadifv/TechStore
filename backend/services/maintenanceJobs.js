@@ -42,7 +42,8 @@ const scheduleMaintenanceJobs = () => {
       const expiredOrders = await expirePendingWhatsappOrders();
       if (expiredOrders > 0) logger.info(`Pedidos de WhatsApp vencidos: ${expiredOrders}`);
       const prunedOrders = await pruneCompletedInventoryRestorationKeys();
-      if (prunedOrders > 0) logger.info(`Claves de restitución de inventario limpiadas: ${prunedOrders}`);
+      if (prunedOrders > 0)
+        logger.info(`Claves de restitución de inventario limpiadas: ${prunedOrders}`);
     }),
   );
 };

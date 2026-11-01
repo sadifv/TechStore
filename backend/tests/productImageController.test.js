@@ -9,11 +9,19 @@ let image;
 const ProductImage = {
   findById(id) {
     assert.equal(id, '507f1f77bcf86cd799439011');
-    return { select() { return this; }, async lean() { return image; } };
+    return {
+      select() {
+        return this;
+      },
+      async lean() {
+        return image;
+      },
+    };
   },
 };
 Module._load = function (request, parent, isMain) {
-  if (parent?.filename === controllerPath && request === '../models/ProductImage') return ProductImage;
+  if (parent?.filename === controllerPath && request === '../models/ProductImage')
+    return ProductImage;
   return originalLoad.call(this, request, parent, isMain);
 };
 let serveProductImage;
@@ -31,11 +39,21 @@ test('serves database images with validated type, immutable caching, and nosniff
   await serveProductImage(
     { params: { imageId: '507f1f77bcf86cd799439011' } },
     {
-      set(values) { Object.assign(headers, values); return this; },
-      type(value) { contentType = value; return this; },
-      send(value) { body = value; },
+      set(values) {
+        Object.assign(headers, values);
+        return this;
+      },
+      type(value) {
+        contentType = value;
+        return this;
+      },
+      send(value) {
+        body = value;
+      },
     },
-    (error) => { throw error; },
+    (error) => {
+      throw error;
+    },
   );
   assert.equal(contentType, 'image/png');
   assert.deepEqual(body, image.data);
@@ -45,6 +63,8 @@ test('serves database images with validated type, immutable caching, and nosniff
 
 test('falls through for non-ObjectId legacy image names', async () => {
   let passed = false;
-  await serveProductImage({ params: { imageId: 'product-legacy.png' } }, {}, () => { passed = true; });
+  await serveProductImage({ params: { imageId: 'product-legacy.png' } }, {}, () => {
+    passed = true;
+  });
   assert.equal(passed, true);
 });

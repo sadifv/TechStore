@@ -20,7 +20,9 @@ const User = {
   findOneAndUpdate(filter, update) {
     const query = {
       select: async () => {
-        const versionMatches = filter.authVersion === admin.authVersion || (filter.$and?.[0]?.$or && (admin.authVersion === undefined || admin.authVersion === 0));
+        const versionMatches =
+          filter.authVersion === admin.authVersion ||
+          (filter.$and?.[0]?.$or && (admin.authVersion === undefined || admin.authVersion === 0));
         if (!versionMatches) return null;
         if (update.$set?.adminMfaLastTotpStep !== undefined) {
           if (admin.adminMfaLastTotpStep >= update.$set.adminMfaLastTotpStep) return null;
@@ -236,11 +238,20 @@ test('password reset during MFA rejects the atomic enrollment update', async () 
   assert.equal(req.session.user, undefined);
 });
 
- test('legacy admin without stored authVersion can enroll with version zero', async () => {
-  delete admin.authVersion; delete admin.adminMfaEnabledAt;
-  const secret = mfa.generateSecret(); const req = request();
-  req.adminMfaPreauth = { userId: admin._id, authVersion: 0, mode: 'enroll', pendingSecret: secret };
+test('legacy admin without stored authVersion can enroll with version zero', async () => {
+  delete admin.authVersion;
+  delete admin.adminMfaEnabledAt;
+  const secret = mfa.generateSecret();
+  const req = request();
+  req.adminMfaPreauth = {
+    userId: admin._id,
+    authVersion: 0,
+    mode: 'enroll',
+    pendingSecret: secret,
+  };
   req.body = { code: mfa.generateTotp(secret, Math.floor(Date.now() / 30000)) };
-  const res = response(); await confirmAdminMfaEnrollment(req, res);
-  assert.equal(res.statusCode, 200); assert.equal(res.body.success, true);
+  const res = response();
+  await confirmAdminMfaEnrollment(req, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
 });

@@ -41,6 +41,16 @@ La reserva de inventario, el pedido y la reserva del cupón se coordinan mediant
 
 El checkout devuelve un pedido pendiente y un enlace a WhatsApp con el resumen. El cliente debe enviar el mensaje. Abrir WhatsApp no confirma el contacto ni el pago. Un administrador registra esas confirmaciones; los pedidos pendientes vencen según la política implementada de 24 horas. Cancelación o vencimiento restituyen inventario y liberan el cupón de forma idempotente. Archivar un producto lo retira del catálogo sin borrar el historial de pedidos.
 
+## Seguimiento y cancelación del cliente
+
+Mi cuenta y la confirmación del checkout comparten el seguimiento de pago, envío y cronología pública. El listado y las respuestas individuales usan `customerOrderView`; no devuelven claves de checkout, hashes, actores internos ni marcadores de inventario. Los nombres históricos tienen prioridad; los pedidos antiguos sin instantánea conservan el nombre disponible del producto.
+
+`POST /api/orders/track` recibe `orderId` y, para invitados, `checkoutKey` en JSON. Reutiliza la comprobación privada de `/api/orders/success`. La clave de invitado permanece en sessionStorage de la pestaña que hizo el checkout, nunca en la URL. Si se pierde, el cliente debe contactar con la tienda. Las respuestas de pedidos usan `Cache-Control: no-store`.
+
+`POST /api/orders/cancel` permite cancelar pedidos propios de WhatsApp listos, pendientes y no vencidos, antes de confirmar el pago. Requiere confirmación explícita en la interfaz y tiene un límite persistente independiente de 20 solicitudes cada 15 minutos por IP. Un pedido ya cancelado con inventario restituido admite reintentos sin repetir stock, cupón ni eventos. Un pago confirmado requiere contactar con la tienda; no hay reembolso automático.
+
+La restitución reutiliza las transacciones y bloqueos existentes, con condiciones adicionales de estado y propiedad comprobadas dentro de la transición. Pago y cancelación concurrentes producen un único resultado; un fallo en la restitución o el cupón revierte la operación. La interfaz ofrece actualización manual y reintentos tras errores, sin sondeo periódico. Un vencimiento se distingue de una cancelación voluntaria incluso después de restituir inventario.
+
 ## Integraciones y mantenimiento
 
 - **Correo:** `EMAIL_TRANSPORT` selecciona Gmail API por HTTPS con OAuth o Gmail SMTP. Nodemailer compone el mensaje y EJS genera bienvenida, recuperación y campañas. Las campañas se procesan en una cola persistida en MongoDB. Gmail API requiere configuración completa y no recurre a SMTP si falla; solo SMTP sin credenciales en desarrollo permite simulación. Véase [docs/gmail-api.md](docs/gmail-api.md).

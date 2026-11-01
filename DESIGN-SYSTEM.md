@@ -34,6 +34,8 @@ Los radios son `--radius-md` (0.5rem), `--radius-lg` (0.75rem), `--radius-xl` (1
 
 ## Accesibilidad y adaptación
 
+`OrderTracking` comparte el seguimiento entre Mi cuenta y confirmación del checkout. Separa pago y envío, muestra cronología con fechas y usa confirmación en línea para cancelar. Mantiene el foco en controles visibles, anuncia resultados y errores, y deshabilita acciones durante solicitudes. La actualización es manual; un error permite reintentar sin presentar éxito prematuro.
+
 Usar `header`, `nav`, `main`, `section`, `article`, `footer`, listas y encabezados según su función. Reservar `div` para agrupación o layout necesario. Conservar el enlace de salto al contenido principal.
 
 Toda acción debe poder operarse con teclado y mostrar un indicador de foco. Los mensajes dinámicos deben anunciarse con el mecanismo apropiado (`role="status"`, `role="alert"` o región viva), sin exponer datos sensibles. Respetar `prefers-reduced-motion` y no depender de animación para comprender el estado.

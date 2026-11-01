@@ -16,11 +16,15 @@ const RESERVATION_EXPIRY_MINUTES = 60;
 const MAX_QUANTITY_PER_PRODUCT = 99;
 
 const getUserId = (req) => req.session?.user?._id || req.session?.user?.id || req.user?._id;
-const publicCartItems = (items = []) => items.map((entry) => {
-  const item = entry.toObject ? entry.toObject() : entry;
-  return { ...item, product: item.product && !isProductArchived(item.product)
-    ? toPublicProduct(item.product) : null };
-});
+const publicCartItems = (items = []) =>
+  items.map((entry) => {
+    const item = entry.toObject ? entry.toObject() : entry;
+    return {
+      ...item,
+      product:
+        item.product && !isProductArchived(item.product) ? toPublicProduct(item.product) : null,
+    };
+  });
 
 // ✅ Validar y normalizar la cantidad
 const parseQuantity = (raw) => {
@@ -265,7 +269,11 @@ router.patch('/quantity/:productId', requireAuth, async (req, res, next) => {
 
       return {
         status: 200,
-        body: { success: true, message: 'Cantidad actualizada.', items: publicCartItems(cart.items) },
+        body: {
+          success: true,
+          message: 'Cantidad actualizada.',
+          items: publicCartItems(cart.items),
+        },
       };
     });
     return res.status(response.status).json(response.body);

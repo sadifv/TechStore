@@ -5,7 +5,13 @@ const test = require('node:test');
 
 const servicePath = path.join(__dirname, '..', 'services', 'campaignQueue.js');
 const originalLoad = Module._load;
-const state = { campaign: null, recipients: [], interrupted: [], redactionFailures: 0, redactionAttempts: 0 };
+const state = {
+  campaign: null,
+  recipients: [],
+  interrupted: [],
+  redactionFailures: 0,
+  redactionAttempts: 0,
+};
 const Newsletter = {
   find() {
     return {

@@ -34,7 +34,9 @@ function sharedCollection() {
   const counters = new Map();
   return {
     counters,
-    async createIndex() { return 'rate_limit_expiry'; },
+    async createIndex() {
+      return 'rate_limit_expiry';
+    },
     async findOneAndUpdate({ _id }) {
       const now = new Date();
       const previous = counters.get(_id);
@@ -47,12 +49,16 @@ function sharedCollection() {
       return { ...counter };
     },
     async updateOne() {},
-    async deleteOne({ _id }) { counters.delete(_id); },
+    async deleteOne({ _id }) {
+      counters.delete(_id);
+    },
   };
 }
 
 const windows = new Map();
-function windowMsFor(key) { return windows.get(key.split(':')[0]); }
+function windowMsFor(key) {
+  return windows.get(key.split(':')[0]);
+}
 function createStore(bucket, collection, windowMs) {
   windows.set(bucket, windowMs);
   const instance = new MongoRateLimitStore(bucket, { getCollection: () => collection });
@@ -71,7 +77,11 @@ test('separate store instances share a bucket but independent operations do not'
 });
 
 test('store errors propagate so callers can fail closed', async () => {
-  const broken = { createIndex: async () => { throw new Error('Mongo indisponible'); } };
+  const broken = {
+    createIndex: async () => {
+      throw new Error('Mongo indisponible');
+    },
+  };
   const limiter = createStore('checkout', broken, 900_000);
   await assert.rejects(limiter.increment('ip'), /Mongo indisponible/);
 });

@@ -24,6 +24,10 @@ Estos controles describen el código; no equivalen a una certificación de segur
 
 ## Credenciales y operación
 
+El seguimiento y la cancelación de pedidos verifican la propiedad en el servidor. Los invitados necesitan la clave privada del checkout, enviada por JSON y comprobada contra su hash; conocer la referencia del pedido no concede acceso. Las respuestas públicas omiten credenciales, datos internos de inventario y actores de administración, y deshabilitan almacenamiento en caché.
+
+La cancelación del cliente tiene un límite persistente específico y conserva las comprobaciones CSRF del servidor. La transacción vuelve a condicionar la actualización a pedido propio, listo y pendiente: no puede restituir inventario de un pedido pagado ni duplicar devoluciones de stock o liberaciones de cupón en reintentos.
+
 - Usar `.env.example` como referencia. Guardar secretos locales en archivos ignorados y los de producción en el proveedor correspondiente. No versionarlos.
 - Separar usuarios MongoDB por finalidad y aplicar el mínimo privilegio necesario. Una cuenta de revisión de solo lectura no sirve como cuenta operativa de la aplicación.
 - Conservar `SESSION_SECRET` de forma segura y estable: participa en las sesiones y en el cifrado MFA. Planificar su rotación junto con la recuperación y el nuevo enrolamiento MFA.
