@@ -1,4 +1,6 @@
 import { submitWhatsappCheckout } from '../whatsappCheckout.js';
+import CheckoutAddressSelector from './account/CheckoutAddressSelector.jsx';
+import { checkoutAddressPayload } from './account/checkoutAddress.js';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../api.js';
 import { CartActionsContext, CartStateContext } from './CartContext.js';
@@ -308,6 +310,7 @@ export function CartProvider({ user, children }) {
 
     const form = new FormData(event.currentTarget);
     const payload = {
+      ...checkoutAddressPayload(form),
       couponCode: String(form.get('couponCode') || '').trim(),
       items: items.map(({ id, quantity }) => ({ productId: id, quantity })),
     };
@@ -538,6 +541,7 @@ export function CartProvider({ user, children }) {
                 Completarás el pedido por WhatsApp. Te confirmaremos disponibilidad y los detalles.
               </p>
             </fieldset>
+            <CheckoutAddressSelector user={user} open={checkoutOpen} busy={busy} />
             <fieldset className="form-group">
               <legend>Cupón de descuento</legend>
               <label htmlFor="checkout-coupon-code">Código (opcional)</label>

@@ -164,12 +164,16 @@ const contactLimiter = createSensitiveLimiter('contact');
 const newsletterLimiter = createSensitiveLimiter('newsletter');
 const passwordRecoveryLimiter = createSensitiveLimiter('password-recovery');
 const passwordResetLimiter = createSensitiveLimiter('password-reset');
+const reviewWriteLimiter = createSensitiveLimiter('review-write', { max: 20 });
+const addressWriteLimiter = createSensitiveLimiter('address-write', { max: 30 });
 const restockRequestLimiter = createSensitiveLimiter('restock-request');
 const restockConfirmLimiter = createSensitiveLimiter('restock-confirm');
 const restockUnsubscribeLimiter = createSensitiveLimiter('restock-unsubscribe');
 const customerOrderCancelLimiter = createSensitiveLimiter('customer-order-cancel', { max: 20 });
 
 module.exports = {
+  reviewWriteLimiter,
+  addressWriteLimiter,
   restockRequestLimiter,
   restockConfirmLimiter,
   restockUnsubscribeLimiter,

@@ -153,6 +153,9 @@ export function AdminDashboardPage() {
           <a href="/admin/users" className="btn btn-outline">
             Usuarios
           </a>
+          <a href="/admin/reviews" className="btn btn-outline">
+            Moderar reseñas
+          </a>
           <a href="/admin/marketing" className="btn btn-primary">
             Marketing y cupones
           </a>

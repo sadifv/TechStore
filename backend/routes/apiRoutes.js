@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+router.use(require('./reviewRoutes'));
+router.use('/addresses', require('./addressRoutes'));
 router.use('/favorites', require('./favoriteRoutes'));
 router.use('/restock-alerts', require('./restockAlertRoutes'));
 const { sendContactMessage } = require('../controllers/contactController');

@@ -51,6 +51,20 @@ Mi cuenta y la confirmación del checkout comparten el seguimiento de pago, env�
 
 La restitución reutiliza las transacciones y bloqueos existentes, con condiciones adicionales de estado y propiedad comprobadas dentro de la transición. Pago y cancelación concurrentes producen un único resultado; un fallo en la restitución o el cupón revierte la operación. La interfaz ofrece actualización manual y reintentos tras errores, sin sondeo periódico. Un vencimiento se distingue de una cancelación voluntaria incluso después de restituir inventario.
 
+## Reseñas verificadas y direcciones
+
+La ficha del producto muestra solo reseñas aprobadas, paginadas de diez en diez, y un promedio calculado sobre aprobadas. `ProductReview` usa `_id=producto:usuario` canónico para impedir duplicados sin índices secundarios automáticos. El backend comprueba un pedido propio pagado y entregado/completado, valida nota entera1–5 y texto plano10–2000. Las creaciones y ediciones quedan pendientes; el autor puede retirar su reseña. La respuesta pública omite usuario, correo, pedido y auditoría; muestra únicamente un nombre mínimo, nota, texto, fecha y compra verificada.
+
+`/api/reviews` gestiona la reseña propia, `/api/products/:id/reviews` sirve el listado público y `/api/admin/reviews` atiende moderación. Owner y admin requieren sesión vigente y MFA. Cualquiera puede tomar una decisión, sin doble aprobación; un moderador no aprueba su propia reseña. Edición, retiro y moderación usan versión/CAS para impedir aprobar texto anterior tras una edición concurrente. La auditoría guarda las últimas50 decisiones con actor/fecha. La escritura del cliente tiene límite propio y la moderación conserva el presupuesto administrativo. `/admin/reviews` se abre desde el dashboard.
+
+`AddressBook` es un documento privado `_id=usuario`, con máximo cinco entradas y referencia a una predeterminada. `/api/addresses` permite alta/listado y rutas por ID para editar, borrar y marcar predeterminada. Las altas usan CAS y deduplican entradas idénticas; las otras mutaciones exigen la versión vigente. Nunca se acepta un propietario aportado por el cliente. Eliminar la predeterminada elige otra existente o deja null si la libreta queda vacía. La respuesta privada usa no-store.
+
+El checkout admite `savedAddressId` propio o `shippingAddress` puntual, nunca ambos. La dirección es opcional y no se guarda implícitamente. `checkoutService` resuelve y valida dentro de la transacción después de buscar un checkout idempotente existente; copia campos permitidos al pedido y marca `shippingAddressProvided`. Un reintento recupera el pedido aunque se haya editado/borrado la libreta, y un ID ajeno o eliminado se rechaza sin reservar inventario. No ejecutar consultas paralelas en la sesión transaccional.
+
+La copia se muestra solo en rutas autorizadas del cliente, personal y comprobante administrativo; se incorpora al mensaje WhatsApp codificado. Abrirlo sigue sin acreditar envío ni pago. Los pedidos legacy sin `shippingAddressProvided` indican entrega por coordinar y no presentan los valores por defecto como una dirección real.
+
+Ambos modelos nuevos tienen autoIndex:false. La unicidad y privacidad no dependen de índices secundarios. `npm run db:ensure-review-indexes` inspecciona sin escribir; aplicar requiere autorización específica y `-- --apply --database=TechStore`, con nombre exacto del destino. Durante desarrollo solo se aplicaron en MongoDB temporal.
+
 ## Integraciones y mantenimiento
 
 ### Favoritos y avisos de disponibilidad

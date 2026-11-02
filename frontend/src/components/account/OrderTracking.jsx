@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import OrderAddress from './OrderAddress.jsx';
 import {
   orderEventLabel,
   orderPaymentLabel,
@@ -57,6 +58,7 @@ export default function OrderTracking({ order, checkoutKey, onUpdate, headingLev
   return (
     <section className="order-tracking" aria-labelledby={headingId} aria-busy={busy}>
       <Heading id={headingId}>Seguimiento del pedido</Heading>
+      <OrderAddress order={order} />
       <dl className="order-tracking-states">
         <dt>Pago</dt>
         <dd>{orderPaymentLabel(order)}</dd>
@@ -112,7 +114,9 @@ export default function OrderTracking({ order, checkoutKey, onUpdate, headingLev
       </div>
       {confirming && (
         <section className="order-cancel-confirmation" aria-labelledby={confirmationId}>
-          <ConfirmationHeading id={confirmationId}>¿Quieres cancelar este pedido?</ConfirmationHeading>
+          <ConfirmationHeading id={confirmationId}>
+            ¿Quieres cancelar este pedido?
+          </ConfirmationHeading>
           <p>
             Se liberará la reserva de los productos y del cupón. Esta acción no se puede deshacer.
           </p>

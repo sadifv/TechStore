@@ -44,6 +44,10 @@ Revisar móvil, escritorio, zoom, textos largos y estados vacío, cargando, erro
 
 ## Cambios al diseño
 
+Las reseñas muestran nota en texto, compra verificada y estado de la propia reseña. El formulario bloquea edición durante envío/recarga para evitar sobrescribir borradores y ofrece reintento tras error. Los selectores tienen etiquetas separadas de sus opciones. El panel de moderación confirma el texto y la decisión, dirige foco a la confirmación y vuelve a un control visible al finalizar.
+
+La libreta se gestiona en Mi cuenta, con confirmación para eliminar y foco devuelto al título tras cambios. El checkout distingue sin dirección, guardada y puntual; solo la opción elegida forma parte del payload. Los formularios usan etiquetas/autocomplete y límites consistentes con el servidor. Los pedidos muestran una copia explícita o «Entrega por coordinar con la tienda», sin inventar direcciones a partir de defaults legacy.
+
 Los botones de favoritos usan texto y `aria-pressed` para expresar si un producto está guardado, conservan estados ocupado/error y ofrecen reintento. Al retirar una tarjeta enfocada desde Mi cuenta, el foco vuelve al título de favoritos. Los productos retirados se muestran como no disponibles con una acción para quitarlos.
 
 Los formularios de disponibilidad usan correo etiquetado y casilla obligatoria de consentimiento sin preselección. Las páginas de confirmación y baja requieren acción explícita, anuncian errores/resultados y permiten volver al catálogo. No comunicar una reserva de inventario ni una entrega de correo sin evidencia.

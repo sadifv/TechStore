@@ -12,6 +12,7 @@ import usePresenceHeartbeat from './hooks/usePresenceHeartbeat.js';
 
 const CatalogPage = lazy(() => import('./pages/CatalogPage.jsx'));
 const ProductPage = lazy(() => import('./pages/ProductPage.jsx'));
+const ReviewModerationPage=lazy(()=>import('./components/admin/ReviewModerationPage.jsx'));
 const LoginPage = lazy(() =>
   import('./components/account/AuthPages.jsx').then((module) => ({ default: module.LoginPage })),
 );
@@ -131,7 +132,7 @@ export default function App() {
   if (malformedRoute) page = <NotFoundPage />;
   else if (pathname === '/') page = <HomePage user={user} />;
   else if (pathname === '/catalogo') page = <CatalogPage />;
-  else if (productMatch) page = <ProductPage productId={decodeRouteSegment(productMatch[1])} />;
+  else if (productMatch) page = <ProductPage productId={decodeRouteSegment(productMatch[1])} user={user} />;
   else if (pathname === '/login') page = <LoginPage />;
   else if (pathname === '/register') page = <RegisterPage />;
   else if (pathname === '/profile')
@@ -172,6 +173,7 @@ export default function App() {
   else if (orderDetailMatch)
     page = <AdminOrderDetailPage orderId={decodeRouteSegment(orderDetailMatch[1])} />;
   else if (pathname === '/admin/users') page = <AdminUsersPage />;
+  else if (pathname === '/admin/reviews') page = <ReviewModerationPage />;
   else page = <NotFoundPage />;
 
   if (packingSlipMatch) return <Suspense fallback={<PageLoading />}>{page}</Suspense>;

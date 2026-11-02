@@ -14,6 +14,15 @@ const buildWhatsappOrderUrl = (order, buyer = {}) => {
     `Pedido: ${order._id}`,
     `Nombre: ${order.guestInfo?.name || buyer.name || 'Cliente'}`,
     `Correo: ${order.guestInfo?.email || buyer.email || 'No proporcionado'}`,
+    ...(order.shippingAddressProvided
+      ? [
+          `Destinatario: ${order.shippingAddress.recipient}`,
+          `Entrega: ${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.country}`,
+          ...(order.shippingAddress.reference
+            ? [`Referencia: ${order.shippingAddress.reference}`]
+            : []),
+        ]
+      : []),
     ...order.items.map(
       (item) =>
         `• ${item.productName} x${item.quantity} — $${(item.price * item.quantity).toFixed(2)}`,

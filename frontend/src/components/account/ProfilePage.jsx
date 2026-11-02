@@ -4,6 +4,7 @@ import { getOrderItemName } from './orderItemDisplay.js';
 import { formatCurrency } from './utils.js';
 import OrderTracking from './OrderTracking.jsx';
 import FavoritesSection from '../favorites/FavoritesSection.jsx';
+import AddressBookSection from './AddressBookSection.jsx';
 import { orderShippingLabel } from './orderTracking.js';
 
 export function ProfilePage({ user }) {
@@ -42,6 +43,7 @@ export function ProfilePage({ user }) {
       </section>
       <section className="orders-section">
         <FavoritesSection />
+        <AddressBookSection />
         <h2>Historial de Compras</h2>
         {orders === null && !error && <p className="orders-status">Cargando tus pedidos…</p>}
         {error && (

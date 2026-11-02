@@ -232,6 +232,8 @@ if (require.main === module) {
   const start = async () => {
     await connectDB();
     await require('./models/Order').init();
+    await require('./models/ProductReview').init();
+    await require('./models/AddressBook').init();
     await require('./services/campaignQueue').startCampaignQueue();
     await require('./models/FavoriteList').init();
     await require('./models/RestockAlert').init();

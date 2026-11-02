@@ -40,6 +40,18 @@ function customerOrderView(order) {
     contactConfirmedAt: order.contactConfirmedAt,
     paymentConfirmedAt: order.paymentConfirmedAt,
     guestOrder: !order.user,
+    shippingAddressProvided: order.shippingAddressProvided === true,
+    ...(order.shippingAddressProvided === true
+      ? {
+          shippingAddress: {
+            recipient: order.shippingAddress?.recipient,
+            street: order.shippingAddress?.street,
+            city: order.shippingAddress?.city,
+            country: order.shippingAddress?.country,
+            reference: order.shippingAddress?.reference,
+          },
+        }
+      : {}),
     canCancel:
       order.paymentMethod === 'whatsapp' &&
       order.paymentStatus === 'pending' &&

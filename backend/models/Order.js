@@ -120,7 +120,10 @@ const orderSchema = new mongoose.Schema(
       default: 'pending',
       index: true,
     },
+    shippingAddressProvided: { type: Boolean, default: false },
     shippingAddress: {
+      recipient: String,
+      reference: String,
       street: { type: String, default: 'Dirección estándar' },
       city: { type: String, default: 'Guayaquil' },
       country: { type: String, default: 'Ecuador' },

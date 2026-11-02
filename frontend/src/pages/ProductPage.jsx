@@ -3,8 +3,9 @@ import { backendAssetUrl, requestJson } from '../api.js';
 import { useCartActions } from '../components/CartContext.js';
 import FavoriteButton from '../components/favorites/FavoriteButton.jsx';
 import RestockRequest from '../components/RestockRequest.jsx';
+import ProductReviews from '../components/reviews/ProductReviews.jsx';
 
-export default function ProductPage({ productId }) {
+export default function ProductPage({ productId, user }) {
   const { add, notify } = useCartActions();
   const [product, setProduct] = useState(null);
   const [error, setError] = useState('');
@@ -128,6 +129,7 @@ export default function ProductPage({ productId }) {
           )}
         </form>
       </section>
+      <ProductReviews key={productId} productId={productId} user={user} />
     </article>
   );
 }

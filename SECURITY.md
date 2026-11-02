@@ -24,6 +24,10 @@ Estos controles describen el código; no equivalen a una certificación de segur
 
 ## Credenciales y operación
 
+Las reseñas requieren una compra propia pagada y entregada/completada, verificada en el servidor. No se acepta autor, estado aprobado ni prueba de compra enviados por el navegador. Solo reseñas aprobadas aparecen públicamente; sus ediciones vuelven a pendiente y las decisiones se condicionan a versión. Owner y admin requieren MFA y no pueden aprobar su propia reseña. La auditoría interna no se devuelve en el listado público.
+
+Las direcciones pertenecen exclusivamente al usuario de la sesión, incluso si quien consulta es personal administrativo. El límite de cinco y la predeterminada se mantienen mediante actualizaciones atómicas/CAS. Se recopilan destinatario, calle, ciudad, país y referencia opcional; no se añade documento, teléfono ni geolocalización. La dirección puntual de un invitado no crea libreta. Cambiar/borrar una dirección no modifica datos históricos de pedidos.
+
 El seguimiento y la cancelación de pedidos verifican la propiedad en el servidor. Los invitados necesitan la clave privada del checkout, enviada por JSON y comprobada contra su hash; conocer la referencia del pedido no concede acceso. Las respuestas públicas omiten credenciales, datos internos de inventario y actores de administración, y deshabilitan almacenamiento en caché.
 
 La cancelación del cliente tiene un límite persistente específico y conserva las comprobaciones CSRF del servidor. La transacción vuelve a condicionar la actualización a pedido propio, listo y pendiente: no puede restituir inventario de un pedido pagado ni duplicar devoluciones de stock o liberaciones de cupón en reintentos.
