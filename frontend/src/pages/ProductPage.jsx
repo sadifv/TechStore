@@ -128,6 +128,10 @@ export default function ProductPage({ productId, user }) {
             </output>
           )}
         </form>
+        <p className="product-order-note">
+          El pedido se prepara en la tienda. Después podrás abrir WhatsApp para coordinar
+          disponibilidad, entrega y pago.
+        </p>
       </section>
       <ProductReviews key={productId} productId={productId} user={user} />
     </article>

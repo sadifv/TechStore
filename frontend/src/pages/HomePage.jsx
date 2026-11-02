@@ -100,7 +100,13 @@ export default function HomePage({ user }) {
       <FlashSaleSection product={flashSale} />
       <section id="destacados" className="products-section" aria-labelledby="featured-heading">
         <header className="section-header">
-          <h2 id="featured-heading">Productos Destacados</h2>
+          <section>
+            <h2 id="featured-heading">Encuentra tu siguiente favorito</h2>
+            <p className="section-note">Tecnología que encaja contigo y con tu día.</p>
+          </section>
+          <a className="section-view-all" href="/catalogo">
+            Ver catálogo <span aria-hidden="true">↗</span>
+          </a>
         </header>
         <ul id="featured-grid" className="products-grid" aria-live="polite">
           {loading ? (

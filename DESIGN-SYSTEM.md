@@ -1,6 +1,6 @@
 # Sistema de diseño de TechStore
 
-Este documento describe el estilo existente y las convenciones para mantenerlo. La referencia de tokens es `frontend/public/css/styles.css`; `frontend/src/index.css` completa las reglas globales de React. No constituye una biblioteca de componentes independiente.
+Este documento describe el estilo existente y las convenciones para mantenerlo. Los estilos visuales y los tokens se mantienen en `frontend/public/css/styles.css`; `frontend/src/index.css` conserva únicamente las reglas globales de montaje de React. No constituye una biblioteca de componentes independiente.
 
 ## Colores
 
@@ -16,11 +16,15 @@ No comunicar un estado solo con color. Acompañar las insignias de texto y compr
 
 ## Tipografía y medidas
 
-La familia principal es `--font-family`: Inter con alternativas del sistema. La escala existente va de `--font-size-xs` (0.75rem) a `--font-size-3xl` (2rem), pasando por 0.875, 1, 1.125, 1.25 y 1.5rem. Conservar una jerarquía de encabezados coherente.
+La familia principal es `--font-family`: Manrope variable (200–800), alojada en `/fonts/manrope-variable.ttf`, con `font-display: swap` y alternativas del sistema. Su licencia está en `frontend/public/fonts/MANROPE-OFL.txt`. No depende de Google Fonts en tiempo de ejecución. La escala existente va de `--font-size-xs` (0.75rem) a `--font-size-3xl` (2rem), pasando por 0.875, 1, 1.125, 1.25 y 1.5rem. Los títulos de portada/ficha tienen escalas adaptables propias. Conservar una jerarquía de encabezados coherente.
 
 El espaciado usa `--space-2`, `--space-3`, `--space-4`, `--space-6`, `--space-8`, `--space-12` y `--space-16`: 0.5, 0.75, 1, 1.5, 2, 3 y 4rem. Preferir esos valores al añadir estilos.
 
 Los radios son `--radius-md` (0.5rem), `--radius-lg` (0.75rem), `--radius-xl` (1rem) y `--radius-full` (9999px). Reutilizar `--shadow-card` y `--shadow-hover`. Las transiciones existentes son `--transition-fast` (150ms) y `--transition-normal` (250ms).
+
+La actualización visual conserva los colores y prioriza bordes suaves, superficies limpias y sombras discretas. Usa controles de referencia de 48px (`--control-height`), títulos con peso 800 y precios tabulares. Inicio, catálogo y ficha comparten imágenes contenidas sin recorte, alineación izquierda y acciones azules. Cuenta, autenticación, carrito y administración reutilizan este ritmo. Las tablas conservan su contenedor de desplazamiento; no se ocultan columnas para que quepan en móvil.
+
+En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA, direcciones y formularios administrativos. Evitar reducirlos por densidad visual.
 
 ## Componentes y comportamiento
 
@@ -33,6 +37,8 @@ Los radios son `--radius-md` (0.5rem), `--radius-lg` (0.75rem), `--radius-xl` (1
 - **Iconos:** se usa Remix Icon con archivos locales. Los iconos decorativos deben ocultarse de tecnologías de asistencia; una acción que solo tenga icono necesita nombre accesible. No asumir que cualquier glifo está incluido en la fuente reducida del proyecto.
 
 ## Accesibilidad y adaptación
+
+`frontend/public/css/styles.css` se organiza por componentes con estilos móviles como base. Todas las consultas de ancho se reúnen al final usando `min-width`, en orden ascendente: 521, 601, 761, 768, 901, 1001 y 1201px. Los umbrales responden a los componentes existentes; no crear otro sin comprobar dónde falta espacio. Después de las adaptaciones por ancho quedan los bloques de impresión y `prefers-reduced-motion`. Mantener los campos editables en 16px como mínimo y comprobar la cascada al mover reglas entre secciones.
 
 `OrderTracking` comparte el seguimiento entre Mi cuenta y confirmación del checkout. Separa pago y envío, muestra cronología con fechas y usa confirmación en línea para cancelar. Mantiene el foco en controles visibles, anuncia resultados y errores, y deshabilita acciones durante solicitudes. La actualización es manual; un error permite reintentar sin presentar éxito prematuro.
 
