@@ -10,6 +10,7 @@ const child = spawn(
     'tests/customerOrders.integration.test.js',
     'tests/customerEngagement.integration.test.js',
     'tests/reviewsAddresses.integration.test.js',
+    'tests/passwordResetAtomic.integration.test.js',
   ],
   {
     cwd: path.join(__dirname, '..'),

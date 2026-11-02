@@ -16,8 +16,11 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 - **Segundo factor:** `owner` y `admin` requieren TOTP o recuperación MFA. Los códigos de recuperación se guardan como hashes y se consumen una sola vez. El secreto TOTP se almacena cifrado. El registro público siempre crea `user`.
 - **Revocación:** los cambios de contraseña o rol incrementan `authVersion`, invalidando las sesiones y los desafíos MFA anteriores.
 - **Solicitudes:** CORS con orígenes explícitos, comprobaciones CSRF de contexto/origen del navegador, Helmet y cabeceras del frontend. No sustituir estas comprobaciones por CORS únicamente.
+- **Validación:** las reglas reconocen las mismas variantes de mayúsculas que Express; los campos de texto no admiten arrays/objetos y los numéricos deben ser finitos. Los permisos siguen comprobándose de forma independiente.
+- **Caché privada:** las rutas de autenticación (incluido MFA), administración, carrito, pedidos, direcciones, favoritos, reseña propia, presencia e historial del asistente emiten `Cache-Control: no-store`, también ante errores. No afecta a las imágenes públicas inmutables ni al catálogo.
 - **Abuso:** límites de API y de operaciones sensibles. Login, checkout y MFA usan contadores persistentes MongoDB. Algunos límites generales son locales al proceso y por IP; no constituyen una garantía de capacidad distribuida.
 - **Datos comerciales:** el backend calcula importes, valida cupones y controla inventario mediante transacciones, actualizaciones condicionadas e idempotencia.
+- **Catálogo público:** `toPublicProduct` solo devuelve campos permitidos, también para agregaciones ordenadas por precio que no aplican `select:false` de Mongoose. Omite marcadores internos de restitución, bloqueos y campos nuevos no autorizados.
 - **Archivos:** las imágenes de producto se validan por tamaño, tipo y firma; su contenido se almacena en MongoDB.
 
 Estos controles describen el código; no equivalen a una certificación de seguridad ni garantizan la configuración de los proveedores.
@@ -38,6 +41,7 @@ La cancelación del cliente tiene un límite persistente específico y conserva 
 - Si se expone una credencial, revocarla o rotarla en el proveedor, revisar el alcance e invalidar sesiones cuando corresponda. Borrar una captura o editar `.env` no revoca una credencial.
 - No registrar contraseñas, cookies, URI completas, secretos MFA o enlaces de recuperación. Revisar los logs antes de compartirlos.
 - Los enlaces de recuperación de contraseña caducan en una hora. La respuesta genérica del formulario no confirma que el correo se haya enviado.
+- El restablecimiento consume el token, cambia el hash de contraseña e incrementa `authVersion` en una única actualización condicionada. Dos solicitudes concurrentes con el mismo token solo permiten un cambio; los intentos rechazados no consumen un token vigente.
 - Verificar copias de seguridad y restauraciones con procedimientos del proveedor. El repositorio no demuestra por sí solo que exista un respaldo válido.
 
 ## Dependencias y verificación
@@ -47,5 +51,7 @@ Favoritos y avisos mantienen controles independientes del boletín. Los favorito
 Los tokens de aviso se almacenan como hashes; el navegador los recibe en fragmentos para evitar incluirlos en peticiones HTTP y los retira de la barra. No registrarlos ni incluirlos en capturas. Una baja antes de iniciar el envío cancela la preparación; una entrega ya iniciada no puede retirarse. Ante un resultado ambiguo no se reenvía automáticamente. Las pruebas usan destinatarios ficticios y transporte simulado.
 
 Los lockfiles de `backend/` y `frontend/` forman parte del proyecto; usar `npm ci` para instalaciones reproducibles. Consultar `npm audit` en ambos directorios y revisar notas, compatibilidad y pruebas antes de actualizar. No resolver alertas desactivando la auditoría o usando `--force` sin analizar el cambio.
+
+El frontend fija mediante `overrides` la rama corregida de `minimatch` (>=11.0.1) usada por ESLint y su configuración, por GHSA-g3hv-75wg-m249. Es una dependencia de desarrollo; no forma parte del JavaScript del cliente. El lockfile resuelve la versión concreta y lint/build verifican compatibilidad. Revisar si se puede retirar este override cuando los paquetes superiores incorporen la corrección.
 
 CI ejecuta pruebas en Node.js 22 y 24; la auditoría de ambos proyectos se ejecuta en el trabajo de Node.js 24. Un trabajo verde de Node.js 22, por sí solo, no confirma el resultado de la auditoría. Consultar [AGENTS.md](AGENTS.md) para los comandos de verificación.

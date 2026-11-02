@@ -5,9 +5,31 @@ const getEffectivePrice = (product, now = Date.now()) =>
     ? product.originalPrice
     : product.price;
 const toPublicProduct = (product, now = Date.now()) => {
-  if (!saleExpired(product, now)) return { ...product };
+  // Aggregations bypass Mongoose select:false. Only explicit catalog fields
+  // may cross the public boundary, regardless of how the document was loaded.
+  const publicProduct = Object.fromEntries(
+    [
+      '_id',
+      'name',
+      'description',
+      'price',
+      'image',
+      'category',
+      'stock',
+      'availableStock',
+      'flashSale',
+      'flashSaleDiscount',
+      'flashSaleEndsAt',
+      'originalPrice',
+      'createdAt',
+      'updatedAt',
+    ]
+      .filter((key) => Object.hasOwn(product, key))
+      .map((key) => [key, product[key]]),
+  );
+  if (!saleExpired(product, now)) return publicProduct;
   return {
-    ...product,
+    ...publicProduct,
     price: getEffectivePrice(product, now),
     flashSale: false,
     flashSaleDiscount: 0,

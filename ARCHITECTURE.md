@@ -31,6 +31,8 @@ El registro crea un usuario con contraseña hasheada y rol `user`. Al iniciar se
 
 Las sesiones se almacenan en la colección `sessions` mediante `connect-mongo`. La cookie tiene una duración configurada de 24 horas. En cada ruta protegida se vuelve a comprobar la cuenta y `authVersion`; una contraseña o permiso cambiado invalida sesiones anteriores. El rol `owner` solo se configura mediante una operación de mantenimiento explícita. Véase [docs/owner-roles.md](docs/owner-roles.md).
 
+La recuperación cambia el hash, consume el token vigente e incrementa la versión en una sola operación MongoDB condicionada por token y caducidad. El middleware `privateResponses` se monta antes de CORS y los limitadores para impedir almacenamiento en caché de respuestas privadas, incluidos errores y desafíos MFA. La validación por ruta conserva la coincidencia sin distinción de mayúsculas usada por Express.
+
 ## Carrito, checkout e inventario
 
 El frontend mantiene el carrito mediante `CartProvider` y sincroniza el carrito de cuenta con el backend. Los cambios del carrito y el checkout respetan las reservas activas. MongoDB necesita soportar transacciones: Atlas o un replica set local; una instancia standalone no satisface ese requisito.

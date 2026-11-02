@@ -416,19 +416,32 @@ const forgotPassword = (req, res) => {
 const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
-    const { password } = req.body;
-    if (!isAcceptablePassword(password)) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'La contraseña no puede superar 72 bytes UTF-8.' });
+    const password = req.body?.password;
+    if (!isAcceptablePassword(password) || password.length < 12 || password.length > 100) {
+      return res.status(400).json({
+        success: false,
+        error: 'Usa al menos 12 caracteres y como máximo 72 bytes UTF-8.',
+      });
     }
 
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/i.test(token))
+      return res
+        .status(400)
+        .json({ success: false, error: 'El token de recuperación es inválido o ha expirado.' });
 
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpires: { $gt: Date.now() },
-    }).select('+authVersion +resetPasswordToken +resetPasswordExpires');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    // Consume the token and revoke sessions in the same atomic write. Two
+    // requests must never both save different passwords from the same token.
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.findOneAndUpdate(
+      { resetPasswordToken: hashedToken, resetPasswordExpires: { $gt: new Date() } },
+      {
+        $set: { password: passwordHash },
+        $inc: { authVersion: 1 },
+        $unset: { resetPasswordToken: '', resetPasswordExpires: '' },
+      },
+      { returnDocument: 'after', runValidators: true },
+    );
 
     if (!user) {
       return res.status(400).json({
@@ -436,13 +449,6 @@ const resetPassword = async (req, res, next) => {
         error: 'El token de recuperación es inválido o ha expirado.',
       });
     }
-
-    user.password = password;
-    user.authVersion = (user.authVersion || 0) + 1;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    await user.save();
 
     logger.info('Contraseña restablecida correctamente.');
 

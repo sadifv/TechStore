@@ -529,6 +529,17 @@ test(
       },
       { name: 'Regular sort', category, price: 10, stock: 2 },
     ]);
+    await Product.collection.updateMany(
+      { category },
+      {
+        $set: {
+          inventoryRestorationKeys: ['test-only-private-order'],
+          reservationLockToken: 'test-only-private-lock',
+          reservationLockExpiresAt: new Date(),
+          futurePrivateField: 'test-only-private',
+        },
+      },
+    );
     const res = {
       status() {
         return this;
@@ -545,6 +556,25 @@ test(
       },
     );
     assert.equal(res.body.products[0].name, 'Regular sort');
+    for (const sort of ['recent', 'price_asc', 'price_desc']) {
+      await require('../controllers/productController').getProducts(
+        { query: { category, sort } },
+        res,
+        (error) => {
+          throw error;
+        },
+      );
+      assert.equal(res.body.products.length, 2);
+      for (const product of res.body.products)
+        for (const key of [
+          'inventoryRestorationKeys',
+          'reservationLockToken',
+          'reservationLockExpiresAt',
+          'futurePrivateField',
+          '__v',
+        ])
+          assert.equal(Object.hasOwn(product, key), false, `${sort}: ${key}`);
+    }
   },
 );
 

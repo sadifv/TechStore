@@ -57,6 +57,10 @@ app.use(
   }),
 );
 
+// Include errors and MFA responses, before CORS, rate limits and auth guards.
+const { privateResponsePaths, preventPrivateCaching } = require('./middleware/privateResponses');
+app.use(privateResponsePaths, preventPrivateCaching);
+
 // Habilitar CORS (Permisivo en desarrollo local, estricto en producción)
 const configuredOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')

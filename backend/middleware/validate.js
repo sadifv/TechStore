@@ -53,7 +53,8 @@ const validationRules = {
 // ==========================================
 const cleanUrl = (url) => {
   if (!url) return '/';
-  return url.split('?')[0].replace(/\/$/, '') || '/';
+  // Express matches these routes case-insensitively. Validation must do the same.
+  return url.split('?')[0].replace(/\/$/, '').toLowerCase() || '/';
 };
 
 const findRules = (url) => {
@@ -110,6 +111,15 @@ const validate = (req, res, next) => {
         continue;
       }
 
+      const numeric = rule.number || rule.integer || rule.gt !== undefined;
+      if (
+        (numeric && !['string', 'number'].includes(typeof rawValue)) ||
+        (!numeric && typeof rawValue !== 'string')
+      ) {
+        errors.push(`${rule.label || field} tiene un formato inválido`);
+        continue;
+      }
+
       // Email
       if (rule.email && !isValidEmail(value)) {
         errors.push(`${rule.label || field} no es un correo válido`);
@@ -126,7 +136,7 @@ const validate = (req, res, next) => {
       }
 
       // Numérico
-      if (rule.number && isNaN(Number(value))) {
+      if (numeric && !Number.isFinite(Number(value))) {
         errors.push(`${rule.label || field} debe ser un número`);
       }
 

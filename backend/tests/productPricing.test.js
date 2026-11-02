@@ -21,3 +21,26 @@ test('legacy products remain visible while archived products are unavailable', (
   assert.equal(isProductArchived({}), false);
   assert.equal(isProductArchived({ archivedAt: new Date() }), true);
 });
+
+test('public products exclude internal fields even when aggregation bypasses schema selection', () => {
+  const product = {
+    _id: 'product-test',
+    name: 'Public product',
+    price: 10,
+    stock: 3,
+    availableStock: 2,
+    inventoryRestorationKeys: ['private-order'],
+    reservationLockToken: 'test-only-lock',
+    reservationLockExpiresAt: new Date(),
+    futurePrivateField: 'private',
+    __v: 2,
+  };
+  assert.deepEqual(toPublicProduct(product), {
+    _id: product._id,
+    name: product.name,
+    price: 10,
+    stock: 3,
+    availableStock: 2,
+  });
+  assert.deepEqual(product.inventoryRestorationKeys, ['private-order']);
+});
