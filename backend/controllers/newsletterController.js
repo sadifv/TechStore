@@ -1,6 +1,7 @@
 const Newsletter = require('../models/Newsletter');
 const crypto = require('crypto');
 const logger = require('../config/logger');
+const { isSingleEmail } = require('../services/emailAddress');
 const { redirectToFrontend } = require('../config/frontendUrl');
 
 // @desc    Suscribir correo al newsletter
@@ -11,7 +12,7 @@ const subscribeNewsletter = async (req, res, next) => {
     const email = String(req.body?.email || '')
       .trim()
       .toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
+    if (!isSingleEmail(email)) {
       return res
         .status(400)
         .json({ success: false, error: 'Ingresa un correo electrónico válido.' });

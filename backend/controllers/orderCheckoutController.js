@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const crypto = require('node:crypto');
+const { isSingleEmail } = require('../services/emailAddress');
 const { getWhatsappPhone, buildWhatsappOrderUrl } = require('../config/whatsapp');
 const { orderEvent } = require('../services/orderAudit');
 
@@ -83,26 +84,25 @@ const createOrder = async (req, res, next) => {
           .status(400)
           .json({ success: false, error: 'Cada item debe tener un productId válido.' });
       const quantity = Number(item.quantity ?? 1);
-      const total = (normalized.get(String(item.productId)) || 0) + quantity;
+      const productId = String(item.productId).toLowerCase();
+      const total = (normalized.get(productId) || 0) + quantity;
       if (!Number.isInteger(quantity) || quantity < 1 || total > 99)
         return res
           .status(400)
           .json({ success: false, error: 'La cantidad por producto debe ser entre 1 y 99.' });
-      normalized.set(String(item.productId), total);
+      normalized.set(productId, total);
     }
     if (
       !userId &&
       (typeof guestInfo?.name !== 'string' ||
         !guestInfo.name.trim() ||
         typeof guestInfo?.email !== 'string' ||
-        !/^\S+@\S+\.\S+$/.test(guestInfo.email))
+        !isSingleEmail(guestInfo.email.trim()))
     )
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: 'Para compras como invitado se requiere nombre y correo válido.',
-        });
+      return res.status(400).json({
+        success: false,
+        error: 'Para compras como invitado se requiere nombre y correo válido.',
+      });
     const result = await createCheckout({
       items: [...normalized].map(([productId, quantity]) => ({ productId, quantity })),
       userId,
@@ -114,13 +114,11 @@ const createOrder = async (req, res, next) => {
       checkoutRequestHash,
     });
     if (!result.created) return respondToRetry(result.order, checkoutRequestHash, req, res);
-    return res
-      .status(201)
-      .json({
-        success: true,
-        orderId: result.order._id,
-        whatsappUrl: buildWhatsappOrderUrl(result.order, req.session?.user),
-      });
+    return res.status(201).json({
+      success: true,
+      orderId: result.order._id,
+      whatsappUrl: buildWhatsappOrderUrl(result.order, req.session?.user),
+    });
   } catch (error) {
     if (error.code === 11000 && checkoutKey) {
       const existing = await Order.findOne({ checkoutKey });

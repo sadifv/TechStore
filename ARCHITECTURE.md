@@ -43,6 +43,8 @@ La reserva de inventario, el pedido y la reserva del cupón se coordinan mediant
 
 El checkout devuelve un pedido pendiente y un enlace a WhatsApp con el resumen. El cliente debe enviar el mensaje. Abrir WhatsApp no confirma el contacto ni el pago. Un administrador registra esas confirmaciones; los pedidos pendientes vencen según la política implementada de 24 horas. Cancelación o vencimiento restituyen inventario y liberan el cupón de forma idempotente. Archivar un producto lo retira del catálogo sin borrar el historial de pedidos.
 
+Las cantidades se agrupan por ObjectId canónico antes de aplicar el máximo por producto. La restitución también agrupa líneas repetidas de pedidos antiguos para que el marcador por producto cubra la cantidad completa. No se recalculan pedidos ya cancelados ni se corrigen datos de producción automáticamente.
+
 ## Seguimiento y cancelación del cliente
 
 Mi cuenta y la confirmación del checkout comparten el seguimiento de pago, envío y cronología pública. El listado y las respuestas individuales usan `customerOrderView`; no devuelven claves de checkout, hashes, actores internos ni marcadores de inventario. Los nombres históricos tienen prioridad; los pedidos antiguos sin instantánea conservan el nombre disponible del producto.

@@ -39,6 +39,63 @@ async function checkout(body) {
   });
   return res;
 }
+
+test(
+  'legacy orders with repeated product lines restore the entire deducted quantity once',
+  { skip: !enabled },
+  async () => {
+    const Product = require('../models/Product');
+    const Order = require('../models/Order');
+    const product = await Product.create({ name: 'Legacy repeated lines', price: 10, stock: 8 });
+    const order = await Order.create({
+      totalAmount: 20,
+      paymentStatus: 'pending',
+      checkoutState: 'ready',
+      items: [1, 1].map((quantity) => ({
+        product: product._id,
+        quantity,
+        price: 10,
+        inventoryReserved: true,
+      })),
+    });
+    const restore = require('../services/orderInventory').restoreOrderInventory;
+    await restore(order._id);
+    assert.equal((await Product.findById(product._id)).stock, 10);
+    await restore(order._id);
+    assert.equal((await Product.findById(product._id)).stock, 10);
+  },
+);
+
+test(
+  'checkout canonicalizes repeated product IDs before quantity limits and cancellation',
+  { skip: !enabled },
+  async () => {
+    const Product = require('../models/Product');
+    const Order = require('../models/Order');
+    const id = new mongoose.Types.ObjectId('abcdefabcdefabcdefabcdef');
+    await Product.create({ _id: id, name: 'Canonical checkout', price: 10, stock: 200 });
+    const items = [String(id), String(id).toUpperCase()].map((productId) => ({
+      productId,
+      quantity: 1,
+    }));
+    const result = await checkout({
+      items,
+      guestInfo: { name: 'Test', email: 'canonical@example.invalid' },
+    });
+    assert.equal(result.statusCode, 201);
+    const order = await Order.findById(result.body.orderId);
+    assert.equal(order.items.length, 1);
+    assert.equal(order.items[0].quantity, 2);
+    await require('../services/orderInventory').restoreOrderInventory(order._id);
+    assert.equal((await Product.findById(id)).stock, 200);
+    const excessive = await checkout({
+      items: items.map((item) => ({ ...item, quantity: 50 })),
+      guestInfo: { name: 'Test', email: 'canonical@example.invalid' },
+    });
+    assert.equal(excessive.statusCode, 400);
+    assert.equal((await Product.findById(id)).stock, 200);
+  },
+);
 test(
   'checkout rollback leaves no partial order, stock change or coupon reservation',
   { skip: !enabled },
@@ -74,7 +131,7 @@ test(
     }
     assert.equal((await Product.findById(product._id)).stock, 5);
     assert.equal((await Coupon.findById(coupon._id)).redemptionCount, 0);
-    assert.equal(await Order.countDocuments(), 0);
+    assert.equal(await Order.countDocuments({ 'items.product': product._id }), 0);
   },
 );
 test.after(async () => {

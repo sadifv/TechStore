@@ -21,7 +21,18 @@ const restoreOrderInventory = async (
   };
   const initial = await Order.findOne(filter);
   if (!initial) return false;
-  const itemsToRestore = items || initial.items.filter((item) => item.inventoryReserved);
+  // Legacy checkouts could contain the same ObjectId in multiple lines.
+  // The restoration marker is per product, so restore their combined quantity.
+  const byProduct = new Map();
+  for (const item of items || initial.items.filter((entry) => entry.inventoryReserved)) {
+    const key = String(item.product);
+    const existing = byProduct.get(key);
+    byProduct.set(key, {
+      product: item.product,
+      quantity: (existing?.quantity || 0) + item.quantity,
+    });
+  }
+  const itemsToRestore = [...byProduct.values()];
   const lease = await acquireProductReservationLocks(itemsToRestore.map((item) => item.product));
   let completed;
   try {

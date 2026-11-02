@@ -124,6 +124,21 @@ const processCampaign = async (campaignId) => {
       if (claimed.modifiedCount !== 1) continue;
 
       try {
+        // A persisted recipient snapshot is not proof of current consent.
+        // A new subscription rotates its token and must not revive old mail.
+        if (
+          typeof recipient.unsubscribeToken !== 'string' ||
+          !recipient.unsubscribeToken ||
+          !(await Newsletter.exists({
+            email: recipient.email,
+            unsubscribeToken: recipient.unsubscribeToken,
+            isSubscribed: { $ne: false },
+          }))
+        ) {
+          throw Object.assign(new Error('El consentimiento ya no está vigente.'), {
+            code: 'CONSENT_NOT_CURRENT',
+          });
+        }
         const result = await sendMarketingCampaignEmail({
           to: recipient.email,
           subject: campaign.subject,

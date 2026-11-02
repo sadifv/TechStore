@@ -4,11 +4,13 @@ const getSafeRequestTarget = require('./safeRequestTarget');
 
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
-  error.message = err.message;
+  error.message = err.type === 'entity.parse.failed' ? 'El cuerpo JSON no es válido.' : err.message;
 
   const statusCode = err.statusCode || err.status || 500;
-  const logMessage = `${err.message} - URL: ${getSafeRequestTarget(req)} - Method: ${req.method}`;
-  const logMetadata = { stack: err.stack, code: err.code };
+  // Parser/Mongoose/provider messages and stack headings may contain submitted
+  // passwords or connection credentials. Log classification, never raw payloads.
+  const logMessage = `Error de solicitud - URL: ${getSafeRequestTarget(req)} - Method: ${req.method}`;
+  const logMetadata = { errorName: err.name, code: err.code, type: err.type, statusCode };
   if (statusCode >= 500) {
     logger.error(logMessage, logMetadata);
   } else {

@@ -6,7 +6,7 @@ const getSafeRequestTarget = require('./safeRequestTarget');
  * Validación simple basada en reglas (sin dependencias externas).
  */
 
-const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
+const { isSingleEmail: isValidEmail } = require('../services/emailAddress');
 
 // ==========================================
 // REGLAS DE VALIDACIÓN POR RUTA

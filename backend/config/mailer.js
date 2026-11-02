@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const ejs = require('ejs');
 const path = require('path');
 const logger = require('./logger');
+const { isSingleEmail } = require('../services/emailAddress');
 const { createGmailApiTransport } = require('../services/gmailApiTransport');
 
 // Validar credenciales al arrancar
@@ -62,6 +63,11 @@ const getAppUrl = () => {
 
 // Función auxiliar para renderizar y enviar
 const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} }) => {
+  if (!isSingleEmail(to)) {
+    const error = new Error('La dirección de correo no es válida.');
+    error.code = 'INVALID_EMAIL_ADDRESS';
+    throw error;
+  }
   // Modo simulado si no hay transporter
   if (!transporter) {
     if (process.env.NODE_ENV === 'production' || transportMode === 'gmail-api') {
@@ -81,11 +87,6 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
       throw new Error('Faltan datos: to, subject o templateName');
     }
 
-    const emailRegex = /^\S+@\S+\.\S+$/;
-    if (!emailRegex.test(to)) {
-      throw new Error('La dirección de correo no es válida.');
-    }
-
     // Enriquecer datos con appUrl y año actual
     const enrichedData = {
       ...templateData,
@@ -99,7 +100,7 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
 
     const mailOptions = {
       from: { name: 'TechStore', address: sender },
-      to,
+      to: { address: to },
       subject,
       html: htmlContent,
     };

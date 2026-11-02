@@ -6,6 +6,7 @@ const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const { issueToken, tokenHash, emailKey } = require('./restockTokens');
 const { getFrontendBaseUrl } = require('../config/frontendUrl');
+const { isSingleEmail } = require('./emailAddress');
 const DAY = 86400000;
 const invalid = () =>
   Object.assign(new Error('El enlace no es válido o ya venció.'), { statusCode: 400 });
@@ -40,7 +41,7 @@ function normalizeRequest({ productId, email, consent } = {}) {
     !/^[a-f0-9]{24}$/i.test(productId) ||
     typeof email !== 'string' ||
     email.length > 254 ||
-    !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email.trim())
+    !isSingleEmail(email.trim())
   )
     throw Object.assign(new Error('Producto o correo inválido.'), { statusCode: 400 });
   return { productId: productId.toLowerCase(), email: email.trim().toLowerCase(), consent: true };

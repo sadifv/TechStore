@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { isSingleEmail } = require('../services/emailAddress');
 
 const userSchema = new mongoose.Schema(
   {
@@ -14,7 +15,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Por favor, ingresa un correo electrónico válido'],
+      validate: { validator: isSingleEmail, message: 'Por favor, ingresa un correo electrónico válido' },
     },
     password: {
       type: String,

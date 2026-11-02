@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const { isSingleEmail } = require('../services/emailAddress');
 
 const newsletterSchema = new mongoose.Schema({
   email: {
@@ -8,6 +9,7 @@ const newsletterSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true,
+    validate: { validator: isSingleEmail, message: 'Ingresa un único correo electrónico válido.' },
   },
   createdAt: {
     type: Date,

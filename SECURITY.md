@@ -20,6 +20,7 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 - **Caché privada:** las rutas de autenticación (incluido MFA), administración, carrito, pedidos, direcciones, favoritos, reseña propia, presencia e historial del asistente emiten `Cache-Control: no-store`, también ante errores. No afecta a las imágenes públicas inmutables ni al catálogo.
 - **Abuso:** límites de API y de operaciones sensibles. Login, checkout y MFA usan contadores persistentes MongoDB. Algunos límites generales son locales al proceso y por IP; no constituyen una garantía de capacidad distribuida.
 - **Datos comerciales:** el backend calcula importes, valida cupones y controla inventario mediante transacciones, actualizaciones condicionadas e idempotencia.
+- **Identificadores de inventario:** el checkout normaliza los ObjectId antes de agrupar cantidades y aplicar el máximo de 99 por producto. La restitución suma las líneas repetidas de pedidos antiguos antes de aplicar un marcador único por producto.
 - **Catálogo público:** `toPublicProduct` solo devuelve campos permitidos, también para agregaciones ordenadas por precio que no aplican `select:false` de Mongoose. Omite marcadores internos de restitución, bloqueos y campos nuevos no autorizados.
 - **Archivos:** las imágenes de producto se validan por tamaño, tipo y firma; su contenido se almacena en MongoDB.
 
@@ -40,6 +41,7 @@ La cancelación del cliente tiene un límite persistente específico y conserva 
 - Conservar `SESSION_SECRET` de forma segura y estable: participa en las sesiones y en el cifrado MFA. Planificar su rotación junto con la recuperación y el nuevo enrolamiento MFA.
 - Si se expone una credencial, revocarla o rotarla en el proveedor, revisar el alcance e invalidar sesiones cuando corresponda. Borrar una captura o editar `.env` no revoca una credencial.
 - No registrar contraseñas, cookies, URI completas, secretos MFA o enlaces de recuperación. Revisar los logs antes de compartirlos.
+- El manejador central registra clasificación/código/ruta, sin mensajes o stacks crudos que puedan contener valores enviados. Los errores de JSON mal formado responden con un mensaje genérico sin fragmentos del cuerpo.
 - Los enlaces de recuperación de contraseña caducan en una hora. La respuesta genérica del formulario no confirma que el correo se haya enviado.
 - El restablecimiento consume el token, cambia el hash de contraseña e incrementa `authVersion` en una única actualización condicionada. Dos solicitudes concurrentes con el mismo token solo permiten un cambio; los intentos rechazados no consumen un token vigente.
 - Verificar copias de seguridad y restauraciones con procedimientos del proveedor. El repositorio no demuestra por sí solo que exista un respaldo válido.
@@ -47,6 +49,10 @@ La cancelación del cliente tiene un límite persistente específico y conserva 
 ## Dependencias y verificación
 
 Favoritos y avisos mantienen controles independientes del boletín. Los favoritos solo se consultan y modifican para la sesión actual y tienen un límite atómico de 100. Los avisos requieren consentimiento y verificación del correo por token; no se activan ni cancelan por GET. La cuota de 20 avisos confirmados es transaccional; los límites por IP/operación y por dirección reducen el abuso de correo sin divulgar solicitudes existentes. Las respuestas públicas no prometen que el correo haya sido enviado.
+
+Los campos de correo admiten una única dirección de tipo dot-atom ASCII (con etiquetas como `+tag`), dominio válido y máximo 254 caracteres; no listas, nombres visibles, cabeceras, direcciones Unicode ni sintaxis entrecomillada. La política se comparte entre validación, modelos y transporte. El transporte valida también los registros antiguos y entrega el destinatario a Nodemailer como objeto `{ address }`.
+
+Antes de enviar cada destinatario de una campaña, la cola vuelve a comprobar correo, suscripción y token vigente. Una baja, eliminación o renovación de la suscripción invalida las instantáneas pendientes; se omite el envío, se registra `CONSENT_NOT_CURRENT` y se eliminan sus datos personales del resultado. Esto no retira un correo cuyo envío ya comenzó.
 
 Los tokens de aviso se almacenan como hashes; el navegador los recibe en fragmentos para evitar incluirlos en peticiones HTTP y los retira de la barra. No registrarlos ni incluirlos en capturas. Una baja antes de iniciar el envío cancela la preparación; una entrega ya iniciada no puede retirarse. Ante un resultado ambiguo no se reenvía automáticamente. Las pruebas usan destinatarios ficticios y transporte simulado.
 

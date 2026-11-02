@@ -72,6 +72,25 @@ test('password recovery renders the real template with the supplied reset URL', 
   assert.ok(messages.at(-1).html.includes(url));
 });
 
+test('mail transport rejects recipient lists instead of sharing private links', async () => {
+  const before = messages.length;
+  for (const email of [
+    'one@example.invalid,two@example.invalid',
+    'one@example.invalid;two@example.invalid',
+    'Name <one@example.invalid>',
+    'one@example.invalid\r\nBcc: two@example.invalid',
+  ])
+    await assert.rejects(
+      mailer.sendPasswordResetEmail(
+        email,
+        'https://store.example.invalid/reset-password/test-only',
+      ),
+    );
+  assert.equal(messages.length, before);
+  await mailer.sendWelcomeEmail('one+tag@example.invalid', 'Test');
+  assert.deepEqual(messages.at(-1).to, { address: 'one+tag@example.invalid' });
+});
+
 test('campaign renders its subject and content, preserves unsubscribe and escapes HTML', async () => {
   await mailer.sendMarketingCampaignEmail({
     to: 'recipient@example.invalid',

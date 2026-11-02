@@ -13,6 +13,9 @@ const state = {
   redactionAttempts: 0,
 };
 const Newsletter = {
+  async exists() {
+    return true;
+  },
   find() {
     return {
       select() {
@@ -146,12 +149,14 @@ test('persists per-recipient outcomes and completes the campaign without sending
       {
         _id: 'recipient-1',
         email: 'sent@example.test',
+        unsubscribeToken: 'test-current-token-1',
         status: 'pending',
         unsubscribeUrl: 'https://store.test/unsub/1',
       },
       {
         _id: 'recipient-2',
         email: 'failure@example.test',
+        unsubscribeToken: 'test-current-token-2',
         status: 'pending',
         unsubscribeUrl: 'https://store.test/unsub/2',
       },
