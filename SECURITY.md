@@ -10,6 +10,8 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+- **Presupuesto de API:** 150 solicitudes por IP cada 15 minutos para público/clientes y 1000 por cuenta para `owner`/`admin` con sesión MFA. El servidor consulta el rol y la versión de autenticación actuales antes de ampliar el presupuesto. Los límites específicos de login, MFA, recuperación, checkout y asistente siguen aplicándose. Los contadores generales son locales al proceso. Un fallo temporal al comprobar la sesión muestra una opción de reintento en el frontend, sin presentarlo como cierre de sesión.
+
 - **Sesiones:** `express-session` con almacenamiento MongoDB mediante `connect-mongo`. La cookie es `HttpOnly`, `SameSite=Lax` y `Secure` en producción. No se usa JWT para el inicio de sesión de la tienda.
 - **Contraseñas:** hashing con bcryptjs; el registro y la recuperación validan sus límites. Los campos de autenticación sensibles se excluyen por defecto en el modelo de usuario.
 - **Permisos:** el servidor vuelve a cargar la identidad y el rol. `owner` puede gestionar administradores; `admin` gestiona las operaciones de la tienda; `user` accede a funciones de cliente. Las cuentas administrativas están protegidas contra eliminación por la API de usuarios.

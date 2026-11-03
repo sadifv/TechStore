@@ -12,7 +12,7 @@ import usePresenceHeartbeat from './hooks/usePresenceHeartbeat.js';
 
 const CatalogPage = lazy(() => import('./pages/CatalogPage.jsx'));
 const ProductPage = lazy(() => import('./pages/ProductPage.jsx'));
-const ReviewModerationPage=lazy(()=>import('./components/admin/ReviewModerationPage.jsx'));
+const ReviewModerationPage = lazy(() => import('./components/admin/ReviewModerationPage.jsx'));
 const LoginPage = lazy(() =>
   import('./components/account/AuthPages.jsx').then((module) => ({ default: module.LoginPage })),
 );
@@ -108,13 +108,32 @@ export default function App() {
   const pathname = location.pathname.replace(/\/+$/, '') || '/';
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState('');
   usePresenceHeartbeat(authReady ? user : null);
   useEffect(() => {
     requestJson('/api/auth/me')
       .then((result) => setUser(result.user))
-      .catch(() => setUser(null))
+      .catch((error) => {
+        if (error.status === 401) setUser(null);
+        else setAuthError(error.message);
+      })
       .finally(() => setAuthReady(true));
   }, []);
+
+  if (authError) {
+    return (
+      <main className="container standalone-page">
+        <section className="standalone-card" aria-labelledby="session-check-heading">
+          <h1 id="session-check-heading">No pudimos comprobar tu sesión</h1>
+          <p role="alert">{authError}</p>
+          <p>Esto no significa que tu sesión se haya cerrado. Inténtalo de nuevo más tarde.</p>
+          <button className="btn btn-primary" onClick={() => location.reload()}>
+            Volver a comprobar
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   const productMatch = pathname.match(/^\/producto\/([^/]+)$/);
   const resetMatch = pathname.match(/^\/reset-password\/([^/]+)$/);
@@ -132,7 +151,8 @@ export default function App() {
   if (malformedRoute) page = <NotFoundPage />;
   else if (pathname === '/') page = <HomePage user={user} />;
   else if (pathname === '/catalogo') page = <CatalogPage />;
-  else if (productMatch) page = <ProductPage productId={decodeRouteSegment(productMatch[1])} user={user} />;
+  else if (productMatch)
+    page = <ProductPage productId={decodeRouteSegment(productMatch[1])} user={user} />;
   else if (pathname === '/login') page = <LoginPage />;
   else if (pathname === '/register') page = <RegisterPage />;
   else if (pathname === '/profile')

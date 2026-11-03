@@ -24,33 +24,38 @@ export default function ReviewModerationPage() {
     if (selected) confirmButton.current?.focus();
   }, [selected]);
   return (
-    <section className="container admin-container">
-      <header>
+    <section className="container admin-container moderation-page">
+      <header className="admin-header">
         <h1 ref={title} tabIndex={-1}>
           Moderación de reseñas
         </h1>
-        <a href="/admin">Volver al dashboard</a>
+        <a href="/admin" className="btn btn-outline">
+          ← Volver al dashboard
+        </a>
       </header>
-      <p>
+      <p className="moderation-guidance">
         Las reseñas requieren una compra verificada. Revisa el texto antes de publicarlo. No puedes
         aprobar tu propia reseña.
       </p>
-      <label htmlFor="moderation-status">Estado de reseñas</label>
-      <select
-        id="moderation-status"
-        value={status}
-        onChange={(e) => {
-          setStatus(e.target.value);
-          setPage(1);
-          setSelected(null);
-        }}
-      >
-        {Object.entries(labels).map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
+      <fieldset className="moderation-filter">
+        <legend>Filtrar reseñas</legend>
+        <label htmlFor="moderation-status">Estado de reseñas</label>
+        <select
+          id="moderation-status"
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+            setSelected(null);
+          }}
+        >
+          {Object.entries(labels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </fieldset>
       {loadError ? (
         <>
           <AdminNotice error={loadError} />
@@ -62,7 +67,15 @@ export default function ReviewModerationPage() {
         <p role="status">Cargando reseñas…</p>
       ) : (
         <>
-          {!data.reviews.length && <p>No hay reseñas en este estado.</p>}
+          {!data.reviews.length && (
+            <section className="moderation-empty" aria-label="Sin reseñas">
+              <span aria-hidden="true">☆</span>
+              <h2>No hay reseñas en este estado</h2>
+              <p>
+                Selecciona otro estado o actualiza la lista para consultar las reseñas disponibles.
+              </p>
+            </section>
+          )}
           <ul className="review-list">
             {data.reviews.map((r) => (
               <li key={r._id}>

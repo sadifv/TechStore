@@ -14,7 +14,7 @@ const express = require('express');
 const session = require('express-session');
 const helmet = require('helmet');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
+const { identifyStaff, apiLimiter } = require('./middleware/apiRateLimiter');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const { getBackendBaseUrl } = require('./config/backendUrl');
@@ -96,19 +96,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Limitador de tasa de peticiones para la API
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    success: false,
-    error: 'Demasiadas solicitudes desde esta IP, inténtalo de nuevo en 15 minutos.',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api', apiLimiter);
-
 // 4. Middlewares para parsear datos
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '32kb', parameterLimit: 100 }));
@@ -142,6 +129,9 @@ app.use(
 );
 
 // Las imágenes que sube el administrador se guardan en MongoDB.
+app.use(['/api', '/admin'], identifyStaff);
+app.use('/api', apiLimiter);
+
 app.get(
   '/uploads/products/:imageId',
   require('./controllers/productImageController').serveProductImage,

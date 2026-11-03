@@ -4,6 +4,7 @@ const slowDown = require('express-slow-down');
 const logger = require('../config/logger');
 const isApiRequest = require('./isApiRequest');
 const getSafeRequestTarget = require('./safeRequestTarget');
+const { key: apiBudgetKey } = require('./apiRateLimiter');
 const { MongoRateLimitStore } = require('./mongoRateLimitStore');
 const loginRateLimitConfig = Object.freeze({ windowMs: 10 * 60 * 1000, max: 5 });
 const checkoutRateLimitConfig = Object.freeze({ windowMs: 15 * 60 * 1000, max: 10 });
@@ -43,11 +44,12 @@ const loginLimiter = rateLimit({
 
 /**
  * Limitador general para rutas de admin.
- * 100 peticiones cada 15 minutos.
+ * 100 peticiones cada 15 minutos; 1000 para personal verificado con MFA.
  */
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: (req) => (req.verifiedStaffId ? 1000 : 100),
+  keyGenerator: apiBudgetKey,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

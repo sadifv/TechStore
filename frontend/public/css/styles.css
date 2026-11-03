@@ -793,6 +793,68 @@ summary:focus-visible {
   flex: 1 1 auto;
 }
 
+/* Contenedores y utilidades compartidas */
+.container {
+  width: min(100% - 2rem, 1240px);
+  margin-inline: auto;
+  min-width: 0;
+}
+.main-content {
+  min-width: 0;
+}
+.text-muted,
+.orders-status,
+.pagination-info {
+  color: var(--color-text-muted);
+}
+.btn-lg {
+  min-height: var(--control-height);
+  padding: var(--space-4) var(--space-6);
+}
+.success-card {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(20px, 4vw, 40px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  overflow-wrap: anywhere;
+}
+.success-card > header,
+.success-card > footer {
+  margin-block: var(--space-6);
+}
+.pagination-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-block: var(--space-8);
+}
+.pagination-container button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.pagination-container button[aria-current='page'] {
+  color: var(--color-surface);
+  background: var(--color-primary);
+}
+.pagination-container button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pagination-ellipsis {
+  padding-inline: var(--space-2);
+}
+
 /* 3. Navegación */
 .navbar {
   position: fixed;
@@ -3748,6 +3810,81 @@ h3.order-id {
   white-space: normal;
 }
 
+.moderation-page {
+  display: grid;
+  gap: var(--space-6);
+}
+.moderation-page .admin-header {
+  margin-bottom: 0;
+}
+.moderation-guidance {
+  padding: var(--space-4) var(--space-6);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  margin: 0;
+}
+.moderation-filter {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.moderation-filter legend {
+  padding-inline: var(--space-2);
+  font-weight: 750;
+}
+.moderation-filter label {
+  font-size: 14px;
+  font-weight: 650;
+}
+.moderation-filter select {
+  width: min(100%, 320px);
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+}
+.moderation-empty {
+  padding: clamp(24px, 5vw, 56px);
+  text-align: center;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+.moderation-empty > span {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-primary);
+  font-size: 36px;
+}
+.moderation-empty h2 {
+  font-size: clamp(20px, 3vw, 26px);
+  margin-bottom: var(--space-3);
+}
+.moderation-empty p {
+  max-width: 480px;
+  margin-inline: auto;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+.moderation-page > .btn {
+  justify-self: start;
+}
+
 /* 14. Diálogos y checkout */
 .modal-dialog {
   border: none;
@@ -3978,7 +4115,7 @@ dialog#checkout-modal {
   padding-left: var(--space-6);
   padding: var(--space-8) var(--space-4);
   grid-template-columns: minmax(0, 1fr);
-  max-width: 1280px;
+  max-width: none;
   gap: 28px;
 }
 .footer h2 {
@@ -5062,6 +5199,9 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 /* 19. Impresión y preferencias de accesibilidad */
 
 @media print {
+  .no-print {
+    display: none !important;
+  }
   .packing-slip {
     padding: 20px;
   }
