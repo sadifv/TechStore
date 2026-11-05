@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { backendAssetUrl } from '../../api.js';
+import { backendAssetUrl } from '../../services/api.js';
 import AppearanceSettings from './AppearanceSettings.jsx';
 import {
   AdminNotice,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { requestJson } from '../../api.js';
+import { requestJson } from '../../services/api.js';
 import AddressFields from './AddressFields.jsx';
 export default function CheckoutAddressSelector({ user, open, busy }) {
   const [mode, setMode] = useState('none'),

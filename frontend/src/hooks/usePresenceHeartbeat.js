@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { requestJson } from '../api.js';
-import { PRESENCE_HEARTBEAT_INTERVAL_MS } from '../requestCadence.js';
+import { requestJson } from '../services/api.js';
+import { PRESENCE_HEARTBEAT_INTERVAL_MS } from '../config/requestCadence.js';
 
 export default function usePresenceHeartbeat(user) {
   useEffect(() => {

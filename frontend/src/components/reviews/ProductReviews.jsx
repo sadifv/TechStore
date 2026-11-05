@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { requestJson } from '../../api.js';
+import { requestJson } from '../../services/api.js';
 const labels = {
   pending: 'Pendiente de moderación',
   approved: 'Publicada',

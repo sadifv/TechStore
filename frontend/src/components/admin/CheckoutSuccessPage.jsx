@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useCartActions } from '../CartContext.js';
+import { useCartActions } from '../cart/CartContext.js';
 import { money } from './shared.jsx';
-import { finishCheckoutAttempt } from '../../whatsappCheckout.js';
-import { requestJson } from '../../api.js';
+import { finishCheckoutAttempt } from '../../features/cart/whatsappCheckout.js';
+import { requestJson } from '../../services/api.js';
 import OrderTracking from '../account/OrderTracking.jsx';
 
 export function CheckoutSuccessPage() {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { requestJson } from '../../api.js';
+import { requestJson } from '../../services/api.js';
 import { getOrderItemName } from './orderItemDisplay.js';
 import { formatCurrency } from './utils.js';
 import OrderTracking from './OrderTracking.jsx';

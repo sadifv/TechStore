@@ -1,6 +1,6 @@
 import { useFavorites } from './FavoritesContext.js';
 import { useEffect, useRef } from 'react';
-import ProductCard from '../ProductCard.jsx';
+import ProductCard from '../catalog/ProductCard.jsx';
 import FavoriteButton from './FavoriteButton.jsx';
 export default function FavoritesSection() {
   const f = useFavorites();

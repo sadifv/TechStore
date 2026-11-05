@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ADMIN_REFRESH_INTERVAL_MS } from '../../requestCadence.js';
+import { ADMIN_REFRESH_INTERVAL_MS } from '../../config/requestCadence.js';
 import {
   AdminNotice,
   AdminPagination,

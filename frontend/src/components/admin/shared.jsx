@@ -1,6 +1,6 @@
 /* eslint react-refresh/only-export-components: off */
 import { useEffect, useState } from 'react';
-import { apiUrl, requestJson } from '../../api.js';
+import { apiUrl, requestJson } from '../../services/api.js';
 
 export const money = (value) => `$${Number(value || 0).toFixed(2)}`;
 export const date = (value, options = { year: 'numeric', month: 'short', day: 'numeric' }) =>

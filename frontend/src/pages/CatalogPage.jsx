@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { requestJson } from '../api.js';
-import ProductCard from '../components/ProductCard.jsx';
+import { requestJson } from '../services/api.js';
+import ProductCard from '../components/catalog/ProductCard.jsx';
 
 const categories = [
   'Laptops',

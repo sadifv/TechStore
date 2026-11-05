@@ -5,8 +5,10 @@
 TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base MongoDB. El frontend React se compila con Vite y se publica en Netlify. El backend Express se ejecuta en Node.js en Render. Mongoose modela los datos de MongoDB Atlas. Las plantillas EJS del backend generan correos; la interfaz de la tienda se renderiza con React.
 
 - `frontend/src/main.jsx`: monta React y `AppErrorBoundary`.
-- `frontend/src/App.jsx`: selecciona la página por `location.pathname`, consulta la sesión y compone encabezado, contenido, carrito y pie. Varias páginas se cargan con `lazy` y `Suspense`; no hay React Router.
-- `frontend/src/api.js`: URLs, solicitudes JSON y propagación de errores. Las mutaciones del panel usan también `components/admin/shared.jsx`.
+- `frontend/src/App.jsx`: compone encabezado, contenido, carrito y pie. `app/routeDefinitions.js` resuelve rutas exactas, alias y parámetros validados; `app/routes.jsx` relaciona esas rutas con páginas y conserva `lazy`/`Suspense`. `hooks/useSession.js` consulta sesión y distingue 401 de errores temporales; `hooks/useStoreTheme.js` aplica el tema global. `AccountAccess` presenta carga o acceso requerido para Mi cuenta. No hay React Router; los enlaces mantienen navegación por documento.
+- `frontend/src/services/api.js`: URLs, solicitudes JSON y propagación de errores. Las mutaciones del panel usan también `components/admin/shared.jsx`.
+- `frontend/src/features/`: módulos de dominio compartidos: tema en `appearance/` y checkout/carrito invitado en `cart/`. Sus pruebas están en `frontend/tests/`, reflejando la estructura de `src/`. `src/config/` contiene la cadencia de solicitudes y `tests/assets/` las comprobaciones generales de recursos.
+- `frontend/src/components/`: componentes agrupados por responsabilidad: `layout/`, `home/`, `cart/`, `assistant/`, `feedback/`, `dialogs/`, `catalog/`, `marketing/`, `contact/`, `account/`, `admin/`, `favorites/` y `reviews/`. Las pruebas específicas están en `frontend/tests/`, agrupadas por el módulo que verifican. Los archivos de reexportación de cuenta y administración se conservan dentro de su grupo.
 - `frontend/public/`: estilos, fuentes, imágenes estáticas y configuración de Netlify.
 - `backend/server.js`: configura middleware, sesiones, rutas, salud y arranque de servicios.
 - `backend/routes/`: conecta métodos HTTP con autorización, validación y controladores.
@@ -15,7 +17,7 @@ TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base 
 - `backend/models/`: esquemas e índices Mongoose.
 - `backend/config/`: conexiones, correo, logs y URLs.
 - `backend/scripts/`: utilidades de mantenimiento y migraciones explícitas.
-- `backend/tests/`, `frontend/tests/` y pruebas junto al código: verificación automatizada.
+- `backend/tests/` y `frontend/tests/`: verificación automatizada; los tests del frontend se mantienen fuera de `src/`.
 
 ## Navegación y comunicación
 

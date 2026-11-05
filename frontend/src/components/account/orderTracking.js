@@ -1,4 +1,4 @@
-import { requestJson } from '../../api.js';
+import { requestJson } from '../../services/api.js';
 
 export const orderPaymentLabel = (order) =>
   order.paymentStatus === 'paid'

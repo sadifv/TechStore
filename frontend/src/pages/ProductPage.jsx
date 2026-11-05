@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { backendAssetUrl, requestJson } from '../api.js';
-import { useCartActions } from '../components/CartContext.js';
+import { backendAssetUrl, requestJson } from '../services/api.js';
+import { useCartActions } from '../components/cart/CartContext.js';
 import FavoriteButton from '../components/favorites/FavoriteButton.jsx';
-import RestockRequest from '../components/RestockRequest.jsx';
+import RestockRequest from '../components/catalog/RestockRequest.jsx';
 import ProductReviews from '../components/reviews/ProductReviews.jsx';
 
 export default function ProductPage({ productId, user }) {

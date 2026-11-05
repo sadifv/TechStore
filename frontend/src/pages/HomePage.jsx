@@ -1,9 +1,9 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { requestJson } from '../api.js';
-const HomeBelowFold = lazy(() => import('../components/HomeBelowFold.jsx'));
-import FlashSaleSection from '../components/FlashSaleSection.jsx';
-import HeroSection from '../components/HeroSection.jsx';
-import ProductCard from '../components/ProductCard.jsx';
+import { requestJson } from '../services/api.js';
+const HomeBelowFold = lazy(() => import('../components/home/HomeBelowFold.jsx'));
+import FlashSaleSection from '../components/home/FlashSaleSection.jsx';
+import HeroSection from '../components/home/HeroSection.jsx';
+import ProductCard from '../components/catalog/ProductCard.jsx';
 import { normalizeHomeProducts } from './homeProducts.js';
 
 function DeferredHomeContent({ user }) {

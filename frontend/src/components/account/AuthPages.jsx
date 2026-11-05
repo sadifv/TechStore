@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { requestJson, safeReturnTo } from '../../api.js';
+import { requestJson, safeReturnTo } from '../../services/api.js';
 import { getAdminMfaStep } from './adminMfaFlow.js';
 import PasswordInput from './PasswordInput.jsx';
 

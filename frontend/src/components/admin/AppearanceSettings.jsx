@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { requestJson } from '../../api.js';
-import { applyTheme } from '../../appearance.js';
+import { requestJson } from '../../services/api.js';
+import { applyTheme } from '../../features/appearance/appearance.js';
 import { adminMutation } from './shared.jsx';
 
 export default function AppearanceSettings() {

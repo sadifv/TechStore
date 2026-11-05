@@ -14,7 +14,7 @@ const createStorage = (items = []) => {
 
 test('removes only purchased guest-cart quantities after a confirmed checkout', async () => {
   const { removePurchasedGuestCartItems, readGuestCart } =
-    await import('../../frontend/src/guestCart.js');
+    await import('../../frontend/src/features/cart/guestCart.js');
   const storage = createStorage([
     { id: 'product-a', quantity: 5 },
     { id: 'product-b', quantity: 2 },
@@ -33,7 +33,7 @@ test('removes only purchased guest-cart quantities after a confirmed checkout', 
 
 test('ignores invalid purchased quantities and preserves the guest cart', async () => {
   const { removePurchasedGuestCartItems, readGuestCart } =
-    await import('../../frontend/src/guestCart.js');
+    await import('../../frontend/src/features/cart/guestCart.js');
   const initialCart = [{ id: 'product-a', quantity: 2 }];
   const storage = createStorage(initialCart);
 
@@ -50,7 +50,8 @@ test('ignores invalid purchased quantities and preserves the guest cart', async 
 });
 
 test('keeps failed products in the guest cart when account-cart synchronization is partial', async () => {
-  const { readGuestCart, syncGuestCartToUser } = await import('../../frontend/src/guestCart.js');
+  const { readGuestCart, syncGuestCartToUser } =
+    await import('../../frontend/src/features/cart/guestCart.js');
   const fetchMock = async (url, options = {}) => {
     if (url === '/api/cart' && !options.method) {
       return { ok: true, json: async () => ({ success: true, items: [] }) };
@@ -81,7 +82,8 @@ test('keeps failed products in the guest cart when account-cart synchronization 
 });
 
 test('retains all guest-cart products if the account cart cannot be read', async () => {
-  const { readGuestCart, syncGuestCartToUser } = await import('../../frontend/src/guestCart.js');
+  const { readGuestCart, syncGuestCartToUser } =
+    await import('../../frontend/src/features/cart/guestCart.js');
   const guestCart = [{ id: 'product-a', quantity: 2 }];
   const storage = createStorage(guestCart);
   const result = await syncGuestCartToUser(async () => {
