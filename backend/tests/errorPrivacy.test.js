@@ -38,3 +38,26 @@ test('invalid JSON never echoes or logs fragments of submitted credentials', asy
   assert.equal((await res.text()).includes('SECRET'), false);
   assert.equal(JSON.stringify(messages).includes('SECRET'), false);
 });
+
+test('database validation messages never disclose submitted values to the browser', () => {
+  const error = new Error('Validation failed');
+  error.name = 'ValidationError';
+  error.errors = { password: { message: 'Validator failed for value SECRET12345' } };
+  let payload;
+  const res = {
+    status(code) {
+      assert.equal(code, 400);
+      return this;
+    },
+    json(body) {
+      payload = body;
+    },
+  };
+  errorHandler(
+    error,
+    { originalUrl: '/api/auth/register', path: '/api/auth/register', method: 'POST' },
+    res,
+    () => {},
+  );
+  assert.equal(JSON.stringify(payload).includes('SECRET12345'), false);
+});

@@ -27,6 +27,11 @@ const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter,
   limits: {
+    fields: 20,
+    parts: 21,
+    files: 1,
+    fieldSize: 64 * 1024,
+    fieldNameSize: 100,
     fileSize: 5 * 1024 * 1024, // 5 MB
   },
 });
@@ -37,14 +42,17 @@ const uploadSingleProductImage = (req, res, next) => {
 
   uploadSingle(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      logger.error(`Error de Multer en subida de imagen: ${err.message}`);
+      logger.warn('Subida rechazada por límites de archivo o formulario.', { code: err.code });
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({
           success: false,
           error: 'La imagen supera el tamaño máximo permitido (5 MB).',
         });
       }
-      return res.status(400).json({ success: false, error: err.message });
+      return res.status(400).json({
+        success: false,
+        error: 'El formulario supera los límites permitidos. Reduce los campos o su tamaño.',
+      });
     } else if (err) {
       logger.error(`Error en subida de imagen: ${err.message}`);
       return res.status(400).json({ success: false, error: err.message });

@@ -31,10 +31,10 @@ const errorHandler = (err, req, res, next) => {
 
   // Error de validación de Mongoose
   if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors)
-      .map((val) => val.message)
-      .join(', ');
-    return res.status(400).json({ success: false, error: message });
+    return res.status(400).json({
+      success: false,
+      error: 'Los datos enviados no son válidos. Revisa los campos e inténtalo de nuevo.',
+    });
   }
 
   // CastError (ID inválido)

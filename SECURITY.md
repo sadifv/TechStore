@@ -10,6 +10,9 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+- **Errores de validación:** las respuestas de errores Mongoose no reproducen mensajes internos que puedan contener valores enviados por el usuario. La validación de entrada proporciona los mensajes de campo; la barrera central devuelve un mensaje genérico.
+- **Formularios de imágenes:** además del máximo de 5MB por imagen, las subidas limitan el multipart a un archivo, 20 campos, 21 partes, nombres de 100 bytes y texto de 64KiB por campo. El permiso administrativo se comprueba antes de procesar la subida.
+
 - **Presupuesto de API:** 150 solicitudes por IP cada 15 minutos para público/clientes y 1000 por cuenta para `owner`/`admin` con sesión MFA. El servidor consulta el rol y la versión de autenticación actuales antes de ampliar el presupuesto. Los límites específicos de login, MFA, recuperación, checkout y asistente siguen aplicándose. Los contadores generales son locales al proceso. Un fallo temporal al comprobar la sesión muestra una opción de reintento en el frontend, sin presentarlo como cierre de sesión.
 
 - **Sesiones:** `express-session` con almacenamiento MongoDB mediante `connect-mongo`. La cookie es `HttpOnly`, `SameSite=Lax` y `Secure` en producción. No se usa JWT para el inicio de sesión de la tienda.
