@@ -1,0 +1,77 @@
+/* Halloween · cargar después de styles.css y activar data-theme="halloween" en html.
+   Base móvil. Decoración estática, sin alterar contenido ni interacciones. */
+:root[data-theme='halloween'] {
+  --color-primary: #a83d0a;
+  --color-primary-dark: #842d08;
+  --color-primary-light: #c74b0b;
+  --color-secondary: #301c46;
+  --color-background: #faf6fd;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f3eafa;
+  --color-text: #30233d;
+  --color-text-muted: #685475;
+  --color-border: #dacee2;
+  --shadow-card: 0 8px 28px rgb(48 28 70 / 7%);
+  --shadow-hover: 0 14px 32px rgb(48 28 70 / 13%);
+}
+html[data-theme='halloween'] .hero {
+  background: radial-gradient(ellipse at top right, #f6dac1, transparent 65%), #f3eafa;
+  border-bottom: 1px solid var(--color-border);
+}
+html[data-theme='halloween'] .hero-media {
+  background: #fff8ee;
+  border-color: #dfb78d;
+  box-shadow: 0 12px 40px rgb(84 46 101 / 12%);
+}
+html[data-theme='halloween'] .hero-eyebrow,
+html[data-theme='halloween'] .hero h1 span,
+html[data-theme='halloween'] .product-price,
+html[data-theme='halloween'] .product-detail-price {
+  color: var(--color-primary);
+}
+html[data-theme='halloween'] .navbar,
+html[data-theme='halloween'] .footer {
+  border-color: var(--color-border);
+  background: #fffafd;
+}
+html[data-theme='halloween'] .product-card,
+html[data-theme='halloween'] .auth-card,
+html[data-theme='halloween'] .login-card {
+  border-color: var(--color-border);
+}
+html[data-theme='halloween'] .ai-header,
+html[data-theme='halloween'] .contact-info {
+  background: linear-gradient(135deg, #301c46, #613576);
+  color: #ffffff;
+}
+html[data-theme='halloween'] .ai-header h2,
+html[data-theme='halloween'] .ai-header p,
+html[data-theme='halloween'] .contact-info a {
+  color: #ffffff;
+}
+html[data-theme='halloween'] .newsletter-container {
+  background: linear-gradient(135deg, #fff8ee, #f3eafa);
+}
+html[data-theme='halloween'] .btn-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+}
+html[data-theme='halloween'] .btn-primary:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+html[data-theme='halloween'] :focus-visible {
+  outline-color: var(--color-primary);
+}
+/* Adaptaciones al final: mantienen el layout compartido. */
+@media (min-width: 768px) {
+  html[data-theme='halloween'] .hero {
+    background: radial-gradient(ellipse at 85% 20%, #f6dac1, transparent 50%), #f3eafa;
+  }
+}
+@media print {
+  html[data-theme='halloween'] .hero {
+    background: #ffffff;
+  }
+}

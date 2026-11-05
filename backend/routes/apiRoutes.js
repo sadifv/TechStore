@@ -50,6 +50,14 @@ const {
   getAdminUsers,
 } = require('../controllers/adminController');
 const { getWhatsappPhone } = require('../config/whatsapp');
+const appearance = require('../controllers/appearanceController');
+router.get('/store/appearance', appearance.getAppearance);
+router.patch(
+  '/admin/appearance',
+  requireOwner,
+  require('../middleware/rateLimiter').adminLimiter,
+  appearance.updateAppearance,
+);
 router.get('/store/config', (req, res) => {
   const phone = getWhatsappPhone();
   res.json({ success: true, whatsappPhone: phone, whatsappUrl: `https://wa.me/${phone}` });

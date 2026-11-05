@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { requestJson } from './api.js';
+import { applyTheme } from './appearance.js';
 import { CartProvider } from './components/Cart.jsx';
 import SiteFooter from './components/SiteFooter.jsx';
 import FavoritesProvider from './components/favorites/FavoritesProvider.jsx';
@@ -109,6 +110,17 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState('');
+  useEffect(() => {
+    let active = true;
+    requestJson('/api/store/appearance')
+      .then((result) => {
+        if (active) applyTheme(result.theme);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
   usePresenceHeartbeat(authReady ? user : null);
   useEffect(() => {
     requestJson('/api/auth/me')
@@ -185,7 +197,8 @@ export default function App() {
     page = <NewsletterUnsubscribePage />;
   else if (pathname === '/pedido-enviado') page = <CheckoutSuccessPage />;
   else if (pathname === '/error') page = <ErrorPage />;
-  else if (pathname === '/admin' || pathname === '/admin/dashboard') page = <AdminDashboardPage />;
+  else if (pathname === '/admin' || pathname === '/admin/dashboard')
+    page = <AdminDashboardPage user={user} />;
   else if (pathname === '/admin/marketing') page = <AdminMarketingPage />;
   else if (pathname === '/admin/orders') page = <AdminOrdersPage />;
   else if (packingSlipMatch)

@@ -4,6 +4,8 @@ Este documento describe el estilo existente y las convenciones para mantenerlo. 
 
 ## Colores
 
+Los temas estacionales están en `frontend/public/css/halloween.css` y `frontend/public/css/christmas.css`. Son capas sobre `styles.css`: requieren cargar su hoja después de la base y establecer `data-theme="halloween"` o `data-theme="christmas"` en `html`. Sin ese atributo no modifican el tema normal. Conservan layout, tipografía y estados funcionales; no incluyen animación decorativa. El owner con MFA selecciona el tema desde «Estilo de la tienda» en el dashboard. Se guarda en StoreAppearance (documento global); GET /api/store/appearance devuelve solo el tema y PATCH /api/admin/appearance valida rol, MFA y una lista cerrada. Los visitantes reciben la selección al cargar la página; no hay actualización automática de pestañas ya abiertas.
+
 Reutilizar las variables CSS existentes:
 
 - Acción principal: `--color-primary` (`#2563eb`), oscuro `--color-primary-dark` (`#1d4ed8`) y claro `--color-primary-light` (`#3b82f6`).

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { backendAssetUrl } from '../../api.js';
+import AppearanceSettings from './AppearanceSettings.jsx';
 import {
   AdminNotice,
   AdminPagination,
@@ -12,7 +13,7 @@ import {
   useAdminData,
 } from './shared.jsx';
 
-export function AdminDashboardPage() {
+export function AdminDashboardPage({ user }) {
   const [subscriberPage, setSubscriberPage] = useState(1);
   const { data, error, refresh } = useAdminData(
     `/api/admin/dashboard?subscribersPage=${subscriberPage}`,
@@ -145,6 +146,7 @@ export function AdminDashboardPage() {
   } = data;
   return (
     <section className="admin-container container" aria-labelledby="admin-dashboard-heading">
+      {user?.role === 'owner' && <AppearanceSettings />}
       <header className="admin-header">
         <h1 id="admin-dashboard-heading">
           <i className="ri-dashboard-line" /> Panel de Administración
