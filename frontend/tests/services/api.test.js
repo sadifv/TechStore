@@ -11,6 +11,27 @@ afterEach(() => {
   else globalThis.window = originalWindow;
 });
 
+test('multipart uploads let the browser set its boundary and retain HTTP errors', async () => {
+  const { adminMutation } = await import('../../src/services/adminMutation.js');
+  const body = new FormData();
+  body.append('name', 'Producto');
+  globalThis.fetch = async (_url, options) => {
+    assert.equal(options.body, body);
+    assert.equal(options.headers.has('Content-Type'), false);
+    return {
+      ok: false,
+      status: 429,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ success: false, error: 'Espera', checkoutRetryAllowed: true }),
+    };
+  };
+  await assert.rejects(adminMutation('/api/admin/products', { method: 'POST', body }), {
+    message: 'Espera',
+    status: 429,
+    checkoutRetryAllowed: true,
+  });
+});
+
 test('safeReturnTo only permits same-origin paths', () => {
   globalThis.window = { location: { origin: 'http://localhost:5173' } };
   assert.equal(safeReturnTo('/profile?tab=orders#recent'), '/profile?tab=orders#recent');

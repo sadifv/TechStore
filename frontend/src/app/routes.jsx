@@ -7,18 +7,20 @@ const CatalogPage = lazy(() => import('../pages/CatalogPage.jsx'));
 const ProductPage = lazy(() => import('../pages/ProductPage.jsx'));
 const ReviewModerationPage = lazy(() => import('../components/admin/ReviewModerationPage.jsx'));
 const LoginPage = lazy(() =>
-  import('../components/account/AuthPages.jsx').then((module) => ({ default: module.LoginPage })),
+  import('../components/account/LoginPage.jsx').then((module) => ({ default: module.LoginPage })),
 );
 const RegisterPage = lazy(() =>
-  import('../components/account/AuthPages.jsx').then((module) => ({ default: module.RegisterPage })),
+  import('../components/account/RegisterPage.jsx').then((module) => ({
+    default: module.RegisterPage,
+  })),
 );
 const ForgotPasswordPage = lazy(() =>
-  import('../components/account/AuthPages.jsx').then((module) => ({
+  import('../components/account/ForgotPasswordPage.jsx').then((module) => ({
     default: module.ForgotPasswordPage,
   })),
 );
 const ResetPasswordPage = lazy(() =>
-  import('../components/account/AuthPages.jsx').then((module) => ({
+  import('../components/account/ResetPasswordPage.jsx').then((module) => ({
     default: module.ResetPasswordPage,
   })),
 );
@@ -41,27 +43,27 @@ const AdminDashboardPage = lazy(() =>
   })),
 );
 const AdminMarketingPage = lazy(() =>
-  import('../components/admin/UserMarketingPages.jsx').then((module) => ({
+  import('../components/admin/MarketingPage.jsx').then((module) => ({
     default: module.AdminMarketingPage,
   })),
 );
 const AdminUsersPage = lazy(() =>
-  import('../components/admin/UserMarketingPages.jsx').then((module) => ({
+  import('../components/admin/UsersPage.jsx').then((module) => ({
     default: module.AdminUsersPage,
   })),
 );
 const AdminOrdersPage = lazy(() =>
-  import('../components/admin/OrderPages.jsx').then((module) => ({
+  import('../components/admin/OrdersPage.jsx').then((module) => ({
     default: module.AdminOrdersPage,
   })),
 );
 const AdminOrderDetailPage = lazy(() =>
-  import('../components/admin/OrderPages.jsx').then((module) => ({
+  import('../components/admin/OrderDetailPage.jsx').then((module) => ({
     default: module.AdminOrderDetailPage,
   })),
 );
 const AdminPackingSlipPage = lazy(() =>
-  import('../components/admin/OrderPages.jsx').then((module) => ({
+  import('../components/admin/PackingSlipPage.jsx').then((module) => ({
     default: module.AdminPackingSlipPage,
   })),
 );

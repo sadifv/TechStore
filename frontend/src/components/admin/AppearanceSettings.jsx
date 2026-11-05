@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { requestJson } from '../../services/api.js';
 import { applyTheme } from '../../features/appearance/appearance.js';
-import { adminMutation } from './shared.jsx';
+import { adminMutation } from '../../services/adminMutation.js';
 
 export default function AppearanceSettings() {
   const [theme, setTheme] = useState('normal');

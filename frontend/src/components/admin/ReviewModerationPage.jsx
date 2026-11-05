@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAdminData, adminMutation, AdminNotice } from './shared.jsx';
+import { useAdminData } from '../../hooks/useAdminData.js';
+import { adminMutation } from '../../services/adminMutation.js';
+import { AdminNotice } from './AdminNotice.jsx';
 const labels = {
   pending: 'Pendientes',
   approved: 'Publicadas',

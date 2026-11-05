@@ -4,6 +4,12 @@ const path = require('node:path');
 const test = require('node:test');
 const controllerPath = path.join(__dirname, '..', 'controllers', 'authController.js');
 const middlewarePath = path.join(__dirname, '..', 'middleware', 'authMiddleware.js');
+const authModulePaths = new Set([
+  controllerPath,
+  path.join(__dirname, '..', 'controllers', 'adminMfaController.js'),
+  path.join(__dirname, '..', 'controllers', 'passwordRecoveryController.js'),
+  path.join(__dirname, '..', 'controllers', 'authSessionController.js'),
+]);
 const originalLoad = Module._load;
 process.env.SESSION_SECRET = 'admin-mfa-test-secret-long-enough-for-hkdf';
 const admin = {
@@ -53,7 +59,7 @@ const mocks = new Map([
   ['../config/frontendUrl', { getFrontendBaseUrl: () => 'https://store.example.test' }],
 ]);
 Module._load = function (request, parent, isMain) {
-  if (parent?.filename === controllerPath && mocks.has(request)) return mocks.get(request);
+  if (authModulePaths.has(parent?.filename) && mocks.has(request)) return mocks.get(request);
   return originalLoad.call(this, request, parent, isMain);
 };
 let loginUser;

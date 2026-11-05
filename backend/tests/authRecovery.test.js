@@ -4,6 +4,12 @@ const path = require('node:path');
 const test = require('node:test');
 
 const controllerPath = path.join(__dirname, '..', 'controllers', 'authController.js');
+const authModulePaths = new Set([
+  controllerPath,
+  path.join(__dirname, '..', 'controllers', 'adminMfaController.js'),
+  path.join(__dirname, '..', 'controllers', 'passwordRecoveryController.js'),
+  path.join(__dirname, '..', 'controllers', 'authSessionController.js'),
+]);
 const originalLoad = Module._load;
 let resolveUserLookup;
 const userLookup = new Promise((resolve) => {
@@ -33,7 +39,7 @@ const dependencies = new Map([
 ]);
 
 Module._load = function (request, parent, isMain) {
-  if (parent?.filename === controllerPath && dependencies.has(request))
+  if (authModulePaths.has(parent?.filename) && dependencies.has(request))
     return dependencies.get(request);
   return originalLoad.call(this, request, parent, isMain);
 };

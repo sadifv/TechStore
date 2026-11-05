@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCartActions } from '../cart/CartContext.js';
-import { money } from './shared.jsx';
+import { money } from '../../utils/formatters.js';
 import { finishCheckoutAttempt } from '../../features/cart/whatsappCheckout.js';
 import { requestJson } from '../../services/api.js';
 import OrderTracking from '../account/OrderTracking.jsx';
@@ -59,7 +59,17 @@ export function CheckoutSuccessPage() {
           {error}
         </p>
         <a href="/catalogo">Volver al catálogo</a>
-        <button type="button" className="btn btn-outline" onClick={() => { setError(''); setLoading(true); setLoadAttempt(current => current + 1); }}>Reintentar carga</button>
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={() => {
+            setError('');
+            setLoading(true);
+            setLoadAttempt((current) => current + 1);
+          }}
+        >
+          Reintentar carga
+        </button>
       </section>
     );
   if (loading || (!data && !error))
@@ -88,9 +98,9 @@ export function CheckoutSuccessPage() {
                   ? 'cancelado'
                   : expired
                     ? 'no disponible'
-                : data.contactConfirmed
-                  ? 'contacto recibido; pendiente de pago'
-                  : 'pendiente de contacto por WhatsApp'}
+                    : data.contactConfirmed
+                      ? 'contacto recibido; pendiente de pago'
+                      : 'pendiente de contacto por WhatsApp'}
             .
           </p>
           <p>
