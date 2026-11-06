@@ -6,6 +6,7 @@ const RestockPreferencePage = lazy(() => import('../components/catalog/RestockPr
 const CatalogPage = lazy(() => import('../pages/CatalogPage.jsx'));
 const ProductPage = lazy(() => import('../pages/ProductPage.jsx'));
 const ReviewModerationPage = lazy(() => import('../components/admin/ReviewModerationPage.jsx'));
+const AuditHistoryPage = lazy(() => import('../components/admin/AuditHistoryPage.jsx'));
 const LoginPage = lazy(() =>
   import('../components/account/LoginPage.jsx').then((module) => ({ default: module.LoginPage })),
 );
@@ -124,6 +125,7 @@ const pages = {
   order: ({ parameter }) => <AdminOrderDetailPage orderId={parameter} />,
   users: () => <AdminUsersPage />,
   reviews: () => <ReviewModerationPage />,
+  audit: ({ user, authReady }) => <AuditHistoryPage user={user} authReady={authReady} />,
   notFound: () => <NotFoundPage />,
 };
 export function RoutedPage({ route, user, authReady }) {

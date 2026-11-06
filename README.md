@@ -52,6 +52,9 @@ Asegúrate de tener instalado en tu sistema:
 
 ## Pruebas
 
+- Desde `frontend/`, prepara Chromium con `npx playwright install chromium` y ejecuta `npm run test:browser`. La suite usa APIs ficticias y bloquea destinos externos; detalles en [las instrucciones de navegador](frontend/tests/browser/README.md). GitHub Actions tiene un trabajo Chromium independiente.
+- El uso del historial owner/MFA, las especificaciones de productos y la preparación explícita de índices se documentan en [historial y especificaciones](docs/admin-history-and-specifications.md).
+
 - Ejecuta `npm test` desde `backend/` para las pruebas automatizadas del servidor.
 - Ejecuta `npm run test:integration` desde `backend/` para las pruebas con un replica set temporal real. Requiere `mongod` disponible (en Windows busca MongoDB Server 9.0; puedes indicar su ejecutable con `MONGOD_BINARY`). Crea y elimina su propia base temporal; no utiliza `MONGO_URI` ni datos de Atlas. La suite normal omite estos casos.
 - Ejecuta `npm test`, `npm run lint` y `npm run build` desde `frontend/` para comprobar React.

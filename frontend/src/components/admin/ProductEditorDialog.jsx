@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { backendAssetUrl } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
 import { categories, placeholder } from '../../config/storeCatalog.js';
+import SpecificationFields from './SpecificationFields.jsx';
 
 export default function ProductEditorDialog({ product, setProduct, refresh, busy, setBusy }) {
   const productDialog = useRef(null);
@@ -84,6 +85,9 @@ export default function ProductEditorDialog({ product, setProduct, refresh, busy
               required
             />
           </p>
+          {product && (
+            <SpecificationFields specifications={product.specifications || []} disabled={busy} />
+          )}
           <fieldset className="form-group-inline">
             <p className="form-field">
               <label htmlFor="prod-price">Precio ($)</label>
@@ -143,13 +147,17 @@ export default function ProductEditorDialog({ product, setProduct, refresh, busy
               id="prod-image"
               name="image"
               type="url"
-              defaultValue={product?.image || ''}
+              defaultValue={/^https?:\/\//i.test(product?.image || '') ? product.image : ''}
+              aria-describedby="prod-image-help"
               placeholder="https://..."
               onChange={(event) => {
                 if (!imageFile.current?.files?.length && event.target.value)
                   setImagePreview(event.target.value);
               }}
             />
+            <small id="prod-image-help">
+              Opcional. Si lo dejas vacío y no subes un archivo, se conserva la imagen actual.
+            </small>
           </p>
           <figure className="form-field image-preview-container">
             <figcaption>Vista previa</figcaption>

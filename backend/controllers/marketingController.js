@@ -1,3 +1,4 @@
+const { auditedHandler } = require('../services/adminAudit');
 const Campaign = require('../models/Campaign');
 const Coupon = require('../models/Coupon');
 const Newsletter = require('../models/Newsletter');
@@ -189,7 +190,7 @@ const sendAdminCampaign = async (req, res, next) => {
 
 module.exports = {
   getAdminMarketing,
-  createAdminCoupon,
-  updateAdminCouponStatus,
+  createAdminCoupon: auditedHandler(createAdminCoupon, 'coupon.created'),
+  updateAdminCouponStatus: auditedHandler(updateAdminCouponStatus, 'coupon.status_updated'),
   sendAdminCampaign,
 };

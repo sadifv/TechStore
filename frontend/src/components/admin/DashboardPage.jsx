@@ -34,6 +34,11 @@ export function AdminDashboardPage({ user }) {
           <i className="ri-dashboard-line" /> Panel de Administración
         </h1>
         <nav className="admin-header-actions" aria-label="Gestión de administración">
+          {user?.role === 'owner' && (
+            <a href="/admin/audit" className="btn btn-outline">
+              Historial administrativo
+            </a>
+          )}
           <a href="/admin/users" className="btn btn-outline">
             Usuarios
           </a>

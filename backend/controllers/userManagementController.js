@@ -1,3 +1,4 @@
+const { auditedHandler } = require('../services/adminAudit');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Presence = require('../models/Presence');
@@ -18,13 +19,11 @@ async function updateUserRole(req, res, next) {
       { returnDocument: 'after', runValidators: true },
     ).select('name role');
     if (!user) {
-      return res
-        .status(409)
-        .json({
-          success: false,
-          error:
-            'No se pudo cambiar el rol. La cuenta está protegida, no existe o su rol ya cambió. Actualiza la lista.',
-        });
+      return res.status(409).json({
+        success: false,
+        error:
+          'No se pudo cambiar el rol. La cuenta está protegida, no existe o su rol ya cambió. Actualiza la lista.',
+      });
     }
     logger.info('Rol de usuario actualizado por el propietario.', {
       event: 'user_role_changed',
@@ -51,12 +50,10 @@ async function deleteUser(req, res, next) {
     // Administrators and the owner are protected, including concurrent promotions.
     const user = await User.findOneAndDelete({ _id: req.params.id, role: 'user' });
     if (!user) {
-      return res
-        .status(409)
-        .json({
-          success: false,
-          error: 'La cuenta no existe o es una cuenta administrativa protegida.',
-        });
+      return res.status(409).json({
+        success: false,
+        error: 'La cuenta no existe o es una cuenta administrativa protegida.',
+      });
     }
     await Presence.deleteOne({ user: user._id });
     return res.json({ success: true, message: 'Usuario eliminado correctamente.' });
@@ -65,4 +62,7 @@ async function deleteUser(req, res, next) {
   }
 }
 
-module.exports = { updateUserRole, deleteUser };
+module.exports = {
+  updateUserRole: auditedHandler(updateUserRole, 'user.role_changed'),
+  deleteUser: auditedHandler(deleteUser, 'user.deleted', (body, req) => ({ _id: req.params.id })),
+};

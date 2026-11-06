@@ -1,3 +1,4 @@
+const { recordAudit } = require('./adminAudit');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const { consumeCouponReservation } = require('./couponService');
@@ -25,6 +26,11 @@ const markOrderAsPaid = async (orderId, actor) => {
       },
       { returnDocument: 'after', ...(session ? { session } : {}) },
     );
+    if (order && actor)
+      await recordAudit(
+        { actorId: actor, action: 'order.payment_confirmed', resourceId: order._id, value: order },
+        session,
+      );
     if (!order)
       order = await inSession(Order.findOne({ _id: orderId, paymentStatus: 'paid' }), session);
     if (!order) return null;

@@ -6,6 +6,8 @@ const child = spawn(
     '--test',
     ...process.argv.slice(2),
     'tests/orderTransactions.integration.test.js',
+    'tests/adminAudit.integration.test.js',
+    'tests/adminAuditDomains.integration.test.js',
     'tests/ownerRoles.integration.test.js',
     'tests/customerOrders.integration.test.js',
     'tests/customerEngagement.integration.test.js',

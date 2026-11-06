@@ -1,3 +1,4 @@
+const { auditedHandler } = require('../services/adminAudit');
 const Appearance = require('../models/StoreAppearance');
 const themes = ['normal', 'halloween', 'christmas'];
 exports.getAppearance = async (req, res, next) => {
@@ -32,3 +33,9 @@ exports.updateAppearance = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.updateAppearance = auditedHandler(
+  exports.updateAppearance,
+  'appearance.updated',
+  (body) => ({ _id: 'global', theme: body.theme }),
+);

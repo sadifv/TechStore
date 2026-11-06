@@ -1,3 +1,4 @@
+const { auditedHandler } = require('../services/adminAudit');
 const express = require('express');
 const router = express.Router();
 
@@ -51,25 +52,43 @@ router.delete('/products/:id/flash-sale', requireAdmin, deactivateFlashSale);
 // ==========================================
 // ELIMINACIÓN DE RECURSOS
 // ==========================================
-router.delete('/messages/:id', requireAdmin, async (req, res) => {
-  try {
-    await Contact.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Mensaje eliminado con éxito.' });
-  } catch (error) {
-    logger.error(`Error al eliminar mensaje: ${error.message}`, { stack: error.stack });
-    res.status(500).json({ success: false, error: 'Error al eliminar el mensaje.' });
-  }
-});
+router.delete(
+  '/messages/:id',
+  requireAdmin,
+  auditedHandler(
+    async (req, res, next) => {
+      try {
+        const deleted = await Contact.findByIdAndDelete(req.params.id);
+        if (!deleted)
+          return res.status(404).json({ success: false, error: 'Recurso no encontrado.' });
+        return res.json({ success: true });
+      } catch (error) {
+        return next(error);
+      }
+    },
+    'message.deleted',
+    (body, req) => ({ _id: req.params.id }),
+  ),
+);
 
-router.delete('/subscribers/:id', requireAdmin, async (req, res) => {
-  try {
-    await Newsletter.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Suscriptor eliminado con éxito.' });
-  } catch (error) {
-    logger.error(`Error al eliminar suscriptor: ${error.message}`, { stack: error.stack });
-    res.status(500).json({ success: false, error: 'Error al eliminar el suscriptor.' });
-  }
-});
+router.delete(
+  '/subscribers/:id',
+  requireAdmin,
+  auditedHandler(
+    async (req, res, next) => {
+      try {
+        const deleted = await Newsletter.findByIdAndDelete(req.params.id);
+        if (!deleted)
+          return res.status(404).json({ success: false, error: 'Recurso no encontrado.' });
+        return res.json({ success: true });
+      } catch (error) {
+        return next(error);
+      }
+    },
+    'subscriber.deleted',
+    (body, req) => ({ _id: req.params.id }),
+  ),
+);
 
 router.delete(
   '/users/:id',

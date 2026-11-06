@@ -20,6 +20,7 @@ const exactRoutes = {
   '/admin/orders': 'orders',
   '/admin/users': 'users',
   '/admin/reviews': 'reviews',
+  '/admin/audit': 'audit',
 };
 const dynamicRoutes = [
   { name: 'product', pattern: /^\/producto\/([^/]+)$/ },

@@ -4575,6 +4575,48 @@ dialog#checkout-modal {
 /* 18. Adaptaciones progresivas · tablet y escritorio
 Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 
+.product-specifications {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.product-specifications dl {
+  margin: var(--space-4) 0;
+}
+.product-specifications dl > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.product-specifications dt {
+  font-weight: 700;
+}
+.product-specifications dd {
+  margin: 0;
+}
+.specification-fields,
+.specification-row {
+  min-width: 0;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.specification-fields > p {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+.specification-row input {
+  width: 100%;
+  min-width: 0;
+  font-size: 1rem;
+}
+.specification-count {
+  margin-top: var(--space-2);
+}
+
 @media (min-width: 521px) {
   .admin-marketing-card {
     padding: 1.5rem;

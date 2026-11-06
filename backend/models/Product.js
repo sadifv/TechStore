@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { normalizeSpecifications } = require('../services/productSpecifications');
 
 const productSchema = new mongoose.Schema(
   {
@@ -10,6 +11,27 @@ const productSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
+    },
+    specifications: {
+      // Mixed preserves the original types so validation never silently casts
+      // scalars, drops unknown keys or accepts nested objects as text.
+      type: mongoose.Schema.Types.Mixed,
+      default: () => [],
+      set(value) {
+        if (value === undefined) return value;
+        if (!Array.isArray(value)) throw new Error('Especificaciones inválidas');
+        return normalizeSpecifications(value);
+      },
+      validate: {
+        validator(value) {
+          try {
+            return Array.isArray(value) && normalizeSpecifications(value) !== undefined;
+          } catch {
+            return false;
+          }
+        },
+        message: 'Especificaciones inválidas',
+      },
     },
     archivedAt: { type: Date, default: null },
     price: {

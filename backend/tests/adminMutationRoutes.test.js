@@ -43,6 +43,7 @@ try {
 }
 
 test('all administrative writes resolve through the API proxy and retain authorization and product validation', async (t) => {
+  require('./helpers/mockAuditPersistence')(t);
   const originalFind = User.findById;
   User.findById = (role) => ({
     select: () => ({ lean: async () => ({ _id: role, role, name: 'Test', authVersion: 0 }) }),

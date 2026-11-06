@@ -25,6 +25,8 @@ TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base 
 
 ## Navegación y comunicación
 
+El historial administrativo usa `AdminAuditEvent` y `services/adminAudit.js`; su consulta `/api/admin/audit` exige owner con MFA. Los controladores auditados comparten una transacción con el evento; pago y cancelación registran desde las transacciones existentes. `Product.specifications` se valida con `services/productSpecifications.js` y se serializa mediante una lista pública explícita. Uso, límites y operación de índices están en `docs/admin-history-and-specifications.md`. Las pruebas de Chromium están en `frontend/tests/browser/` y se ejecutan en un trabajo independiente de CI.
+
 El navegador abre una ruta de página como `/catalogo` o `/admin/users`. Netlify entrega `index.html` y React selecciona la pantalla. Las solicitudes de datos usan `/api/*`; Netlify las reenvía a Render conservando el prefijo. `/uploads/*` también se reenvía al backend para servir imágenes guardadas en MongoDB.
 
 Los destinos se definen en `frontend/public/_redirects`; la regla SPA va al final. No usar `/admin/...` para una mutación del frontend: esas rutas son navegación del sitio. `backend/routes/adminMutationRoutes.js` comparte los controladores de escritura bajo `/api/admin` y las rutas anteriores del backend. Los endpoints específicos de roles y pedidos también se montan desde `apiRoutes.js`.

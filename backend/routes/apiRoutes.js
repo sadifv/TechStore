@@ -85,6 +85,7 @@ router.get('/products/home', getHomeProducts);
 router.get('/products/:id', getProductById);
 
 // APIs JSON del panel administrativo React.
+router.get('/admin/audit', requireOwner, require('../services/adminAudit').getAudit);
 router.get('/admin/dashboard', requireAdmin, getAdminDashboard);
 router.get('/admin/marketing', requireAdmin, getAdminMarketing);
 router.get('/admin/orders', requireAdmin, getAdminOrders);

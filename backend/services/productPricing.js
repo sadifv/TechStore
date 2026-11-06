@@ -27,6 +27,11 @@ const toPublicProduct = (product, now = Date.now()) => {
       .filter((key) => Object.hasOwn(product, key))
       .map((key) => [key, product[key]]),
   );
+  if (Array.isArray(product.specifications)) {
+    publicProduct.specifications = product.specifications
+      .filter((pair) => pair && typeof pair.name === 'string' && typeof pair.value === 'string')
+      .map(({ name, value }) => ({ name, value }));
+  }
   if (!saleExpired(product, now)) return publicProduct;
   return {
     ...publicProduct,

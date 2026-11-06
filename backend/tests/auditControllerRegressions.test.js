@@ -29,7 +29,8 @@ function response() {
     },
   };
 }
-test('successful product archive returns success for the archived after-document', async () => {
+test('successful product archive returns success for the archived after-document', async (t) => {
+  require('./helpers/mockAuditPersistence')(t);
   const { deleteProduct } = loadController('productController.js', {
     '../models/Product': {
       findOneAndUpdate: async (filter, update) => {

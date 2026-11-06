@@ -1,3 +1,4 @@
+const { recordAudit } = require('./adminAudit');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const logger = require('../config/logger');
@@ -47,6 +48,11 @@ const restoreOrderInventory = async (
           { returnDocument: 'after', ...(session ? { session } : {}) },
         );
         if (!order) return false;
+        if (actor && reason === 'cancelled')
+          await recordAudit(
+            { actorId: actor, action: 'order.cancelled', resourceId: order._id, value: order },
+            session,
+          );
         for (const item of itemsToRestore) {
           const key = `${order._id}:${item.product}`;
           const result = await Product.updateOne(

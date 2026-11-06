@@ -1,3 +1,4 @@
+const { auditedHandler, recordAudit } = require('../services/adminAudit');
 const service = require('../services/productReviews');
 const handle = (fn) => async (req, res, next) => {
   try {
@@ -20,7 +21,15 @@ module.exports = {
   }),
   moderation: handle((req) => service.listModeration(req.query.status, req.query.page)),
   moderate: handle(async (req) => {
-    await service.moderateReview(req.user.id, req.params.id, req.body);
+    const row = await service.moderateReview(req.user.id, req.params.id, req.body);
+    await recordAudit({
+      actorId: req.user.id,
+      action: 'review.moderated',
+      resourceId: row._id,
+      value: row,
+    });
     return { updated: true };
   }),
 };
+
+module.exports.moderate = auditedHandler(module.exports.moderate, 'review.moderated', () => null);

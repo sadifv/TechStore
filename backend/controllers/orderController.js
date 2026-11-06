@@ -1,3 +1,4 @@
+const { auditedHandler } = require('../services/adminAudit');
 const Order = require('../models/Order');
 const logger = require('../config/logger');
 const { createOrder } = require('./orderCheckoutController');
@@ -174,6 +175,7 @@ const confirmWhatsappContact = async (req, res, next) => {
         .status(409)
         .json({ success: false, error: 'El pedido no está pendiente o ya venció.' });
     }
+    req.auditContactChanged = true;
     logger.info('Contacto de WhatsApp confirmado por la tienda.', {
       orderId: String(order._id),
       actorId: actorId(req),
@@ -207,12 +209,18 @@ const cancelWhatsappOrder = async (req, res, next) => {
 };
 
 module.exports = {
-  confirmWhatsappContact,
+  confirmWhatsappContact: auditedHandler(
+    confirmWhatsappContact,
+    'order.contact_confirmed',
+    (body, req) => (req.auditContactChanged ? body.order : null),
+  ),
   cancelWhatsappOrder,
   createOrder,
   markWhatsappOrderPaid,
   expirePendingWhatsappOrders,
   pruneCompletedInventoryRestorationKeys,
   getUserOrders,
-  updateOrderStatus,
+  updateOrderStatus: auditedHandler(updateOrderStatus, 'order.status_updated', (body) =>
+    body.message === 'La orden ya tiene ese estado.' ? null : body.order,
+  ),
 };

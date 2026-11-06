@@ -1,3 +1,5 @@
+const { normalizeSpecifications } = require('../services/productSpecifications');
+const { auditedHandler } = require('../services/adminAudit');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
@@ -44,23 +46,31 @@ const getProducts = async (req, res, next) => {
     const productQuery = ['price_asc', 'price_desc'].includes(sort)
       ? Product.aggregate([
           { $match: query },
-          { $set: { effectivePrice: { $cond: [
-            { $and: [
-              { $eq: ['$flashSale', true] },
-              { $lte: ['$flashSaleEndsAt', new Date(now)] },
-              { $ne: [{ $ifNull: ['$originalPrice', null] }, null] },
-            ] },
-            '$originalPrice', '$price',
-          ] } } },
+          {
+            $set: {
+              effectivePrice: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ['$flashSale', true] },
+                      { $lte: ['$flashSaleEndsAt', new Date(now)] },
+                      { $ne: [{ $ifNull: ['$originalPrice', null] }, null] },
+                    ],
+                  },
+                  '$originalPrice',
+                  '$price',
+                ],
+              },
+            },
+          },
           { $sort: { effectivePrice: sort === 'price_asc' ? 1 : -1, _id: 1 } },
-          { $skip: skip }, { $limit: limitNum }, { $unset: 'effectivePrice' },
+          { $skip: skip },
+          { $limit: limitNum },
+          { $unset: 'effectivePrice' },
         ])
       : Product.find(query).sort(sortOption).skip(skip).limit(limitNum).lean();
 
-    const [products, totalCount] = await Promise.all([
-      productQuery,
-      Product.countDocuments(query),
-    ]);
+    const [products, totalCount] = await Promise.all([productQuery, Product.countDocuments(query)]);
 
     // Calcular stock disponible descontando reservas activas
     const reservedByProduct = await Reservation.getReservedStockByProducts(
@@ -159,7 +169,9 @@ const createProduct = async (req, res, next) => {
       imagePath = image.trim();
     }
 
+    const specifications = normalizeSpecifications(req.body.specifications);
     const newProduct = await Product.create({
+      ...(specifications !== undefined ? { specifications } : {}),
       name,
       description,
       price: Number(price),
@@ -189,6 +201,8 @@ const updateProduct = async (req, res, next) => {
       imagePath = image.trim();
     }
 
+    const specifications = normalizeSpecifications(req.body.specifications);
+    if (specifications !== undefined) product.specifications = specifications;
     product.name = name || product.name;
     product.description = description !== undefined ? description : product.description;
     product.price = price !== undefined ? Number(price) : product.price;
@@ -276,9 +290,15 @@ module.exports = {
   getProducts,
   getHomeProducts,
   getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  activateFlashSale,
-  deactivateFlashSale,
+  createProduct: auditedHandler(createProduct, 'product.created', undefined),
+  updateProduct: auditedHandler(updateProduct, 'product.updated', undefined),
+  deleteProduct: auditedHandler(deleteProduct, 'product.archived', (body, req) => ({
+    _id: req.params.id,
+  })),
+  activateFlashSale: auditedHandler(activateFlashSale, 'product.flash_sale_activated', undefined),
+  deactivateFlashSale: auditedHandler(
+    deactivateFlashSale,
+    'product.flash_sale_deactivated',
+    undefined,
+  ),
 };

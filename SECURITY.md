@@ -10,6 +10,11 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+- **Vistas previas de imágenes:** la CSP de Netlify permite `blob:` únicamente en `img-src` para archivos seleccionados localmente. No habilita scripts blob ni scripts inline; una prueba de Chromium aplica la cabecera real para verificar este límite.
+
+- **Historial administrativo:** consulta solo owner/MFA, eventos con lista cerrada de acciones y campos, sin cuerpos HTTP, secretos ni textos personales. Las mutaciones auditadas se confirman con su evento; los fallos revierten la operación. El historial no es resistente a modificaciones directas por administradores de MongoDB y no reconstruye el pasado.
+- **Especificaciones:** pares estrictos de texto plano con límites, nombres no repetidos, rechazo de HTML/objetos y serialización pública explícita de nombre/valor. La autorización sigue en el servidor.
+
 - **Errores de validación:** las respuestas de errores Mongoose no reproducen mensajes internos que puedan contener valores enviados por el usuario. La validación de entrada proporciona los mensajes de campo; la barrera central devuelve un mensaje genérico.
 - **Formularios de imágenes:** además del máximo de 5MB por imagen, las subidas limitan el multipart a un archivo, 20 campos, 21 partes, nombres de 100 bytes y texto de 64KiB por campo. El permiso administrativo se comprueba antes de procesar la subida.
 

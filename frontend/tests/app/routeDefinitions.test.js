@@ -13,6 +13,7 @@ test('keeps public and administrative route aliases and trailing slashes', () =>
   ])
     assert.equal(matchRoute(path).name, 'unsubscribe');
   assert.equal(matchRoute('/profile').name, 'profile');
+  assert.equal(matchRoute('/admin/audit').name, 'audit');
   assert.equal(matchRoute('/avisos/confirmar').name, 'restock');
   assert.equal(matchRoute('/avisos/baja').name, 'restock');
   assert.equal(matchRoute('/toString').name, 'notFound');

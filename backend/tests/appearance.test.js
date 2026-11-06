@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+const Audit = require('../models/AdminAuditEvent');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
@@ -8,6 +10,10 @@ const controller = require('../controllers/appearanceController');
 
 test('appearance is public to read, strictly validated and writable only by current owner with MFA', async () => {
   const originals = [User.findById, Appearance.findById, Appearance.findOneAndUpdate];
+  const originalTransaction = mongoose.connection.transaction,
+    originalCreate = Audit.create;
+  mongoose.connection.transaction = async (fn) => fn({});
+  Audit.create = async () => [];
   let saved;
   User.findById = () => ({
     select: () => ({
@@ -58,5 +64,7 @@ test('appearance is public to read, strictly validated and writable only by curr
   } finally {
     await new Promise((resolve) => server.close(resolve));
     [User.findById, Appearance.findById, Appearance.findOneAndUpdate] = originals;
+    mongoose.connection.transaction = originalTransaction;
+    Audit.create = originalCreate;
   }
 });
