@@ -12,6 +12,7 @@ const orders = require('../controllers/orderController');
 const marketing = require('../controllers/marketingController');
 const users = require('../controllers/userManagementController');
 const appearance = require('../controllers/appearanceController');
+const collections = require('../controllers/storeCollectionsController');
 const reviews = require('../controllers/reviewController');
 async function invoke(handler, req) {
   const res = {
@@ -88,6 +89,16 @@ test(
     ).body.coupon;
     await invoke(marketing.updateAdminCouponStatus, req({}, coupon._id));
     await invoke(appearance.updateAppearance, req({ theme: 'christmas' }));
+    assert.equal(
+      (await invoke(collections.updateSelection, req({ key: 'setup', ids: [String(fixture._id)] })))
+        .statusCode,
+      200,
+    );
+    const event = await Audit.findOne({ action: 'collection.updated' }).lean();
+    assert.deepEqual(event.changes, [
+      { field: 'collectionKey', after: 'setup' },
+      { field: 'productCount', after: 1 },
+    ]);
     await invoke(users.updateUserRole, req({ role: 'admin' }, customer._id));
     await invoke(users.updateUserRole, req({ role: 'user' }, customer._id));
     const review = await Review.create({

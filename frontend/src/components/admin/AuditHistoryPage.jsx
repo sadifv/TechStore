@@ -15,6 +15,7 @@ const actionLabels = {
   'user.role_changed': 'Rol actualizado',
   'user.deleted': 'Cuenta eliminada',
   'appearance.updated': 'Tema actualizado',
+  'collection.updated': 'Colección actualizada',
   'coupon.created': 'Cupón creado',
   'coupon.status_updated': 'Estado de cupón actualizado',
   'review.moderated': 'Reseña moderada',

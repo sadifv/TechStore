@@ -1,4 +1,5 @@
 const Appearance = require('../models/StoreAppearance');
+const { auditedHandler } = require('../services/adminAudit');
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
 const { activeProductFilter } = require('../services/productAvailability');
@@ -71,8 +72,14 @@ exports.updateSelection = async (req, res, next) => {
       { $set: { [`collections.${key}`]: ids } },
       { upsert: true, runValidators: true },
     );
-    res.json({ success: true });
+    res.json({ success: true, key, productCount: ids.length });
   } catch (error) {
     next(error);
   }
 };
+
+exports.updateSelection = auditedHandler(exports.updateSelection, 'collection.updated', (body) => ({
+  _id: 'global',
+  collectionKey: body.key,
+  productCount: body.productCount,
+}));

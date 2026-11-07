@@ -16,7 +16,7 @@ export default function ProductGallery({ product, onSale }) {
           onClick={() => dialog.current.showModal()}
           aria-label="Ampliar foto"
         >
-          <img src={source} alt={product.name} />
+          <img src={source} alt={product.name} referrerPolicy="no-referrer" />
         </button>
         {onSale && <span className="product-detail-discount">-{product.flashSaleDiscount}%</span>}
       </figure>
@@ -30,7 +30,7 @@ export default function ProductGallery({ product, onSale }) {
                 aria-label={`Ver foto ${number + 1}`}
                 onClick={() => setIndex(number)}
               >
-                <img src={backendAssetUrl(image)} alt="" loading="lazy" />
+                <img src={backendAssetUrl(image)} alt="" loading="lazy" referrerPolicy="no-referrer" />
               </button>
             </li>
           ))}
@@ -44,7 +44,7 @@ export default function ProductGallery({ product, onSale }) {
         <form method="dialog">
           <button className="btn btn-outline">Cerrar foto</button>
         </form>
-        <img src={source} alt={product.name} loading="lazy" />
+        <img src={source} alt={product.name} loading="lazy" referrerPolicy="no-referrer" />
       </dialog>
     </section>
   );
