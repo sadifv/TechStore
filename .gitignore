@@ -21,3 +21,4 @@ certs/
 .env.test
 .env.production
 .env.development
+/.playwright-mcp/

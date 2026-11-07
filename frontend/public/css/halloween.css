@@ -1,12 +1,14 @@
 /* Halloween · cargar después de styles.css y activar data-theme="halloween" en html.
    Base móvil. Decoración estática, sin alterar contenido ni interacciones. */
 :root[data-theme='halloween'] {
+  --editorial-glow: #f6dac19c;
+  --editorial-wash: #f3eafa;
   --color-primary: #a83d0a;
   --color-primary-dark: #842d08;
   --color-primary-light: #c74b0b;
   --color-secondary: #301c46;
   --color-background: #faf6fd;
-  --color-surface: #ffffff;
+  --color-surface: #f2eaf6;
   --color-surface-hover: #f3eafa;
   --color-text: #30233d;
   --color-text-muted: #685475;

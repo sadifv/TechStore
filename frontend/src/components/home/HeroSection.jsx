@@ -1,6 +1,28 @@
+import HeroMascot from './HeroMascot.jsx';
+
 export default function HeroSection() {
+  function moveImage(event) {
+    if (event.pointerType !== 'mouse') return;
+    const frame = event.currentTarget;
+    const bounds = frame.getBoundingClientRect();
+    frame.style.setProperty(
+      '--hero-offset-x',
+      `${((event.clientX - bounds.left) / bounds.width - 0.5) * 24}px`,
+    );
+    frame.style.setProperty(
+      '--hero-offset-y',
+      `${((event.clientY - bounds.top) / bounds.height - 0.5) * 18}px`,
+    );
+  }
+
+  function resetImage(event) {
+    event.currentTarget.style.removeProperty('--hero-offset-x');
+    event.currentTarget.style.removeProperty('--hero-offset-y');
+  }
+
   return (
-    <section id="inicio" className="hero">
+    <section id="inicio" className="hero editorial-hero">
+      <HeroMascot />
       <article className="hero-content">
         <header>
           <span className="hero-eyebrow">Tecnología para tu día a día</span>
@@ -14,10 +36,10 @@ export default function HeroSection() {
         </header>
         <nav className="hero-actions" aria-label="Explorar productos">
           <a href="/catalogo" className="btn btn-primary">
-            Explorar catálogo <span aria-hidden="true">→</span>
+            <span aria-hidden="true">01</span> Explorar catálogo <span aria-hidden="true">→</span>
           </a>
           <a href="#destacados" className="hero-secondary">
-            Ver destacados
+            <span aria-hidden="true">02</span> Ver destacados <span aria-hidden="true">↓</span>
           </a>
         </nav>
         <ul className="hero-benefits">
@@ -27,7 +49,7 @@ export default function HeroSection() {
           <li>Guarda tus favoritos</li>
         </ul>
       </article>
-      <figure className="hero-media">
+      <figure className="hero-media" onPointerMove={moveImage} onPointerLeave={resetImage}>
         <img
           src="/images/hero-tech.svg"
           alt="Laptop, teléfono y audífonos en un espacio de trabajo moderno"

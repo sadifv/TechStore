@@ -1,12 +1,14 @@
 /* Navidad · cargar después de styles.css y activar data-theme="christmas" en html.
    Base móvil. Decoración estática y controles compartidos. */
 :root[data-theme='christmas'] {
+  --editorial-glow: #f7e6d19c;
+  --editorial-wash: #edf4ee;
   --color-primary: #af2339;
   --color-primary-dark: #88172b;
   --color-primary-light: #c73149;
   --color-secondary: #123f35;
   --color-background: #f7faf7;
-  --color-surface: #ffffff;
+  --color-surface: #edf3ed;
   --color-surface-hover: #edf4ee;
   --color-text: #203b32;
   --color-text-muted: #52695f;

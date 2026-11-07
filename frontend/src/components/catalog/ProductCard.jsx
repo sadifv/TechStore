@@ -3,7 +3,7 @@ import { backendAssetUrl } from '../../services/api.js';
 import { useCartActions } from '../cart/CartContext.js';
 import FavoriteButton from '../favorites/FavoriteButton.jsx';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, featured = false }) {
   const { add, notify } = useCartActions();
   const [busy, setBusy] = useState(false);
   const [added, setAdded] = useState(false);
@@ -25,7 +25,7 @@ export default function ProductCard({ product }) {
   }
   return (
     <li>
-      <article className="product-card">
+      <article className={featured ? 'product-card featured-product' : 'product-card'}>
         <a
           href={`/producto/${product._id}`}
           className="product-card-link"
@@ -39,7 +39,21 @@ export default function ProductCard({ product }) {
             />
           </figure>
           <header>
+            {featured && <p className="editorial-kicker">{product.category}</p>}
             <h3>{product.name}</h3>
+            {featured && product.description && (
+              <p className="featured-description">{product.description}</p>
+            )}
+            {featured && product.specifications?.length > 0 && (
+              <dl className="featured-specs">
+                {product.specifications.slice(0, 3).map(({ name, value }) => (
+                  <div key={name}>
+                    <dt>{name}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </header>
           <p className="product-price">${Number(product.price).toFixed(2)}</p>
         </a>

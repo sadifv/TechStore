@@ -3,7 +3,10 @@ import { requestJson } from '../services/api.js';
 const HomeBelowFold = lazy(() => import('../components/home/HomeBelowFold.jsx'));
 import FlashSaleSection from '../components/home/FlashSaleSection.jsx';
 import HeroSection from '../components/home/HeroSection.jsx';
+import HomeCategoryGallery from '../components/home/HomeCategoryGallery.jsx';
 import ProductCard from '../components/catalog/ProductCard.jsx';
+import { backendAssetUrl } from '../services/api.js';
+import { placeholder } from '../config/storeCatalog.js';
 import { normalizeHomeProducts } from './homeProducts.js';
 
 function DeferredHomeContent({ user }) {
@@ -72,6 +75,7 @@ export default function HomePage({ user }) {
   const [flashSale, setFlashSale] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [featuredIndex, setFeaturedIndex] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -97,18 +101,50 @@ export default function HomePage({ user }) {
   return (
     <>
       <HeroSection />
+      <HomeCategoryGallery />
       <FlashSaleSection product={flashSale} />
-      <section id="destacados" className="products-section" aria-labelledby="featured-heading">
+      <section
+        id="destacados"
+        className="products-section editorial-section"
+        aria-labelledby="featured-heading"
+      >
         <header className="section-header">
-          <section>
+          <div>
+            <p className="editorial-kicker">02 / Selección TechStore</p>
             <h2 id="featured-heading">Encuentra tu siguiente favorito</h2>
             <p className="section-note">Tecnología que encaja contigo y con tu día.</p>
-          </section>
+          </div>
           <a className="section-view-all" href="/catalogo">
             Ver catálogo <span aria-hidden="true">↗</span>
           </a>
         </header>
-        <ul id="featured-grid" className="products-grid" aria-live="polite">
+        {products.length > 1 && (
+          <nav className="editorial-controls" aria-label="Navegar productos destacados">
+            <button
+              type="button"
+              aria-label="Producto destacado anterior"
+              aria-controls="featured-grid"
+              disabled={featuredIndex === 0}
+              onClick={() => setFeaturedIndex(featuredIndex - 1)}
+            >
+              ←
+            </button>
+            <span role="status">
+              {String(featuredIndex + 1).padStart(2, '0')} /{' '}
+              {String(products.length).padStart(2, '0')}
+            </span>
+            <button
+              type="button"
+              aria-label="Producto destacado siguiente"
+              aria-controls="featured-grid"
+              disabled={featuredIndex === products.length - 1}
+              onClick={() => setFeaturedIndex(featuredIndex + 1)}
+            >
+              →
+            </button>
+          </nav>
+        )}
+        <ul id="featured-grid" className="editorial-featured" aria-live="polite">
           {loading ? (
             <li className="empty-state-item">
               <p className="empty-msg">Cargando productos...</p>
@@ -118,13 +154,35 @@ export default function HomePage({ user }) {
               <p className="empty-msg">{error}</p>
             </li>
           ) : products.length ? (
-            products.map((product) => <ProductCard key={product._id} product={product} />)
+            <ProductCard
+              key={products[featuredIndex]._id}
+              product={products[featuredIndex]}
+              featured
+            />
           ) : (
             <li className="empty-state-item">
               <p className="empty-msg">No hay productos destacados disponibles en este momento.</p>
             </li>
           )}
         </ul>
+        {products.length > 1 && (
+          <ul className="featured-thumbnails" aria-label="Elegir producto destacado">
+            {products.map((product, index) => (
+              <li key={product._id}>
+                <button
+                  type="button"
+                  aria-label={product.name}
+                  aria-current={index === featuredIndex ? 'true' : undefined}
+                  aria-controls="featured-grid"
+                  onClick={() => setFeaturedIndex(index)}
+                >
+                  <img src={backendAssetUrl(product.image || placeholder)} alt="" loading="lazy" />
+                  <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
       <DeferredHomeContent user={user} />
     </>

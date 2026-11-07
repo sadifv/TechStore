@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { CartProvider } from './components/cart/Cart.jsx';
 import SiteFooter from './components/layout/SiteFooter.jsx';
 import SiteHeader from './components/layout/SiteHeader.jsx';
+import AmbientBackground from './components/layout/AmbientBackground.jsx';
 import FavoritesProvider from './components/favorites/FavoritesProvider.jsx';
 import SessionError from './components/account/SessionError.jsx';
 import useSession from './hooks/useSession.js';
@@ -14,17 +15,30 @@ export default function App() {
   const { user, ready: authReady, error } = useSession();
   useStoreTheme();
   usePresenceHeartbeat(authReady ? user : null);
-  if (error) return <SessionError error={error} />;
+  if (error)
+    return (
+      <>
+        <AmbientBackground />
+        <SessionError error={error} />
+      </>
+    );
   const route = matchRoute(location.pathname);
   const page = (
     <Suspense fallback={<PageLoading />}>
       <RoutedPage route={route} user={user} authReady={authReady} />
     </Suspense>
   );
-  if (route.standalone) return page;
+  if (route.standalone)
+    return (
+      <>
+        <AmbientBackground />
+        {page}
+      </>
+    );
   return (
     <CartProvider user={user}>
       <FavoritesProvider key={user?.id || 'guest'} user={user}>
+        <AmbientBackground />
         <a className="skip-link" href="#main-content">
           Saltar al contenido principal
         </a>
