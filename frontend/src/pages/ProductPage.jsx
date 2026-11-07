@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { backendAssetUrl, requestJson } from '../services/api.js';
+import { requestJson } from '../services/api.js';
+import ProductGallery from '../components/catalog/ProductGallery.jsx';
 import { useCartActions } from '../components/cart/CartContext.js';
 import FavoriteButton from '../components/favorites/FavoriteButton.jsx';
 import RestockRequest from '../components/catalog/RestockRequest.jsx';
@@ -59,13 +60,7 @@ export default function ProductPage({ productId, user }) {
     product.flashSale && product.flashSaleEndsAt && new Date(product.flashSaleEndsAt) > new Date();
   return (
     <article className="product-detail-page">
-      <figure className="product-detail-media">
-        <img
-          src={backendAssetUrl(product.image || '/images/products/product-placeholder.svg')}
-          alt={product.name}
-        />
-        {onSale && <span className="product-detail-discount">-{product.flashSaleDiscount}%</span>}
-      </figure>
+      <ProductGallery key={`gallery-${product._id}`} product={product} onSale={onSale} />
       <section className="product-detail-info">
         <nav aria-label="Navegación">
           <a href="/catalogo" className="product-detail-back">

@@ -88,6 +88,18 @@ export default function ProductEditorDialog({ product, setProduct, refresh, busy
           {product && (
             <SpecificationFields specifications={product.specifications || []} disabled={busy} />
           )}
+          <p className="form-field">
+            <label htmlFor="prod-gallery">Fotos adicionales</label>
+            <textarea
+              id="prod-gallery"
+              name="gallery"
+              rows="3"
+              maxLength={10244}
+              defaultValue={product?.gallery?.join('\n') || ''}
+              aria-describedby="prod-gallery-help"
+            />
+            <small id="prod-gallery-help">Hasta cinco enlaces HTTPS, uno por línea.</small>
+          </p>
           <fieldset className="form-group-inline">
             <p className="form-field">
               <label htmlFor="prod-price">Precio ($)</label>

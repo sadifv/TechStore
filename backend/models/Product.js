@@ -39,6 +39,7 @@ const productSchema = new mongoose.Schema(
       required: [true, 'El precio es obligatorio'],
       min: 0,
     },
+    gallery: { type: [String], default: [] },
     image: {
       type: String,
       default: '/images/products/product-placeholder.svg',

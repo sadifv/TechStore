@@ -12,6 +12,7 @@ const toPublicProduct = (product, now = Date.now()) => {
       '_id',
       'name',
       'description',
+      'gallery',
       'price',
       'image',
       'category',

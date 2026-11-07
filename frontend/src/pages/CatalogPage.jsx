@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { requestJson } from '../services/api.js';
 import ProductCard from '../components/catalog/ProductCard.jsx';
+import ProductComparison from '../components/catalog/ProductComparison.jsx';
 
 const categories = [
   'Laptops',
@@ -37,6 +38,17 @@ export default function CatalogPage() {
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [data, setData] = useState({ key: '', products: [], pagination: null });
   const [error, setError] = useState('');
+  const [comparison, setComparison] = useState([]);
+
+  function toggleComparison(product) {
+    setComparison((current) => {
+      if (current.some((item) => item._id === product._id))
+        return current.filter((item) => item._id !== product._id);
+      if (current.length >= 3 || (current.length && current[0].category !== product.category))
+        return current;
+      return [...current, product];
+    });
+  }
   const query = new URLSearchParams({
     page: String(page),
     limit: '8',
@@ -79,6 +91,9 @@ export default function CatalogPage() {
       <header className="section-header">
         <h1 id="catalog-heading">Nuestro Catálogo</h1>
       </header>
+      {comparison.length > 0 && (
+        <ProductComparison products={comparison} clear={() => setComparison([])} />
+      )}
       <form
         id="catalog-filters-form"
         className="catalog-filters"
@@ -149,7 +164,23 @@ export default function CatalogPage() {
             <p className="empty-msg">{error}</p>
           </li>
         ) : data.products.length ? (
-          data.products.map((product) => <ProductCard key={product._id} product={product} />)
+          data.products.map((product) => {
+            const selected = comparison.some((item) => item._id === product._id);
+            return (
+              <ProductCard
+                key={product._id}
+                product={product}
+                comparison={{
+                  selected,
+                  disabled:
+                    !selected &&
+                    (comparison.length >= 3 ||
+                      Boolean(comparison.length && comparison[0].category !== product.category)),
+                  toggle: toggleComparison,
+                }}
+              />
+            );
+          })
         ) : (
           <li className="empty-state-item">
             <p className="empty-msg">No se encontraron productos con los filtros seleccionados.</p>

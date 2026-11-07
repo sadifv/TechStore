@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import AppearanceSettings from './AppearanceSettings.jsx';
+import CollectionSettings from './CollectionSettings.jsx';
 import { AdminNotice } from './AdminNotice.jsx';
 import { useAdminData } from '../../hooks/useAdminData.js';
 import DashboardCatalog from './DashboardCatalog.jsx';
@@ -52,6 +53,7 @@ export function AdminDashboardPage({ user }) {
       </header>
       <DashboardSalesOverview data={data} orders={orders} />
       <DashboardCatalog products={products} refresh={refresh} />
+      {['owner', 'admin'].includes(user?.role) && <CollectionSettings products={products} />}
       <DashboardContacts
         messages={messages}
         subscribers={subscribers}

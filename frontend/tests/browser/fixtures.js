@@ -58,6 +58,10 @@ export const test = base.extend({
         case 'GET /api/store/appearance':
           json.theme = state.theme;
           break;
+        case 'GET /api/store/collections':
+        case 'GET /api/admin/collections':
+          json.collections = {};
+          break;
         case 'GET /api/store/config':
           json.whatsappPhone = '593000000000';
           break;

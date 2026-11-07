@@ -1,3 +1,4 @@
+const { normalizeGallery } = require('../services/productGallery');
 const { normalizeSpecifications } = require('../services/productSpecifications');
 const { auditedHandler } = require('../services/adminAudit');
 const Product = require('../models/Product');
@@ -170,8 +171,10 @@ const createProduct = async (req, res, next) => {
     }
 
     const specifications = normalizeSpecifications(req.body.specifications);
+    const gallery = normalizeGallery(req.body.gallery);
     const newProduct = await Product.create({
       ...(specifications !== undefined ? { specifications } : {}),
+      ...(gallery !== undefined ? { gallery } : {}),
       name,
       description,
       price: Number(price),
@@ -203,6 +206,8 @@ const updateProduct = async (req, res, next) => {
 
     const specifications = normalizeSpecifications(req.body.specifications);
     if (specifications !== undefined) product.specifications = specifications;
+    const gallery = normalizeGallery(req.body.gallery);
+    if (gallery !== undefined) product.gallery = gallery;
     product.name = name || product.name;
     product.description = description !== undefined ? description : product.description;
     product.price = price !== undefined ? Number(price) : product.price;

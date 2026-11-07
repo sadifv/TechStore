@@ -3,6 +3,7 @@ import { requestJson } from '../services/api.js';
 const HomeBelowFold = lazy(() => import('../components/home/HomeBelowFold.jsx'));
 import FlashSaleSection from '../components/home/FlashSaleSection.jsx';
 import HeroSection from '../components/home/HeroSection.jsx';
+import HomeCollections from '../components/home/HomeCollections.jsx';
 import HomeCategoryGallery from '../components/home/HomeCategoryGallery.jsx';
 import ProductCard from '../components/catalog/ProductCard.jsx';
 import { backendAssetUrl } from '../services/api.js';
@@ -184,6 +185,7 @@ export default function HomePage({ user }) {
           </ul>
         )}
       </section>
+      <HomeCollections />
       <DeferredHomeContent user={user} />
     </>
   );

@@ -3,7 +3,7 @@ import { backendAssetUrl } from '../../services/api.js';
 import { useCartActions } from '../cart/CartContext.js';
 import FavoriteButton from '../favorites/FavoriteButton.jsx';
 
-export default function ProductCard({ product, featured = false }) {
+export default function ProductCard({ product, featured = false, comparison }) {
   const { add, notify } = useCartActions();
   const [busy, setBusy] = useState(false);
   const [added, setAdded] = useState(false);
@@ -58,6 +58,17 @@ export default function ProductCard({ product, featured = false }) {
           <p className="product-price">${Number(product.price).toFixed(2)}</p>
         </a>
         <footer>
+          {comparison && (
+            <label>
+              <input
+                type="checkbox"
+                checked={comparison.selected}
+                disabled={comparison.disabled}
+                onChange={() => comparison.toggle(product)}
+              />{' '}
+              Comparar <span className="sr-only">{product.name}</span>
+            </label>
+          )}
           <FavoriteButton product={product} />
           <button
             type="button"

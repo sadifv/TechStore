@@ -8,6 +8,7 @@ function appendMessage(current, message) {
 }
 
 export default function AiAssistant({ user }) {
+  const promptInput = useRef(null);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -44,10 +45,12 @@ export default function AiAssistant({ user }) {
     requestJson('/api/ai/history')
       .then((result) => {
         if (active && Array.isArray(result.history))
-          setMessages(result.history.slice(-MAX_VISIBLE_MESSAGES).map((item) => ({
-            role: item.role === 'user' ? 'user' : 'bot',
-            content: item.content,
-          })));
+          setMessages(
+            result.history.slice(-MAX_VISIBLE_MESSAGES).map((item) => ({
+              role: item.role === 'user' ? 'user' : 'bot',
+              content: item.content,
+            })),
+          );
       })
       .catch((requestError) => {
         if (active) setError(requestError.message);
@@ -169,11 +172,7 @@ export default function AiAssistant({ user }) {
             <p className="ai-sr-only" role="status" aria-live="polite" aria-atomic="true">
               {announcement}
             </p>
-            <section
-              id="ai-chat-messages"
-              ref={historyRef}
-              className="ai-history"
-            >
+            <section id="ai-chat-messages" ref={historyRef} className="ai-history">
               {messages.length === 0 && (
                 <section
                   id="ai-empty-state"
@@ -243,6 +242,33 @@ export default function AiAssistant({ user }) {
                 {error}
               </output>
             )}
+            <fieldset className="shop-prompts">
+              <legend>¿Qué estás buscando?</legend>
+              {[
+                ['Quiero una laptop', 'Busco una laptop para ___ y mi presupuesto es de $___'],
+                [
+                  'Busco un regalo',
+                  'Busco un regalo para alguien a quien le gusta ___. Puedo gastar hasta $___',
+                ],
+                [
+                  'Tengo un presupuesto',
+                  'Tengo $___ para comprar ___. ¿Qué opciones hay en la tienda?',
+                ],
+              ].map(([label, prompt]) => (
+                <button
+                  key={label}
+                  className="btn btn-secondary"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setMessage(prompt);
+                    promptInput.current?.focus();
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </fieldset>
             <form
               id="ai-chat-form"
               className="ai-form"
@@ -259,6 +285,7 @@ export default function AiAssistant({ user }) {
                 </label>
                 <input
                   id="ai-chat-input"
+                  ref={promptInput}
                   type="text"
                   name="message"
                   placeholder="Escribe tu consulta..."
