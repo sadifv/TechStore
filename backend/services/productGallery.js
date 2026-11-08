@@ -1,3 +1,17 @@
+function normalizeMainImage(raw) {
+  if (raw === undefined || raw === '') return undefined;
+  if (typeof raw === 'string') {
+    const value = raw.trim();
+    if (!value) return undefined;
+    if (/^\/images\/products\/[a-z0-9_-]+\.(?:svg|png|jpe?g|webp|gif)$/i.test(value)) return value;
+    return normalizeGallery([value])[0];
+  }
+  throw Object.assign(new Error('La imagen principal debe ser un enlace HTTPS válido.'), {
+    status: 400,
+    statusCode: 400,
+  });
+}
+
 function normalizeGallery(raw) {
   if (raw === undefined) return undefined;
   const urls =
@@ -26,4 +40,4 @@ function normalizeGallery(raw) {
     statusCode: 400,
   });
 }
-module.exports = { normalizeGallery };
+module.exports = { normalizeGallery, normalizeMainImage };

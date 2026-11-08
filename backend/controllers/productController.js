@@ -1,4 +1,4 @@
-const { normalizeGallery } = require('../services/productGallery');
+const { normalizeGallery, normalizeMainImage } = require('../services/productGallery');
 const { normalizeSpecifications } = require('../services/productSpecifications');
 const { auditedHandler } = require('../services/adminAudit');
 const Product = require('../models/Product');
@@ -163,11 +163,12 @@ const getProductById = async (req, res, next) => {
 const createProduct = async (req, res, next) => {
   try {
     const { name, description, price, category, stock, image } = req.body;
+    const suppliedImage = req.file ? undefined : normalizeMainImage(image);
     let imagePath = '/images/products/product-placeholder.svg';
     if (req.file) {
       imagePath = `/uploads/products/${req.file.filename}`;
-    } else if (image && image.trim() !== '') {
-      imagePath = image.trim();
+    } else if (suppliedImage) {
+      imagePath = suppliedImage;
     }
 
     const specifications = normalizeSpecifications(req.body.specifications);
@@ -192,6 +193,7 @@ const createProduct = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   try {
     const { name, description, price, category, stock, image } = req.body;
+    const suppliedImage = req.file ? undefined : normalizeMainImage(image);
     const product = await Product.findById(req.params.id);
     if (!product || isProductArchived(product)) {
       return res.status(404).json({ success: false, error: 'Producto no encontrado' });
@@ -200,8 +202,8 @@ const updateProduct = async (req, res, next) => {
     let imagePath = product.image;
     if (req.file) {
       imagePath = `/uploads/products/${req.file.filename}`;
-    } else if (image && image.trim() !== '') {
-      imagePath = image.trim();
+    } else if (suppliedImage) {
+      imagePath = suppliedImage;
     }
 
     const specifications = normalizeSpecifications(req.body.specifications);
