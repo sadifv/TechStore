@@ -1,4 +1,5 @@
 import CheckoutAddressSelector from '../account/CheckoutAddressSelector.jsx';
+import BeforeBuying from '../catalog/BeforeBuying.jsx';
 import { restoreCartFocus } from '../dialogs/modalFocus.js';
 
 export default function CheckoutDialog({
@@ -92,6 +93,7 @@ export default function CheckoutDialog({
           />
           <small>El servidor validará el cupón y calculará el descuento antes del pago.</small>
         </fieldset>
+        <BeforeBuying />
         <section className="checkout-summary-box" aria-label="Resumen del pedido">
           <span>Subtotal antes del cupón:</span>
           <strong>${subtotal.toFixed(2)}</strong>

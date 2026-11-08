@@ -6,6 +6,7 @@ import FavoriteButton from '../components/favorites/FavoriteButton.jsx';
 import RestockRequest from '../components/catalog/RestockRequest.jsx';
 import ProductReviews from '../components/reviews/ProductReviews.jsx';
 import ProductSpecifications from '../components/catalog/ProductSpecifications.jsx';
+import BeforeBuying from '../components/catalog/BeforeBuying.jsx';
 
 export default function ProductPage({ productId, user }) {
   const { add, notify } = useCartActions();
@@ -130,6 +131,7 @@ export default function ProductPage({ productId, user }) {
         </p>
       </section>
       <ProductSpecifications specifications={product.specifications} />
+      <BeforeBuying />
       <ProductReviews key={productId} productId={productId} user={user} />
     </article>
   );
