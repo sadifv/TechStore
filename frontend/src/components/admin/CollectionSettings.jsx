@@ -34,14 +34,13 @@ export default function CollectionSettings({ products }) {
     }
   }
   return (
-    <details className="product-comparison">
+    <details className="collection-settings">
       <summary>Editar colecciones de la portada</summary>
       <form onSubmit={save}>
         <fieldset disabled={busy || !groups}>
-          <legend>Selecciona hasta ocho productos</legend>
-          <label>
-            {' '}
-            Colección{' '}
+          <legend>Selecciona hasta ocho productos para mostrar en la portada.</legend>
+          <label className="collection-select">
+            Colección
             <select
               value={key}
               onChange={(event) => {
@@ -56,10 +55,13 @@ export default function CollectionSettings({ products }) {
               ))}
             </select>
           </label>
+          <p className="collection-count" role="status">
+            {ids.length} / 8 productos seleccionados
+          </p>
           <ul className="collection-picker">
             {[...new Set([...ids, ...names.keys()])].map((id) => (
               <li key={id}>
-                <label>
+                <label className="collection-option">
                   <input
                     type="checkbox"
                     checked={ids.includes(id)}
@@ -70,14 +72,14 @@ export default function CollectionSettings({ products }) {
                         [key]: ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
                       })
                     }
-                  />{' '}
-                  {names.get(id) || 'Producto no disponible en esta lista'}
+                  />
+                  <span>{names.get(id) || 'Producto no disponible en esta lista'}</span>
                 </label>
               </li>
             ))}
           </ul>
           <button className="btn btn-primary" type="submit">
-            Guardar colección
+            {busy ? 'Guardando…' : 'Guardar colección'}
           </button>
         </fieldset>
         <p role="status">{status}</p>

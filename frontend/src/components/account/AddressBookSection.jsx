@@ -64,10 +64,12 @@ export default function AddressBookSection() {
               {data.addresses.map((a) => (
                 <li key={a._id}>
                   <article className="order-card">
-                    <h3>
-                      {a.label || 'Dirección'}
-                      {data.defaultAddressId === a._id ? ' · Predeterminada' : ''}
-                    </h3>
+                    <header className="address-card-heading">
+                      <h3>{a.label || 'Dirección'}</h3>
+                      {data.defaultAddressId === a._id && (
+                        <span className="customer-badge">Predeterminada</span>
+                      )}
+                    </header>
                     <p>{a.recipient}</p>
                     <p>
                       {a.street}, {a.city}, {a.country}

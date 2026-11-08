@@ -244,6 +244,7 @@ export default function AiAssistant({ user }) {
             )}
             <fieldset className="shop-prompts">
               <legend>¿Qué estás buscando?</legend>
+              <p>Elige una idea y edita la pregunta antes de enviarla.</p>
               {[
                 ['Quiero una laptop', 'Busco una laptop para ___ y mi presupuesto es de $___'],
                 [
@@ -257,7 +258,7 @@ export default function AiAssistant({ user }) {
               ].map(([label, prompt]) => (
                 <button
                   key={label}
-                  className="btn btn-secondary"
+                  className="shop-prompt-card"
                   type="button"
                   disabled={busy}
                   onClick={() => {
@@ -266,6 +267,7 @@ export default function AiAssistant({ user }) {
                   }}
                 >
                   {label}
+                  <span aria-hidden="true">↗</span>
                 </button>
               ))}
             </fieldset>

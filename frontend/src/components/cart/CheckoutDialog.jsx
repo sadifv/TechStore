@@ -92,7 +92,7 @@ export default function CheckoutDialog({
           />
           <small>El servidor validará el cupón y calculará el descuento antes del pago.</small>
         </fieldset>
-        <section className="checkout-summary-box">
+        <section className="checkout-summary-box" aria-label="Resumen del pedido">
           <span>Subtotal antes del cupón:</span>
           <strong>${subtotal.toFixed(2)}</strong>
         </section>

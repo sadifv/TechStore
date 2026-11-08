@@ -7,6 +7,8 @@ export default function ProductGallery({ product, onSale }) {
   const [index, setIndex] = useState(0);
   const dialog = useRef(null);
   const source = backendAssetUrl(images[index] || images[0]);
+  const changePhoto = (step) =>
+    setIndex((current) => (current + step + images.length) % images.length);
   return (
     <section className="detail-gallery" aria-label="Fotos del producto">
       <figure className="product-detail-media">
@@ -30,7 +32,12 @@ export default function ProductGallery({ product, onSale }) {
                 aria-label={`Ver foto ${number + 1}`}
                 onClick={() => setIndex(number)}
               >
-                <img src={backendAssetUrl(image)} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                <img
+                  src={backendAssetUrl(image)}
+                  alt=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                />
               </button>
             </li>
           ))}
@@ -40,11 +47,33 @@ export default function ProductGallery({ product, onSale }) {
         ref={dialog}
         className="gallery-dialog"
         aria-label={`Foto ampliada de ${product.name}`}
+        onKeyDown={(event) => {
+          if (images.length < 2 || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+          event.preventDefault();
+          changePhoto(event.key === 'ArrowLeft' ? -1 : 1);
+        }}
       >
-        <form method="dialog">
-          <button className="btn btn-outline">Cerrar foto</button>
-        </form>
+        <header className="gallery-toolbar">
+          <p role="status" aria-label="Foto actual">
+            {String(index + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
+          </p>
+          <form method="dialog">
+            <button className="btn btn-outline" aria-label="Cerrar foto">
+              ×
+            </button>
+          </form>
+        </header>
         <img src={source} alt={product.name} loading="lazy" referrerPolicy="no-referrer" />
+        {images.length > 1 && (
+          <nav className="gallery-navigation" aria-label="Recorrer fotos ampliadas">
+            <button className="btn btn-outline" type="button" onClick={() => changePhoto(-1)}>
+              ← Anterior
+            </button>
+            <button className="btn btn-outline" type="button" onClick={() => changePhoto(1)}>
+              Siguiente →
+            </button>
+          </nav>
+        )}
       </dialog>
     </section>
   );

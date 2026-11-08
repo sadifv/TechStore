@@ -1,3 +1,6 @@
+import { backendAssetUrl } from '../../services/api.js';
+import { placeholder } from '../../config/storeCatalog.js';
+
 const normalize = (name) => name.trim().normalize('NFKC').toLocaleLowerCase('es');
 const currency = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' });
 
@@ -33,7 +36,14 @@ export default function ProductComparison({ products, clear }) {
                 <th scope="col">Característica</th>
                 {products.map((product) => (
                   <th scope="col" key={product._id}>
-                    <a href={`/producto/${product._id}`}>{product.name}</a>
+                    <a className="comparison-product" href={`/producto/${product._id}`}>
+                      <img
+                        src={backendAssetUrl(product.image || placeholder)}
+                        alt=""
+                        loading="lazy"
+                      />
+                      <span>{product.name}</span>
+                    </a>
                   </th>
                 ))}
               </tr>
@@ -42,14 +52,21 @@ export default function ProductComparison({ products, clear }) {
               <tr>
                 <th scope="row">Precio</th>
                 {products.map((product) => (
-                  <td key={product._id}>{currency.format(product.price)}</td>
+                  <td className="comparison-price" key={product._id}>
+                    {currency.format(product.price)}
+                  </td>
                 ))}
               </tr>
               <tr>
                 <th scope="row">Disponibilidad</th>
                 {products.map((product) => (
                   <td key={product._id}>
-                    {(product.availableStock ?? product.stock) > 0 ? 'Disponible' : 'Agotado'}
+                    <span
+                      className="comparison-stock"
+                      data-available={(product.availableStock ?? product.stock) > 0}
+                    >
+                      {(product.availableStock ?? product.stock) > 0 ? 'Disponible' : 'Agotado'}
+                    </span>
                   </td>
                 ))}
               </tr>

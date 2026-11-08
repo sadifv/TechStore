@@ -105,10 +105,12 @@ export default function ProductReviews({ productId, user }) {
             {data.reviews.map((r, index) => (
               <li key={`${r.createdAt}-${index}`}>
                 <article className="order-card">
-                  <h3>
-                    {r.author} · {r.rating}/5
-                  </h3>
-                  <p>Compra verificada</p>
+                  <h3>{r.author}</h3>
+                  <p className="review-rating">
+                    <span aria-hidden="true">{'★'.repeat(Math.max(0, Math.min(5, r.rating)))}</span>{' '}
+                    {r.rating}/5
+                  </p>
+                  <p className="customer-badge">Compra verificada</p>
                   <p className="review-text">{r.text}</p>
                   <time dateTime={r.createdAt}>
                     {new Date(r.createdAt).toLocaleDateString('es-EC')}

@@ -60,10 +60,14 @@ export default function OrderTracking({ order, checkoutKey, onUpdate, headingLev
       <Heading id={headingId}>Seguimiento del pedido</Heading>
       <OrderAddress order={order} />
       <dl className="order-tracking-states">
-        <dt>Pago</dt>
-        <dd>{orderPaymentLabel(order)}</dd>
-        <dt>Envío</dt>
-        <dd>{orderShippingLabel(order)}</dd>
+        <div>
+          <dt>Pago</dt>
+          <dd>{orderPaymentLabel(order)}</dd>
+        </div>
+        <div>
+          <dt>Envío</dt>
+          <dd>{orderShippingLabel(order)}</dd>
+        </div>
       </dl>
       <ol className="order-timeline">
         <li>

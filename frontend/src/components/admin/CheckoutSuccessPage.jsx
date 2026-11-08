@@ -129,7 +129,7 @@ export function CheckoutSuccessPage() {
         </section>
         <OrderTracking order={data} checkoutKey={checkoutKey} onUpdate={setData} headingLevel={2} />
         <footer>
-          <a href="/catalogo" className="btn btn-primary">
+          <a href="/catalogo" className="btn btn-outline">
             Volver al Catálogo
           </a>
         </footer>

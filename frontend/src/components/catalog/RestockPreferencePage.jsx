@@ -17,16 +17,21 @@ export default function RestockPreferencePage() {
   const valid = /^[a-f0-9]{64}$/i.test(token);
   return (
     <section className="container login-container">
-      <article className="login-card">
+      <article className="login-card preference-card">
+        <p className="editorial-kicker">Avisos de disponibilidad</p>
         <h1>
           {action === 'confirm'
             ? 'Confirmar aviso de disponibilidad'
             : 'Cancelar aviso de disponibilidad'}
         </h1>
         {!valid ? (
-          <p role="alert">El enlace no es válido o está incompleto.</p>
+          <p role="alert" className="form-status error">
+            El enlace no es válido o está incompleto.
+          </p>
         ) : done ? (
-          <p role="status">{message}</p>
+          <p role="status" className="preference-result">
+            {message}
+          </p>
         ) : (
           <>
             <p>

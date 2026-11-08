@@ -41,20 +41,20 @@ export default function NewsletterUnsubscribePage() {
 
   return (
     <section className="login-container container">
-      <article className="login-card" aria-labelledby="unsubscribe-heading">
+      <article className="login-card preference-card" aria-labelledby="unsubscribe-heading">
+        <p className="editorial-kicker">Comunicaciones de TechStore</p>
         <h1 id="unsubscribe-heading">
           {done ? 'Preferencias actualizadas' : 'Preferencias de correo'}
         </h1>
         {done ? (
-          <p>Tu solicitud para dejar de recibir estas comunicaciones se completó.</p>
+          <p role="status" className="preference-result">
+            Tu solicitud para dejar de recibir estas comunicaciones se completó.
+          </p>
         ) : valid ? (
           <>
             <p>
               Confirma si quieres dejar de recibir{' '}
-              {campaign
-                ? 'estas comunicaciones de marketing'
-                : 'el boletín de TechStore'}
-              .
+              {campaign ? 'estas comunicaciones de marketing' : 'el boletín de TechStore'}.
             </p>
             <button
               type="button"
