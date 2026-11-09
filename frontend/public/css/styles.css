@@ -11,6 +11,7 @@ Colores y comportamiento comercial conservados. */
 /* 1. Fuente y tokens */
 :root {
   --color-primary: #2563eb;
+  --editorial-accent: #f47761;
   --color-primary-dark: #1d4ed8;
   --color-primary-light: #3b82f6;
   --color-secondary: #0f172a;
@@ -4755,6 +4756,7 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   opacity: 0.16;
 }
 .ambient-trail {
+  stroke: var(--editorial-accent);
   opacity: 0.4;
   stroke-width: 2;
   stroke-linecap: round;
@@ -5359,6 +5361,27 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 .before-buying p {
   margin: 0 0 0.75rem;
   color: var(--color-text-muted);
+}
+
+/* Acento editorial para detalles decorativos de los tres temas */
+.hero.editorial-hero .hero-media {
+  box-shadow: 0.55rem 0.55rem 0 var(--editorial-accent);
+}
+.editorial-hero .hero-secondary {
+  border-bottom: 3px solid var(--editorial-accent);
+  padding-block: 0.45rem;
+  text-decoration: none;
+}
+.editorial-section .editorial-kicker {
+  display: inline-block;
+  border-inline-start: 4px solid var(--editorial-accent);
+  padding-inline-start: 0.55rem;
+}
+.hero-eyebrow::before {
+  background: var(--editorial-accent);
+}
+.featured-thumbnails button[aria-current] {
+  box-shadow: inset 0 -3px var(--editorial-accent);
 }
 
 @media (min-width: 521px) {
@@ -6001,7 +6024,60 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 
 /* 19. Impresión y preferencias de accesibilidad */
 
+.navbar-logo-mark {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  color: var(--color-primary);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.logo-intro { display: none; }
+
 @media (prefers-reduced-motion: no-preference) {
+  .logo-intro {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    background: var(--color-background);
+    color: var(--color-secondary);
+    animation: logo-intro-exit 420ms 900ms ease-in-out both;
+  }
+  .logo-intro-lockup {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    font-size: clamp(2rem, 8vw, 6rem);
+    font-weight: 800;
+    border-bottom: 0.08em solid var(--editorial-accent);
+    padding-bottom: 0.15em;
+  }
+  @keyframes logo-intro-exit {
+    from { opacity: 1; visibility: visible; }
+    to { opacity: 0; visibility: hidden; }
+  }
+  .logo-intro .navbar-logo-mark path {
+    stroke-dasharray: 100;
+    animation: logo-draw 480ms ease-out both;
+  }
+  .logo-intro-lockup > span {
+    animation: logo-wordmark 350ms 250ms ease-out both;
+  }
+  @keyframes logo-draw {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes logo-wordmark {
+    from { opacity: 0; transform: translateX(-0.3em); }
+    to { opacity: 1; transform: translateX(0); }
+  }
   .hero-mascot-hand {
     transform-origin: 59px 56px;
   }

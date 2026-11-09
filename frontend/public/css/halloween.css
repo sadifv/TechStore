@@ -1,15 +1,16 @@
 /* Halloween · cargar después de styles.css y activar data-theme="halloween" en html.
    Base móvil. Decoración estática, sin alterar contenido ni interacciones. */
 :root[data-theme='halloween'] {
-  --editorial-glow: #f6dac19c;
-  --editorial-wash: #f3eafa;
-  --color-primary: #a83d0a;
-  --color-primary-dark: #842d08;
-  --color-primary-light: #c74b0b;
+  --editorial-accent: #8cae36;
+  --editorial-glow: #cde89d80;
+  --editorial-wash: #ede4f4;
+  --color-primary: #653584;
+  --color-primary-dark: #49245f;
+  --color-primary-light: #78459a;
   --color-secondary: #301c46;
-  --color-background: #faf6fd;
-  --color-surface: #f2eaf6;
-  --color-surface-hover: #f3eafa;
+  --color-background: #f9f4eb;
+  --color-surface: #f3e9f5;
+  --color-surface-hover: #ede4f4;
   --color-text: #30233d;
   --color-text-muted: #685475;
   --color-border: #dacee2;
@@ -17,12 +18,12 @@
   --shadow-hover: 0 14px 32px rgb(48 28 70 / 13%);
 }
 html[data-theme='halloween'] .hero {
-  background: radial-gradient(ellipse at top right, #f6dac1, transparent 65%), #f3eafa;
+  background: radial-gradient(ellipse at top right, #e2edc8, transparent 65%), #ede4f4;
   border-bottom: 1px solid var(--color-border);
 }
 html[data-theme='halloween'] .hero-media {
-  background: #fff8ee;
-  border-color: #dfb78d;
+  background: #fff6e5;
+  border-color: #d7c3e1;
   box-shadow: 0 12px 40px rgb(84 46 101 / 12%);
 }
 html[data-theme='halloween'] .hero-eyebrow,
@@ -34,7 +35,7 @@ html[data-theme='halloween'] .product-detail-price {
 html[data-theme='halloween'] .navbar,
 html[data-theme='halloween'] .footer {
   border-color: var(--color-border);
-  background: #fffafd;
+  background: #fcf7ee;
 }
 html[data-theme='halloween'] .product-card,
 html[data-theme='halloween'] .auth-card,
@@ -52,7 +53,7 @@ html[data-theme='halloween'] .contact-info a {
   color: #ffffff;
 }
 html[data-theme='halloween'] .newsletter-container {
-  background: linear-gradient(135deg, #fff8ee, #f3eafa);
+  background: linear-gradient(135deg, #fff6e5, #ede4f4);
 }
 html[data-theme='halloween'] .btn-primary {
   background: var(--color-primary);
@@ -69,7 +70,7 @@ html[data-theme='halloween'] :focus-visible {
 /* Adaptaciones al final: mantienen el layout compartido. */
 @media (min-width: 768px) {
   html[data-theme='halloween'] .hero {
-    background: radial-gradient(ellipse at 85% 20%, #f6dac1, transparent 50%), #f3eafa;
+    background: radial-gradient(ellipse at 85% 20%, #e2edc8, transparent 50%), #ede4f4;
   }
 }
 @media print {

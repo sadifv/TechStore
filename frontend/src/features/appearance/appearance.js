@@ -6,8 +6,8 @@ export function applyTheme(value) {
     'content',
     {
       normal: '#2563eb',
-      halloween: '#a83d0a',
-      christmas: '#af2339',
+      halloween: '#653584',
+      christmas: '#20604c',
     }[theme],
   );
   window.dispatchEvent(new CustomEvent('store-theme-changed', { detail: theme }));
