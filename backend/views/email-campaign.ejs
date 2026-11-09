@@ -21,11 +21,12 @@
       <p style="white-space: pre-line; line-height: 1.7"><%= content %></p>
       <% if (couponCode) { %>
       <p>Tu código: <strong style="font-size: 20px"><%= couponCode %></strong></p>
-      <% } %>
+      <% } %> <% if (unsubscribeUrl) { %>
       <p style="margin-top: 32px; font-size: 12px; color: #64748b">
         Recibes este mensaje porque aceptaste recibir novedades de TechStore.
         <a href="<%= unsubscribeUrl %>">Darme de baja</a>
       </p>
+      <% } %>
     </main>
   </body>
 </html>

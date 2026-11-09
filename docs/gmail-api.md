@@ -39,7 +39,7 @@ Guardar la configuración y comprobar el despliegue. El mensaje de transporte co
 
 Con una cuenta de prueba propia y autorización para enviarle un mensaje, comprobar bienvenida, recuperación y una campaña dirigida exclusivamente a destinatarios de prueba. Confirmar bandeja de entrada y spam, asunto, enlaces al dominio correcto y baja de campañas. No usar una lista real de suscriptores para probar.
 
-El transporte exige un ID de mensaje de Gmail antes de informar éxito. Ese ID acredita aceptación por Gmail, no entrega en bandeja de entrada. Los errores se registran con códigos seguros; la respuesta genérica de recuperación tampoco confirma que el envío haya ocurrido.
+El transporte exige un ID de mensaje de Gmail antes de informar éxito. Ese ID acredita aceptación por Gmail, no entrega en bandeja de entrada. El panel de marketing tiene una prueba individual: envía la plantilla de campaña solo al correo de la cuenta administrativa autenticada con MFA, no consulta suscriptores ni crea campañas. La consola muestra códigos de error Gmail de una lista cerrada; nunca registra la respuesta completa del proveedor, cabeceras ni cuerpo del mensaje. La respuesta genérica de recuperación tampoco confirma que el envío haya ocurrido.
 
 Las solicitudes tienen tiempo de espera. El envío no se reintenta automáticamente ante fallos de red para evitar duplicar mensajes de resultado incierto; la renovación de credenciales la gestiona la biblioteca de Google. Un error OAuth `invalid_grant`, revocación, permisos insuficientes, API deshabilitada o cuota agotada requiere revisar Google Cloud y la autorización del remitente. Nunca publicar el objeto completo de error del proveedor: puede incluir credenciales y el mensaje.
 

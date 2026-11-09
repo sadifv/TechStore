@@ -2,6 +2,7 @@ const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
 const fs = require('fs');
+const consoleLogFormat = require('./consoleLogFormat');
 
 const levels = {
   error: 0,
@@ -29,7 +30,7 @@ if (!fs.existsSync(logDir)) {
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf((info) => `${info.timestamp} ${info.level}: ${info.message}`),
+  winston.format.printf(consoleLogFormat),
 );
 
 const fileFormat = winston.format.combine(winston.format.timestamp(), winston.format.json());

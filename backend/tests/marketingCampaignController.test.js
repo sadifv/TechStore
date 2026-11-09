@@ -9,6 +9,7 @@ let createdCampaign;
 let queuedId;
 let saveCompleted = false;
 let emailCalls = 0;
+const testEmailCalls = [];
 const Campaign = {
   async create(data) {
     saveCompleted = true;
@@ -42,6 +43,10 @@ Module._load = function (request, parent, isMain) {
       sendMarketingCampaignEmail: async () => {
         emailCalls += 1;
       },
+      sendAdminCampaignTestEmail: async (message) => {
+        testEmailCalls.push(message);
+        return { success: true, messageId: 'test-message-id' };
+      },
     };
   }
   if (parent?.filename === controllerPath && request === '../config/logger')
@@ -49,8 +54,9 @@ Module._load = function (request, parent, isMain) {
   return originalLoad.call(this, request, parent, isMain);
 };
 let sendAdminCampaign;
+let sendAdminCampaignTest;
 try {
-  ({ sendAdminCampaign } = require(controllerPath));
+  ({ sendAdminCampaign, sendAdminCampaignTest } = require(controllerPath));
 } finally {
   Module._load = originalLoad;
 }
@@ -95,4 +101,51 @@ test('persists the campaign and returns 202 before attempting recipient delivery
   assert.equal(emailCalls, 0);
   assert.equal(body.campaign.results, undefined);
   assert.match(body.message, /en cola/);
+});
+
+test('sends an isolated campaign preview only to the authenticated admin account', async () => {
+  testEmailCalls.length = 0;
+  queuedId = undefined;
+  createdCampaign = undefined;
+  let response;
+  let statusCode = 200;
+  await sendAdminCampaignTest(
+    {
+      user: { email: 'admin@example.invalid', name: 'Admin' },
+      body: {
+        to: 'other-subscriber@example.invalid',
+        subject: '  Prueba Gmail  ',
+        content: 'Contenido de prueba',
+        couponCode: 'TEST10',
+      },
+    },
+    {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(value) {
+        response = value;
+      },
+    },
+    (error) => {
+      throw error;
+    },
+  );
+
+  assert.equal(statusCode, 200);
+  assert.deepEqual(testEmailCalls, [
+    {
+      to: 'admin@example.invalid',
+      subject: 'Prueba Gmail',
+      name: 'Admin',
+      content: 'Contenido de prueba',
+      couponCode: 'TEST10',
+    },
+  ]);
+  assert.equal(response.success, true);
+  assert.match(response.message, /admin@example\.invalid/);
+  assert.equal(emailCalls, 0);
+  assert.equal(queuedId, undefined);
+  assert.equal(createdCampaign, undefined);
 });

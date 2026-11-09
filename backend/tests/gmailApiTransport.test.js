@@ -68,6 +68,48 @@ test('Gmail API sanitizes provider errors and never returns success without ackn
   }
 });
 
+test('Gmail API exposes a safe diagnostic code for OAuth and permission failures', async () => {
+  const failures = [
+    [
+      Object.assign(new Error('provider payload contains private data'), {
+        response: {
+          status: 400,
+          data: { error: 'invalid_grant', error_description: 'private token details' },
+        },
+      }),
+      'GMAIL_REFRESH_TOKEN_INVALID',
+    ],
+    [
+      Object.assign(new Error('provider payload contains private data'), {
+        response: {
+          status: 403,
+          data: { error: { errors: [{ reason: 'insufficientPermissions' }] } },
+        },
+      }),
+      'GMAIL_PERMISSION_DENIED',
+    ],
+    [
+      Object.assign(new Error('provider payload contains private data'), {
+        response: {
+          status: 403,
+          data: { error: { errors: [{ reason: 'accessNotConfigured' }] } },
+        },
+      }),
+      'GMAIL_API_NOT_ENABLED',
+    ],
+  ];
+
+  for (const [providerError, expectedCode] of failures) {
+    const { transport } = setup(providerError);
+    await assert.rejects(transport.sendMail(message), (error) => {
+      assert.equal(error.code, expectedCode);
+      assert.equal(error.cause, undefined);
+      assert.ok(!String(error).includes('private'));
+      return true;
+    });
+  }
+});
+
 test('real OAuth client refreshes access and does not repeat an ambiguous send failure', async () => {
   for (const failSend of [false, true]) {
     const calls = [];
@@ -107,7 +149,7 @@ test('real OAuth client refreshes access and does not repeat an ambiguous send f
     }
     const transport = createGmailApiTransport(credentials, IsolatedAuthClient);
     if (failSend)
-      await assert.rejects(transport.sendMail(message), { code: 'GMAIL_API_SEND_FAILED' });
+      await assert.rejects(transport.sendMail(message), { code: 'GMAIL_NETWORK_ERROR' });
     else assert.equal((await transport.sendMail(message)).messageId, 'accepted-test-message');
     assert.deepEqual(calls, [
       'https://oauth2.googleapis.com/token',

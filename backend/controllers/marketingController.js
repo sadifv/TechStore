@@ -3,6 +3,8 @@ const Campaign = require('../models/Campaign');
 const Coupon = require('../models/Coupon');
 const Newsletter = require('../models/Newsletter');
 const { enqueueCampaign } = require('../services/campaignQueue');
+const { isSingleEmail } = require('../services/emailAddress');
+const { sendAdminCampaignTestEmail } = require('../config/mailer');
 
 const getAdminMarketing = async (req, res, next) => {
   try {
@@ -188,9 +190,57 @@ const sendAdminCampaign = async (req, res, next) => {
   }
 };
 
+const sendAdminCampaignTest = async (req, res, next) => {
+  try {
+    const subject = typeof req.body?.subject === 'string' ? req.body.subject.trim() : '';
+    const content = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+    const couponCode =
+      typeof req.body?.couponCode === 'string' ? req.body.couponCode.trim().toUpperCase() : '';
+    const to = req.user?.email;
+
+    if (!isSingleEmail(to)) {
+      return res.status(400).json({
+        success: false,
+        error: 'La cuenta administrativa no tiene un correo válido para la prueba.',
+      });
+    }
+    if (
+      !subject ||
+      subject.length > 150 ||
+      /[\r\n]/.test(subject) ||
+      !content ||
+      content.length > 5000
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'Completa un asunto y mensaje válidos para la prueba.',
+      });
+    }
+    if (couponCode && !/^[A-Z0-9_-]{4,32}$/.test(couponCode)) {
+      return res.status(400).json({ success: false, error: 'El cupón de prueba no es válido.' });
+    }
+
+    await sendAdminCampaignTestEmail({
+      to,
+      subject,
+      name: req.user.name || '',
+      content,
+      couponCode: couponCode || undefined,
+    });
+
+    return res.json({
+      success: true,
+      message: `Gmail aceptó el correo de prueba para ${to}. No se envió a suscriptores.`,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getAdminMarketing,
   createAdminCoupon: auditedHandler(createAdminCoupon, 'coupon.created'),
   updateAdminCouponStatus: auditedHandler(updateAdminCouponStatus, 'coupon.status_updated'),
   sendAdminCampaign,
+  sendAdminCampaignTest,
 };

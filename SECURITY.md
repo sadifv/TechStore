@@ -64,6 +64,8 @@ Los campos de correo admiten una única dirección de tipo dot-atom ASCII (con e
 
 Antes de enviar cada destinatario de una campaña, la cola vuelve a comprobar correo, suscripción y token vigente. Una baja, eliminación o renovación de la suscripción invalida las instantáneas pendientes; se omite el envío, se registra `CONSENT_NOT_CURRENT` y se eliminan sus datos personales del resultado. Esto no retira un correo cuyo envío ya comenzó.
 
+La prueba de campaña solo puede usar el correo vigente de la cuenta administrativa autenticada tras MFA; ignora cualquier destinatario enviado por el cliente, no lee ni cambia la lista y no crea una campaña. La consola expone únicamente códigos Gmail de una lista cerrada; no registra respuestas, cabeceras ni cuerpos del proveedor.
+
 Los tokens de aviso se almacenan como hashes; el navegador los recibe en fragmentos para evitar incluirlos en peticiones HTTP y los retira de la barra. No registrarlos ni incluirlos en capturas. Una baja antes de iniciar el envío cancela la preparación; una entrega ya iniciada no puede retirarse. Ante un resultado ambiguo no se reenvía automáticamente. Las pruebas usan destinatarios ficticios y transporte simulado.
 
 Los lockfiles de `backend/` y `frontend/` forman parte del proyecto; usar `npm ci` para instalaciones reproducibles. Consultar `npm audit` en ambos directorios y revisar notas, compatibilidad y pruebas antes de actualizar. No resolver alertas desactivando la auditoría o usando `--force` sin analizar el cambio.

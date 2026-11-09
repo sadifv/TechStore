@@ -21,10 +21,12 @@ const mocks = {
   ),
   '../controllers/orderController': { updateOrderStatus: handler('updateOrderStatus') },
   '../controllers/marketingController': Object.fromEntries(
-    ['createAdminCoupon', 'updateAdminCouponStatus', 'sendAdminCampaign'].map((key) => [
-      key,
-      handler(key),
-    ]),
+    [
+      'createAdminCoupon',
+      'updateAdminCouponStatus',
+      'sendAdminCampaign',
+      'sendAdminCampaignTest',
+    ].map((key) => [key, handler(key)]),
   ),
   '../middleware/uploadMiddleware': { uploadSingleProductImage: (req, res, next) => next() },
   '../models/Contact': { findByIdAndDelete: async () => invoked.push('deleteMessage') },
@@ -81,6 +83,7 @@ test('all administrative writes resolve through the API proxy and retain authori
     ['POST', '/coupons', {}, 'createAdminCoupon'],
     ['PATCH', '/coupons/123/status', {}, 'updateAdminCouponStatus'],
     ['POST', '/campaigns', {}, 'sendAdminCampaign'],
+    ['POST', '/campaigns/test', {}, 'sendAdminCampaignTest'],
     ['PUT', '/orders/123/status', {}, 'updateOrderStatus'],
     ['DELETE', '/messages/123', {}, 'deleteMessage'],
     ['DELETE', '/subscribers/123', {}, 'deleteSubscriber'],

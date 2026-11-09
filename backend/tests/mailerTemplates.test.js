@@ -107,3 +107,16 @@ test('campaign renders its subject and content, preserves unsubscribe and escape
   assert.ok(!message.html.includes('<script>test-only</script>'));
   assert.ok(message.html.includes('/marketing/unsubscribe?token=test-only'));
 });
+
+test('admin campaign test email omits the newsletter unsubscribe link', async () => {
+  await mailer.sendAdminCampaignTestEmail({
+    to: 'recipient@example.invalid',
+    subject: 'Prueba privada',
+    name: 'Admin',
+    content: 'Solo para verificar el correo',
+  });
+  const message = messages.at(-1);
+  assert.ok(message.html.includes('Solo para verificar el correo'));
+  assert.ok(!message.html.includes('Darme de baja'));
+  assert.ok(!message.html.includes('href="undefined"'));
+});

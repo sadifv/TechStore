@@ -152,6 +152,14 @@ const sendMarketingCampaignEmail = async ({
   });
 };
 
+const sendAdminCampaignTestEmail = ({ to, subject, name, content, couponCode }) =>
+  sendTemplateEmail({
+    to,
+    subject,
+    templateName: 'email-campaign',
+    templateData: { name, content, couponCode, unsubscribeUrl: '' },
+  });
+
 module.exports = {
   sendRestockConfirmationEmail: ({ to, productName, confirmUrl, unsubscribeUrl }) =>
     sendTemplateEmail({
@@ -170,4 +178,5 @@ module.exports = {
   sendPasswordResetEmail,
   sendWelcomeEmail,
   sendMarketingCampaignEmail,
+  sendAdminCampaignTestEmail,
 };

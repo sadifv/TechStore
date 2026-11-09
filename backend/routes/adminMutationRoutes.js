@@ -21,6 +21,7 @@ const {
   createAdminCoupon,
   updateAdminCouponStatus,
   sendAdminCampaign,
+  sendAdminCampaignTest,
 } = require('../controllers/marketingController');
 
 // DASHBOARD
@@ -28,6 +29,7 @@ const {
 router.post('/coupons', requireAdmin, createAdminCoupon);
 router.patch('/coupons/:id/status', requireAdmin, updateAdminCouponStatus);
 router.post('/campaigns', requireAdmin, sendAdminCampaign);
+router.post('/campaigns/test', requireAdmin, sendAdminCampaignTest);
 
 // ==========================================
 // GESTIÓN DE ÓRDENES

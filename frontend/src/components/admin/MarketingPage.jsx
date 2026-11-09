@@ -75,6 +75,28 @@ export function AdminMarketingPage() {
       setBusy(false);
     }
   }
+  async function sendCampaignTest(event) {
+    const formData = new FormData(event.currentTarget.form);
+    const payload = Object.fromEntries(formData.entries());
+    if (!String(payload.subject || '').trim() || !String(payload.content || '').trim()) {
+      setStatus('Completa el asunto y el mensaje antes de enviar la prueba.');
+      return;
+    }
+
+    setBusy(true);
+    setStatus('Enviando una prueba a la cuenta administrativa…');
+    try {
+      const result = await adminMutation('/api/admin/campaigns/test', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      setStatus(result.message);
+    } catch (cause) {
+      setStatus(cause.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function toggleCoupon(coupon) {
     try {
       await adminMutation(`/api/admin/coupons/${coupon._id}/status`, { method: 'PATCH' });
@@ -166,8 +188,14 @@ export function AdminMarketingPage() {
         <article className="admin-marketing-card">
           <h2>Enviar campaña</h2>
           <p>
-            El envío respeta las bajas. Sin SMTP configurado, queda registrado como simulado y no se
-            envía ningún correo.
+            El envío respeta las bajas y usa el transporte de correo configurado en el backend. Si no
+            está disponible, la campaña quedará fallida en producción; en desarrollo puede quedar
+            registrada como simulada.
+          </p>
+          <p>
+            La prueba se envía solo al correo de la cuenta administrativa con sesión iniciada. No
+            incluye suscriptores ni crea una campaña. Gmail debe aceptar el mensaje; revisa también
+            la carpeta de spam.
           </p>
           <form className="admin-marketing-form" onSubmit={sendCampaign}>
             <label>
@@ -201,6 +229,14 @@ export function AdminMarketingPage() {
               Mensaje
               <textarea name="content" required maxLength="5000" rows="6" />
             </label>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={busy}
+              onClick={sendCampaignTest}
+            >
+              Enviar prueba a mi cuenta
+            </button>
             <button className="btn btn-primary" disabled={busy}>
               Enviar campaña
             </button>
