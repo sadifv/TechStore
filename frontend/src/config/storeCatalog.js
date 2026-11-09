@@ -17,5 +17,6 @@ export const categories = [
   'Componentes',
   'Gaming',
   'Redes',
+  'Cocina y hogar',
 ];
 export const placeholder = '/images/products/product-placeholder.svg';

@@ -5247,6 +5247,22 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   justify-self: start;
   white-space: normal;
 }
+.order-reference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-block: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.order-reference [role='status'] {
+  flex-basis: 100%;
+  color: var(--color-text-muted);
+}
+.order-reference [role='status']:empty {
+  margin: 0;
+  flex-basis: 0;
+}
 .order-tracking .order-tracking-states {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
@@ -5364,6 +5380,20 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 }
 
 /* Acento editorial para detalles decorativos de los tres temas */
+#catalogo > .section-header,
+.cart-drawer-header {
+  border-bottom: 3px solid var(--editorial-accent);
+}
+.catalog-filters [data-filter-active='true'] {
+  border-block-end: 3px solid var(--editorial-accent);
+}
+.product-specifications h2,
+.product-reviews h2,
+.before-buying h2,
+.checkout-summary-box {
+  border-inline-start: 4px solid var(--editorial-accent);
+  padding-inline-start: 0.75rem;
+}
 .hero.editorial-hero .hero-media {
   box-shadow: 0.55rem 0.55rem 0 var(--editorial-accent);
 }

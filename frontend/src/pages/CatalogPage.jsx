@@ -3,18 +3,7 @@ import { requestJson } from '../services/api.js';
 import ProductCard from '../components/catalog/ProductCard.jsx';
 import ProductComparison from '../components/catalog/ProductComparison.jsx';
 
-const categories = [
-  'Laptops',
-  'Smartphones',
-  'Audio',
-  'Accesorios',
-  'Periféricos',
-  'Monitores',
-  'Almacenamiento',
-  'Componentes',
-  'Gaming',
-  'Redes',
-];
+import { categories } from '../config/storeCatalog.js';
 
 function getVisiblePages(currentPage, totalPages) {
   currentPage = Math.max(1, Math.min(totalPages, currentPage));
@@ -109,6 +98,7 @@ export default function CatalogPage() {
             id="search-input"
             name="search"
             value={search}
+            data-filter-active={search.trim() !== ''}
             onChange={(event) => {
               setSearch(event.target.value);
               setPage(1);
@@ -123,6 +113,7 @@ export default function CatalogPage() {
             id="category-select"
             name="category"
             value={category}
+            data-filter-active={category !== 'all'}
             onChange={(event) => {
               setCategory(event.target.value);
               setPage(1);
@@ -142,6 +133,7 @@ export default function CatalogPage() {
             id="sort-select"
             name="sort"
             value={sort}
+            data-filter-active={sort !== 'recent'}
             onChange={(event) => {
               setSort(event.target.value);
               setPage(1);

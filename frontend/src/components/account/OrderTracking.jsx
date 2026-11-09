@@ -19,6 +19,7 @@ export default function OrderTracking({ order, checkoutKey, onUpdate, headingLev
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [copyStatus, setCopyStatus] = useState('');
   const inFlight = useRef(false);
   const refreshButton = useRef(null);
   const confirmButton = useRef(null);
@@ -55,9 +56,31 @@ export default function OrderTracking({ order, checkoutKey, onUpdate, headingLev
     }
   }
 
+  async function copyOrderNumber() {
+    try {
+      await navigator.clipboard.writeText(String(order._id));
+      setCopyStatus('Número copiado.');
+    } catch {
+      setCopyStatus(
+        'No se pudo copiar. Puedes seleccionar el número del pedido y copiarlo manualmente.',
+      );
+    }
+  }
+
   return (
     <section className="order-tracking" aria-labelledby={headingId} aria-busy={busy}>
       <Heading id={headingId}>Seguimiento del pedido</Heading>
+      {order._id && (
+        <div className="order-reference">
+          <p>
+            Pedido <strong>#{order._id}</strong>
+          </p>
+          <button type="button" className="btn btn-outline" onClick={copyOrderNumber}>
+            Copiar número
+          </button>
+          <p role="status">{copyStatus}</p>
+        </div>
+      )}
       <OrderAddress order={order} />
       <dl className="order-tracking-states">
         <div>

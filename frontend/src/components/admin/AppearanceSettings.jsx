@@ -61,8 +61,8 @@ export default function AppearanceSettings() {
         }}
       >
         <option value="normal">Normal · Azul TechStore</option>
-        <option value="halloween">Halloween · Naranja y morado</option>
-        <option value="christmas">Navidad · Rojo y verde</option>
+        <option value="halloween">Halloween · Violeta, crema y lima</option>
+        <option value="christmas">Navidad · Verde pino, marfil y azul hielo</option>
       </select>
       <button className="btn btn-primary" disabled={!ready || busy}>
         {busy ? 'Guardando…' : 'Guardar tema global'}
