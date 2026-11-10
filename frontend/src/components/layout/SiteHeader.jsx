@@ -1,17 +1,7 @@
 import { useState } from 'react';
 import { requestJson } from '../../services/api.js';
 import { useCartActions, useCartState } from '../cart/CartContext.js';
-
-function LogoMark() {
-  return (
-    <svg className="navbar-logo-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M4 10v10h16V10M3 10l2-6h14l2 6c0 2-3 3-4 1-1 2-4 2-5 0-1 2-4 2-5 0-1 2-4 1-4-1Z"
-        pathLength="100"
-      />
-    </svg>
-  );
-}
+import LogoMark from './LogoMark.jsx';
 
 export default function SiteHeader({ user }) {
   const [open, setOpen] = useState(false);
@@ -63,7 +53,9 @@ export default function SiteHeader({ user }) {
             </a>
           </li>
           <li>
-            <a href="/arma-tu-equipo" onClick={() => setOpen(false)}>Arma tu equipo</a>
+            <a href="/arma-tu-equipo" onClick={() => setOpen(false)}>
+              Arma tu equipo
+            </a>
           </li>
           <li>
             <a href="/#contacto" onClick={() => setOpen(false)}>

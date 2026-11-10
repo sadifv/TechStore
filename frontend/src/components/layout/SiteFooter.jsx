@@ -1,15 +1,15 @@
 import WhatsappLink from '../contact/WhatsappLink.jsx';
+import LogoMark from './LogoMark.jsx';
+
 export default function SiteFooter() {
   return (
     <>
       <footer className="footer">
         <section className="footer-info">
           <h2>
-            <i className="ri-store-line" aria-hidden="true" /> TechStore
+            <LogoMark /> TechStore
           </h2>
-          <p>
-            Laptops, audio y periféricos en Ecuador. Coordina tu pedido por WhatsApp.
-          </p>
+          <p>Laptops, audio y periféricos en Ecuador. Coordina tu pedido por WhatsApp.</p>
           <nav className="footer-socials" aria-label="Redes sociales">
             <a
               href="https://www.instagram.com/whois.sadi.lm/"

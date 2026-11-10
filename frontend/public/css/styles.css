@@ -1046,7 +1046,10 @@ summary:focus-visible {
   margin-bottom: 24px;
 }
 .hero .btn-primary {
-  transition: all var(--transition-normal);
+  transition:
+    background-color var(--transition-normal),
+    transform var(--transition-normal),
+    box-shadow var(--transition-normal);
   font-size: 14px;
   min-height: 50px;
   padding: 14px 24px;
@@ -1056,6 +1059,15 @@ summary:focus-visible {
 .hero .btn-primary:hover {
   transform: translateY(-3px);
   box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.5);
+}
+:root .editorial-hero .hero-actions .btn-primary {
+  background: var(--editorial-accent);
+  border-color: var(--editorial-accent);
+  color: #0f172a;
+}
+:root .editorial-hero .hero-actions .btn-primary:hover {
+  background: color-mix(in srgb, var(--editorial-accent) 88%, white);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--editorial-accent) 30%, transparent);
 }
 .hero-media {
   position: relative;
@@ -6094,12 +6106,18 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   color: var(--color-primary);
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.navbar-logo-mark circle {
+  fill: var(--editorial-accent);
+  stroke: none;
+}
 
-.logo-intro { display: none; }
+.logo-intro {
+  display: none;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .logo-intro {
@@ -6129,6 +6147,17 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   .logo-intro .navbar-logo-mark path {
     stroke-dasharray: 100;
     animation: logo-draw 480ms ease-out both;
+  }
+  .logo-intro .navbar-logo-mark circle {
+    animation: logo-node-light 200ms 420ms ease-out both;
+  }
+  @keyframes logo-node-light {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
   .logo-intro-lockup > span {
     animation: logo-wordmark 350ms 250ms ease-out both;
