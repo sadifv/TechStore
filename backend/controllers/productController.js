@@ -164,7 +164,7 @@ const createProduct = async (req, res, next) => {
   try {
     const { name, description, price, category, stock, image } = req.body;
     const suppliedImage = req.file ? undefined : normalizeMainImage(image);
-    let imagePath = '/images/products/product-placeholder.svg';
+    let imagePath = '/images/products/catalog-fallback.jpg';
     if (req.file) {
       imagePath = `/uploads/products/${req.file.filename}`;
     } else if (suppliedImage) {

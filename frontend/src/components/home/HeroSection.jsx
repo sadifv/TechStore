@@ -51,7 +51,7 @@ export default function HeroSection() {
       </article>
       <figure className="hero-media" onPointerMove={moveImage} onPointerLeave={resetImage}>
         <img
-          src="/images/hero-tech.svg"
+          src="/images/hero-tech.jpg"
           alt="Laptop, teléfono y audífonos en un espacio de trabajo moderno"
         />
       </figure>

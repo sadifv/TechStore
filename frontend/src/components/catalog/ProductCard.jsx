@@ -33,7 +33,7 @@ export default function ProductCard({ product, featured = false, comparison }) {
         >
           <figure className="product-card-media">
             <img
-              src={backendAssetUrl(product.image || '/images/products/product-placeholder.svg')}
+              src={backendAssetUrl(product.image || '/images/products/catalog-fallback.jpg')}
               alt={product.name}
               loading="lazy"
             />

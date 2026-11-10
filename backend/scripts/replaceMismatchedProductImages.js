@@ -6,22 +6,22 @@ const replacements = [
   {
     name: 'Cámara Web Logitech Brio 4K',
     oldImageId: 'photo-1588702547919-26089e690ecc',
-    image: '/images/products/product-webcam.svg',
+    image: '/images/products/logitech-brio-4k-ref.jpg',
   },
   {
     name: "Monitor LG UltraGear 27'' 144Hz",
     oldImageId: 'photo-1527443224154-c4a3942d3acf',
-    image: '/images/products/monitor-ultrawide.svg',
+    image: '/images/products/lg-ultragear-27-ref.jpg',
   },
   {
     name: "Monitor Ultrawide Samsung Odyssey G9 49''",
     oldImageId: 'photo-1550745165-9bc0b252726f',
-    image: '/images/products/monitor-ultrawide.svg',
+    image: '/images/products/samsung-odyssey-g9-ref.jpg',
   },
   {
     name: 'Micrófono Shure SM7B',
     oldImageId: 'photo-1590658268037-6bf12165a8df',
-    image: '/images/products/product-microphone.svg',
+    image: '/images/products/shure-sm7b-ref.jpg',
   },
 ];
 

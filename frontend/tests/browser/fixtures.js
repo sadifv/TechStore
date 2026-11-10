@@ -7,7 +7,7 @@ export const product = {
   price: 329,
   stock: 8,
   availableStock: 8,
-  image: '/images/products/product-placeholder.svg',
+  image: '/images/products/catalog-fallback.jpg',
   description: 'Producto ficticio para pruebas.',
   specifications: [
     { name: 'Panel', value: 'IPS' },

@@ -29,7 +29,7 @@ export function NewsletterSection() {
       <article className="newsletter-container">
         <figure className="newsletter-media">
           <img
-            src="/images/newsletter-tech.svg"
+            src="/images/newsletter-tech.jpg"
             alt="Dispositivos tecnológicos y un sobre para recibir novedades"
             className="newsletter-img"
           />

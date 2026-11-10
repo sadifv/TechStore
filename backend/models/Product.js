@@ -42,7 +42,7 @@ const productSchema = new mongoose.Schema(
     gallery: { type: [String], default: [] },
     image: {
       type: String,
-      default: '/images/products/product-placeholder.svg',
+      default: '/images/products/catalog-fallback.jpg',
       trim: true,
     },
     category: {

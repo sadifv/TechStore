@@ -19,4 +19,4 @@ export const categories = [
   'Redes',
   'Cocina y hogar',
 ];
-export const placeholder = '/images/products/product-placeholder.svg';
+export const placeholder = '/images/products/catalog-fallback.jpg';

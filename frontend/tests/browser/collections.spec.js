@@ -21,14 +21,19 @@ test('el propietario guarda una colección que puede ver un visitante', async ({
   mock.role = 'guest';
   await page.goto('/');
   const collection = page.getByRole('region', { name: 'Colecciones TechStore' });
-  await expect(collection.getByRole('link', { name: `Ver detalles de ${mock.product.name}` })).toBeVisible();
+  await expect(
+    collection.getByRole('link', { name: `Ver detalles de ${mock.product.name}` }),
+  ).toBeVisible();
 });
 
 test('la galería cambia de foto y permite ampliarla y cerrarla', async ({ page, mock }) => {
-  mock.product.gallery = ['/images/hero-tech.svg'];
+  mock.product.gallery = ['/images/hero-tech.jpg'];
   await page.goto(`/producto/${mock.product._id}`);
   await page.getByRole('button', { name: 'Ver foto 2' }).click();
-  await expect(page.locator('.product-detail-media img')).toHaveAttribute('src', mock.product.gallery[0]);
+  await expect(page.locator('.product-detail-media img')).toHaveAttribute(
+    'src',
+    mock.product.gallery[0],
+  );
   await page.getByRole('button', { name: 'Ampliar foto' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');

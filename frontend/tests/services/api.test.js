@@ -50,8 +50,8 @@ test('API and uploaded-image URLs keep the same-origin default', () => {
   );
   assert.equal(backendAssetUrl('/uploads/products/photo.webp'), '/uploads/products/photo.webp');
   assert.equal(
-    backendAssetUrl('/images/products/product-placeholder.svg'),
-    '/images/products/product-placeholder.svg',
+    backendAssetUrl('/images/products/catalog-fallback.jpg'),
+    '/images/products/catalog-fallback.jpg',
   );
 });
 

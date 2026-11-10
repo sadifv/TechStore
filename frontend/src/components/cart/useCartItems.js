@@ -7,7 +7,7 @@ import {
   syncGuestCartToUser,
 } from '../../features/cart/guestCart.js';
 
-const placeholder = '/images/products/product-placeholder.svg';
+const placeholder = '/images/products/catalog-fallback.jpg';
 
 export function useCartItems(user, notify) {
   const [items, setItems] = useState([]);

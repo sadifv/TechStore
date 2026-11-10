@@ -7,6 +7,9 @@ export function apiUrl(path) {
 }
 
 export function backendAssetUrl(path) {
+  if (path === '/images/products/product-placeholder.svg' || path === '/images/products/catalog-fallback.svg') {
+    return '/images/products/catalog-fallback.jpg';
+  }
   if (typeof path !== 'string' || !path.startsWith('/uploads/')) return path;
   return apiUrl(path);
 }

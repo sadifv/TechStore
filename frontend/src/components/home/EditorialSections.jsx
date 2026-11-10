@@ -1,19 +1,19 @@
 export function BlogSection() {
   const posts = [
     [
-      '/images/blog-gadgets.svg',
+      '/images/blog-gadgets.jpg',
       'Laptop, teléfono y audífonos inalámbricos',
       'Los mejores Gadgets para potenciar tu Setup en 2026',
       'Descubre los accesorios indispensables para optimizar tu espacio de trabajo.',
     ],
     [
-      '/images/blog-audio.svg',
+      '/images/blog-audio.jpg',
       'Audífonos inalámbricos con almohadillas acolchadas',
       'Guía de compra: Audífonos con Cancelación de Ruido',
       'Te enseñamos a elegir el modelo ideal según tu presupuesto y necesidades.',
     ],
     [
-      '/images/blog-smartwatch.svg',
+      '/images/blog-smartwatch.jpg',
       'Reloj inteligente con indicadores de actividad',
       'Smartwatches: Monitoreo de salud y rendimiento',
       'Analizamos las funciones clave de los relojes inteligentes más avanzados.',
