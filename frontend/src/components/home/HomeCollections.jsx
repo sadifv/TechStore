@@ -17,7 +17,10 @@ export default function HomeCollections() {
   if (!visible.length) return null;
   const active = visible.find(([key]) => key === selected) || visible[0];
   return (
-    <section className="products-section editorial-section" aria-labelledby="collection-heading">
+    <section
+      className="products-section editorial-section home-collections"
+      aria-labelledby="collection-heading"
+    >
       <h2 id="collection-heading">Colecciones TechStore</h2>
       <nav className="editorial-controls collection-controls" aria-label="Elegir colección">
         {visible.map(([key, title]) => (

@@ -150,7 +150,7 @@ export function ContactSection() {
           </ul>
           <nav className="contact-socials" aria-label="Redes sociales">
             <a
-              href="https://instagram.com/tu_usuario"
+              href="https://www.instagram.com/whois.sadi.lm/"
               target="_blank"
               rel="noreferrer"
               aria-label="Instagram"

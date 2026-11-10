@@ -5,13 +5,22 @@ const test = require('node:test');
 const controllerPath = path.join(__dirname, '..', 'controllers', 'productController.js');
 const originalLoad = Module._load;
 const calls = [];
-const products = [{ _id: '1', stock: 5, createdAt: new Date() }];
+const products = [
+  { _id: '1', category: 'Laptops', stock: 5 },
+  { _id: '2', category: 'Laptops', stock: 3 },
+  { _id: '3', category: 'Laptops', stock: 1 },
+  { _id: '4', category: 'Laptops', stock: 2 },
+  { _id: '5', category: 'Audio', stock: 3 },
+  { _id: '6', category: 'Periféricos', stock: 4 },
+];
+const categoryImages = [{ _id: 'Smartphones', image: '/uploads/phone.jpg' }];
 const saleProduct = {
   _id: 'sale',
   flashSale: true,
   flashSaleEndsAt: new Date(Date.now() + 60_000),
 };
 const Product = {
+  aggregate: async () => categoryImages,
   find(query) {
     calls.push({ query });
     return {
@@ -31,7 +40,7 @@ const Product = {
     };
   },
 };
-const Reservation = { getReservedStockByProducts: async () => new Map() };
+const Reservation = { getReservedStockByProducts: async () => new Map([['1', 5]]) };
 Module._load = function (request, parent, isMain) {
   if (parent?.filename === controllerPath && request === '../models/Product') return Product;
   if (parent?.filename === controllerPath && request === '../models/Reservation')
@@ -46,7 +55,7 @@ try {
   Module._load = originalLoad;
 }
 
-test('home API returns at most eight recent products and the soonest active sale', async () => {
+test('home API excludes fully reserved stock, diversifies featured products and keeps the active sale', async () => {
   assert.equal(typeof getHomeProducts, 'function');
   let response;
   await getHomeProducts(
@@ -63,9 +72,16 @@ test('home API returns at most eight recent products and the soonest active sale
       throw error;
     },
   );
-  assert.deepEqual(response.products, [{ ...products[0], availableStock: 5 }]);
-  assert.equal(calls[0].limit, 8);
-  assert.deepEqual(calls[0].sort, { createdAt: -1 });
+  assert.deepEqual(
+    response.products.map((product) => product._id),
+    ['2', '5', '6', '3'],
+  );
+  assert.ok(response.products.every((product) => product.availableStock > 0));
+  assert.equal(calls[0].limit, undefined);
+  assert.deepEqual(calls[0].sort, { createdAt: -1, _id: 1 });
+  assert.deepEqual(calls[0].query.category.$in, ['Laptops', 'Audio', 'Periféricos']);
+  assert.deepEqual(calls[0].query.stock, { $gt: 0 });
+  assert.deepEqual(response.categoryImages, categoryImages);
   assert.equal(calls[1].query.flashSale, true);
   assert.ok(calls[1].query.flashSaleEndsAt.$gt instanceof Date);
   assert.deepEqual(calls[1].sort, { flashSaleEndsAt: 1 });

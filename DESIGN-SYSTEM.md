@@ -30,6 +30,8 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+- **Portada:** Destacados muestra hasta cuatro productos disponibles de Laptops, Audio y Periféricos. El hero enlaza a la ficha de un destacado con imagen. Las categorías usan una imagen del catálogo cuando existe y una tarjeta de texto cuando no hay imagen adecuada.
+
 - **Especificaciones:** editor de pares etiquetados, máximo 20, con foco preservado al añadir o eliminar. La ficha usa `dl`/`dt`/`dd` y permite partir valores largos. No mostrar una sección vacía en productos antiguos.
 - **Historial administrativo:** acceso de presentación reservado al owner, filtros etiquetados y registros de solo lectura, con estados de carga, vacío y error recuperable. Los responsables se identifican por ID y los detalles no contienen datos privados de clientes.
 

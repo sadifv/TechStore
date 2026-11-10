@@ -105,36 +105,57 @@ const getProducts = async (req, res, next) => {
   }
 };
 
+const homeCategories = ['Laptops', 'Audio', 'Periféricos'];
+
 const getHomeProducts = async (req, res, next) => {
   try {
     const now = new Date();
     const productFields =
-      '_id name price image stock flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';
-    const [products, sales] = await Promise.all([
-      Product.find(activeProductFilter())
+      '_id name category price image stock flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';
+    const [products, sales, categoryImages] = await Promise.all([
+      Product.find({
+        ...activeProductFilter(),
+        category: { $in: homeCategories },
+        stock: { $gt: 0 },
+      })
         .select(productFields)
-        .sort({ createdAt: -1 })
-        .limit(8)
+        .sort({ createdAt: -1, _id: 1 })
         .lean(),
       Product.find({ ...activeProductFilter(), flashSale: true, flashSaleEndsAt: { $gt: now } })
         .select(`${productFields} description`)
         .sort({ flashSaleEndsAt: 1 })
         .limit(1)
         .lean(),
+      Product.aggregate([
+        {
+          $match: {
+            ...activeProductFilter(),
+            image: { $type: 'string', $nin: ['', '/images/products/catalog-fallback.jpg'] },
+          },
+        },
+        { $sort: { stock: -1, createdAt: -1, _id: 1 } },
+        { $group: { _id: '$category', image: { $first: '$image' } } },
+      ]),
     ]);
     const reservedByProduct = await Reservation.getReservedStockByProducts(
       products.map((product) => product._id),
     );
-    const productsWithAvailability = products.map((product) => ({
-      ...toPublicProduct(product),
-      availableStock: Math.max(
-        0,
-        product.stock - (reservedByProduct.get(String(product._id)) || 0),
-      ),
-    }));
+    const available = products
+      .map((product) => ({
+        ...toPublicProduct(product),
+        availableStock: Math.max(
+          0,
+          product.stock - (reservedByProduct.get(String(product._id)) || 0),
+        ),
+      }))
+      .filter((product) => product.availableStock > 0);
+    const firstByCategory = homeCategories
+      .map((category) => available.find((product) => product.category === category))
+      .filter(Boolean);
+    const featured = [...new Set([...firstByCategory, ...available])].slice(0, 4);
     return res
       .status(200)
-      .json({ success: true, products: productsWithAvailability, flashSale: sales[0] || null });
+      .json({ success: true, products: featured, categoryImages, flashSale: sales[0] || null });
   } catch (error) {
     logger.error('Error al obtener los productos del inicio.', {
       errorCode: error.code || error.name,

@@ -130,8 +130,9 @@ export default function AiAssistant({ user }) {
         <hgroup className="ai-title-group">
           <h2 id="ai-title">Asistente TechBot</h2>
           <p>
-            <span className="ai-status" aria-hidden="true" />
-            <span id="ai-status-text">En línea · Pregúntame sobre cualquier producto</span>
+            <span id="ai-status-text">
+              {user ? 'Pregúntame sobre los productos del catálogo' : 'Inicia sesión para conversar'}
+            </span>
           </p>
         </hgroup>
         {user && (

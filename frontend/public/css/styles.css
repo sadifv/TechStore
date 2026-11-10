@@ -2279,109 +2279,6 @@ label.ai-sr-only {
 }
 
 /* 8. Contenido editorial */
-.blog-section {
-  margin: 0 auto;
-  padding: var(--space-12) 0;
-  max-width: 1240px;
-  width: 90%;
-  padding-block: 32px;
-}
-.testimonials-section {
-  margin: 0 auto;
-  padding: var(--space-12) 0;
-  max-width: 1240px;
-  width: 90%;
-  padding-block: 32px;
-}
-.blog-section h2 {
-  text-align: center;
-  margin-bottom: var(--space-8);
-  font-weight: 800;
-  font-size: 27px;
-  letter-spacing: -0.8px;
-}
-.testimonials-section h2 {
-  text-align: center;
-  margin-bottom: var(--space-8);
-  font-weight: 800;
-  font-size: 27px;
-  letter-spacing: -0.8px;
-}
-.blog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-}
-.testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-}
-.blog-card {
-  background-color: var(--color-surface);
-  overflow: hidden;
-  transition: transform var(--transition-normal);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: none;
-}
-.blog-card img {
-  width: 100%;
-  height: 200px;
-}
-.blog-content h3 {
-  margin-bottom: var(--space-2);
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  line-height: 1.4;
-}
-.blog-content p {
-  color: var(--color-text-muted);
-  font-size: 14px;
-  line-height: 1.8;
-}
-.testimonial-card {
-  background-color: var(--color-surface);
-  text-align: center;
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: none;
-  padding: 28px;
-}
-.testimonial-avatar {
-  display: grid;
-  width: 80px;
-  height: 80px;
-  place-items: center;
-  margin: 0 auto var(--space-4);
-  border: 3px solid var(--color-primary);
-  border-radius: var(--radius-full);
-  background: var(--color-surface-hover);
-  color: var(--color-primary-dark);
-  font-size: var(--font-size-xl);
-  box-shadow: none;
-  font-weight: 800;
-}
-.testimonial-card blockquote {
-  font-style: italic;
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-3);
-  font-size: 15px;
-  line-height: 1.8;
-}
-.testimonial-card cite {
-  font-weight: 600;
-  color: var(--color-secondary);
-  font-style: normal;
-}
-.blog-card:hover {
-  transform: translateY(-3px);
-  box-shadow: none;
-}
-.blog-content {
-  padding: 20px;
-}
 
 /* 9. Boletín y contacto */
 .newsletter-consent {
@@ -4620,6 +4517,7 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 
 /* Portada editorial */
 :root .hero.editorial-hero {
+  isolation: isolate;
   background:
     radial-gradient(ellipse at 85% 20%, var(--editorial-glow, transparent), transparent 65%),
     color-mix(in srgb, var(--editorial-wash, var(--color-background)) 48%, transparent);
@@ -4631,11 +4529,25 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   letter-spacing: -0.035em;
 }
 .hero.editorial-hero h1 {
-  font-size: clamp(2.8rem, 7vw, 6rem);
+  font-size: clamp(2.6rem, 5vw, 4.8rem);
+}
+.editorial-hero h1[data-enter] > span {
+  display: inline-block;
+}
+.hero.editorial-hero h1 .hero-title-lead {
+  color: inherit;
 }
 .editorial-hero .hero-media {
   border-radius: 0;
   box-shadow: none;
+}
+.hero-photo {
+  display: block;
+  position: relative;
+  width: 100%;
+}
+.hero-photo img {
+  display: block;
 }
 .editorial-hero .hero-actions a {
   gap: 0.65rem;
@@ -4692,6 +4604,8 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 }
 .editorial-category-list a {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: end;
   gap: 0.65rem;
   padding: 1rem;
   min-height: 9rem;
@@ -4699,6 +4613,17 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   background: var(--editorial-wash, var(--color-surface));
   color: var(--color-text);
   text-decoration: none;
+}
+.editorial-category-list img {
+  grid-column: 1 / -1;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  background: var(--color-surface);
+}
+.editorial-category-list a:not(:has(img)) {
+  align-content: center;
+  background: linear-gradient(135deg, var(--editorial-wash, var(--color-surface)), var(--color-surface-hover));
 }
 .editorial-category-list a:hover,
 .editorial-controls button:hover:not(:disabled) {
@@ -4849,6 +4774,13 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   position: absolute;
   inset: 0.4rem 0.75rem auto auto;
   z-index: 3;
+}
+@media (max-width: 767px) {
+  .editorial-hero .hero-mascot {
+    position: relative;
+    inset: auto;
+    align-self: end;
+  }
 }
 .hero-mascot-button {
   display: block;
@@ -5842,27 +5774,6 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
     font-size: 26px;
     font-weight: 800;
   }
-  .blog-section {
-    padding: var(--space-12) 0;
-    padding-block: 48px;
-  }
-  .testimonials-section {
-    padding: var(--space-12) 0;
-    padding-block: 48px;
-  }
-  .blog-section h2 {
-    font-size: 32px;
-    letter-spacing: -1.1px;
-    font-weight: 800;
-  }
-  .testimonials-section h2 {
-    font-size: 32px;
-    letter-spacing: -1.1px;
-    font-weight: 800;
-  }
-  .blog-content {
-    padding: 24px;
-  }
   .newsletter-section {
     padding: var(--space-12) 0;
     padding-block: 48px;
@@ -6274,20 +6185,48 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
       transform: translateX(105%);
     }
   }
-  .editorial-hero .hero-content header,
+  .editorial-hero .hero-eyebrow,
+  .editorial-hero .hero-content header p,
   .editorial-hero .hero-actions,
-  .editorial-hero .hero-benefits,
-  .editorial-hero .hero-media {
+  .editorial-hero .hero-benefits {
     animation: editorial-reveal 620ms ease-out both;
   }
-  .editorial-hero .hero-actions {
-    animation-delay: 100ms;
+  .editorial-hero h1[data-enter] > span {
+    animation: editorial-reveal 650ms ease-out both;
   }
-  .editorial-hero .hero-benefits {
+  .editorial-hero h1[data-enter] > .hero-title-accent {
+    animation-delay: 120ms;
+  }
+  .editorial-hero .hero-actions {
     animation-delay: 180ms;
   }
+  .editorial-hero .hero-benefits {
+    animation-delay: 240ms;
+  }
   .editorial-hero .hero-media {
-    animation-delay: 140ms;
+    animation: hero-frame-arrive 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .hero-photo img {
+    transform: none;
+    animation: hero-photo-arrive 500ms ease-out both;
+  }
+  @keyframes hero-frame-arrive {
+    from {
+      opacity: 0;
+      translate: 0 12px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes hero-photo-arrive {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .main-content {
@@ -6325,8 +6264,57 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   .editorial-category-list a:focus-visible {
     transform: translateY(-4px);
   }
-  .editorial-featured > li:has(.product-card) {
-    animation: editorial-reveal 360ms ease both;
+  .featured-product .product-card-media,
+  .featured-product .product-card-link > header,
+  .featured-product .product-price,
+  .featured-product footer {
+    animation: featured-arrive 500ms cubic-bezier(0.2, 0.75, 0.3, 1) both;
+  }
+  .featured-product .product-card-link > header {
+    animation-delay: 45ms;
+  }
+  .featured-product .product-price,
+  .featured-product footer {
+    animation-delay: 85ms;
+  }
+  .featured-product:focus-within :is(.product-card-media, header, .product-price, footer) {
+    animation: none;
+  }
+  @keyframes featured-arrive {
+    from {
+      opacity: 0.4;
+      translate: 0 16px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @supports (animation-timeline: view()) and (animation-range: entry 0% entry 100%) {
+    .home-collections > :is(h2, h3, nav),
+    .home-collections .products-grid > li {
+      animation: collection-arrive 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+    .home-collections .products-grid > li:nth-child(even) {
+      animation-range: entry 10% entry 75%;
+    }
+    .home-collections > nav:focus-within,
+    .home-collections .products-grid > li:focus-within {
+      animation: none;
+    }
+    @keyframes collection-arrive {
+      from {
+        opacity: 0.45;
+        translate: 0 24px;
+      }
+      to {
+        opacity: 1;
+        translate: 0 0;
+      }
+    }
   }
   @keyframes editorial-reveal {
     from {
@@ -6341,8 +6329,7 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .hero.editorial-hero .hero-media img,
-  .hero.editorial-hero .hero-media img:hover {
+  .hero.editorial-hero .hero-photo {
     transform: translate(var(--hero-offset-x, 0px), var(--hero-offset-y, 0px));
     transition: transform 220ms ease-out;
   }

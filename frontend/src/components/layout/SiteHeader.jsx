@@ -63,13 +63,16 @@ export default function SiteHeader({ user }) {
             </a>
           </li>
           <li>
+            <a href="/arma-tu-equipo" onClick={() => setOpen(false)}>Arma tu equipo</a>
+          </li>
+          <li>
             <a href="/#contacto" onClick={() => setOpen(false)}>
               <i className="ri-mail-line" aria-hidden="true" /> Contacto
             </a>
           </li>
           <li>
             <a href="/#ai-assistant" onClick={() => setOpen(false)}>
-              <i className="ri-robot-line" aria-hidden="true" /> IA Assistant
+              <i className="ri-robot-line" aria-hidden="true" /> TechBot
             </a>
           </li>
           <li>

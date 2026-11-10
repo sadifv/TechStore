@@ -1,17 +1,24 @@
+import HeroBackground from './HeroBackground.jsx';
 import HeroMascot from './HeroMascot.jsx';
+import { backendAssetUrl } from '../../services/api.js';
+import { placeholder } from '../../config/storeCatalog.js';
 
-export default function HeroSection() {
+const heroPointerMotion =
+  '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)';
+
+export default function HeroSection({ product }) {
+  const image = product?.image !== placeholder && product?.image;
   function moveImage(event) {
-    if (event.pointerType !== 'mouse') return;
+    if (event.pointerType !== 'mouse' || !window.matchMedia(heroPointerMotion).matches) return;
     const frame = event.currentTarget;
     const bounds = frame.getBoundingClientRect();
     frame.style.setProperty(
       '--hero-offset-x',
-      `${((event.clientX - bounds.left) / bounds.width - 0.5) * 24}px`,
+      `${((event.clientX - bounds.left) / bounds.width - 0.5) * 16}px`,
     );
     frame.style.setProperty(
       '--hero-offset-y',
-      `${((event.clientY - bounds.top) / bounds.height - 0.5) * 18}px`,
+      `${((event.clientY - bounds.top) / bounds.height - 0.5) * 12}px`,
     );
   }
 
@@ -22,40 +29,30 @@ export default function HeroSection() {
 
   return (
     <section id="inicio" className="hero editorial-hero">
-      <HeroMascot />
+      <HeroBackground />
       <article className="hero-content">
         <header>
-          <span className="hero-eyebrow">Tecnología para tu día a día</span>
-          <h1>
-            Tu próximo paso. <span>Más tecnología.</span>
+          <span className="hero-eyebrow">TechStore Ecuador</span>
+          <h1 data-enter>
+            <span className="hero-title-lead">Laptops, audio y periféricos</span>{' '}
+            <span className="hero-title-accent">en Ecuador</span>
           </h1>
-          <p>
-            Encuentra lo que necesitas para trabajar, crear y disfrutar. Elige tus favoritos y
-            coordina tu pedido con la tienda.
-          </p>
+          <p>Explora el catálogo y coordina tu pedido por WhatsApp.</p>
         </header>
         <nav className="hero-actions" aria-label="Explorar productos">
           <a href="/catalogo" className="btn btn-primary">
-            <span aria-hidden="true">01</span> Explorar catálogo <span aria-hidden="true">→</span>
+            Explorar catálogo <span aria-hidden="true">→</span>
           </a>
-          <a href="#destacados" className="hero-secondary">
-            <span aria-hidden="true">02</span> Ver destacados <span aria-hidden="true">↓</span>
-          </a>
-          <a href="/arma-tu-equipo" className="hero-secondary">Arma tu equipo</a>
         </nav>
-        <ul className="hero-benefits">
-          <li>
-            <i className="ri-shopping-cart-line" aria-hidden="true" /> Pedido por WhatsApp
-          </li>
-          <li>Guarda tus favoritos</li>
-        </ul>
       </article>
-      <figure className="hero-media" onPointerMove={moveImage} onPointerLeave={resetImage}>
-        <img
-          src="/images/hero-tech.jpg"
-          alt="Laptop, teléfono y audífonos en un espacio de trabajo moderno"
-        />
-      </figure>
+      <HeroMascot />
+      {image && (
+        <figure className="hero-media" onPointerMove={moveImage} onPointerLeave={resetImage}>
+          <a className="hero-photo" href={`/producto/${product._id}`}>
+            <img src={backendAssetUrl(image)} alt={product.name} fetchPriority="high" />
+          </a>
+        </figure>
+      )}
     </section>
   );
 }

@@ -8,12 +8,11 @@ export default function SiteFooter() {
             <i className="ri-store-line" aria-hidden="true" /> TechStore
           </h2>
           <p>
-            Tu tienda de tecnología de confianza. Ofrecemos los mejores productos con la mejor
-            garantía y servicio.
+            Laptops, audio y periféricos en Ecuador. Coordina tu pedido por WhatsApp.
           </p>
           <nav className="footer-socials" aria-label="Redes sociales">
             <a
-              href="https://instagram.com/tu_usuario"
+              href="https://www.instagram.com/whois.sadi.lm/"
               target="_blank"
               rel="noreferrer"
               aria-label="Instagram"
@@ -36,7 +35,7 @@ export default function SiteFooter() {
               <a href="/#contacto">Contacto</a>
             </li>
             <li>
-              <a href="/#ai-assistant">IA Assistant</a>
+              <a href="/#ai-assistant">TechBot</a>
             </li>
           </ul>
         </nav>
@@ -77,7 +76,7 @@ export default function SiteFooter() {
             </p>
             <p>
               <i className="ri-time-line" aria-hidden="true" />
-              Lun-Vie: 9:00 - 18:00
+              Lun–Vie, 9:00–16:00
             </p>
           </address>
         </section>

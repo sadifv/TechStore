@@ -1,5 +1,4 @@
 import AiAssistant from '../assistant/AiAssistant.jsx';
-import { BlogSection, TestimonialsSection } from './EditorialSections.jsx';
 import { ContactSection, NewsletterSection } from './FormsSections.jsx';
 import { useEffect } from 'react';
 
@@ -13,8 +12,6 @@ export default function HomeBelowFold({ user }) {
   return (
     <>
       <AiAssistant key={user?.id || user?._id || user?.email || 'guest'} user={user} />
-      <BlogSection />
-      <TestimonialsSection />
       <NewsletterSection />
       <ContactSection />
     </>
