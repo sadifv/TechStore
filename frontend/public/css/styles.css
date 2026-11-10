@@ -5414,6 +5414,125 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   box-shadow: inset 0 -3px var(--editorial-accent);
 }
 
+.build-kit-intro {
+  margin-block-end: 1.5rem;
+}
+.build-kit-intro h1 {
+  margin-block: 0.4rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.08;
+}
+.build-kit-intro > p:last-child {
+  color: var(--color-text-muted);
+  margin-block-start: 0.65rem;
+}
+.build-kit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+.build-kit-panel {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 1.75rem);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+}
+.build-kit-panel fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.build-kit-panel legend {
+  margin-block-end: 0.45rem;
+  font-weight: 700;
+}
+.build-kit-panel select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+}
+.build-kit-panel select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.build-kit-panel select:disabled {
+  opacity: 0.65;
+}
+.build-kit-panel .build-kit-types ul {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+}
+.build-kit-types label {
+  height: 100%;
+  cursor: pointer;
+  font-weight: 650;
+  background: var(--color-background);
+}
+.build-kit-types label:has(:checked) {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 -2px var(--color-primary);
+  color: var(--color-primary);
+}
+.build-kit-guide {
+  padding: 0.75rem 0.9rem;
+  border-inline-start: 3px solid var(--color-primary);
+  border-radius: 0.4rem;
+  background: var(--color-background);
+  color: var(--color-text-muted);
+}
+.build-kit-panel ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.build-kit-panel label,
+.build-kit-summary li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+}
+.build-kit-panel input {
+  accent-color: var(--color-primary);
+}
+.build-kit-summary img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 0.4rem;
+}
+.build-kit-summary small {
+  display: block;
+  color: var(--color-text-muted);
+}
+.build-kit-summary strong {
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+.build-kit-summary .product-price {
+  margin: 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--color-border);
+}
+.build-kit-note {
+  color: var(--color-text-muted);
+}
+.build-kit-summary [role='status']:empty {
+  display: none;
+}
+
 @media (min-width: 521px) {
   .admin-marketing-card {
     padding: 1.5rem;
@@ -5489,6 +5608,9 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 }
 
 @media (min-width: 768px) {
+  .build-kit-layout {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
   .featured-product .product-card-link {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
     align-items: center;

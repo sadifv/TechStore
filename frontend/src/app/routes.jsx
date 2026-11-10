@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage.jsx';
 import NewsletterUnsubscribePage from '../components/marketing/NewsletterUnsubscribePage.jsx';
 const RestockPreferencePage = lazy(() => import('../components/catalog/RestockPreferencePage.jsx'));
 const CatalogPage = lazy(() => import('../pages/CatalogPage.jsx'));
+const BuildKitPage = lazy(() => import('../pages/BuildKitPage.jsx'));
 const ProductPage = lazy(() => import('../pages/ProductPage.jsx'));
 const ReviewModerationPage = lazy(() => import('../components/admin/ReviewModerationPage.jsx'));
 const AuditHistoryPage = lazy(() => import('../components/admin/AuditHistoryPage.jsx'));
@@ -103,6 +104,7 @@ function ErrorPage() {
 const pages = {
   home: ({ user }) => <HomePage user={user} />,
   catalog: () => <CatalogPage />,
+  buildKit: () => <BuildKitPage />,
   product: ({ user, parameter }) => <ProductPage productId={parameter} user={user} />,
   login: () => <LoginPage />,
   register: () => <RegisterPage />,

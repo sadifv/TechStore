@@ -41,6 +41,7 @@ export default function HeroSection() {
           <a href="#destacados" className="hero-secondary">
             <span aria-hidden="true">02</span> Ver destacados <span aria-hidden="true">↓</span>
           </a>
+          <a href="/arma-tu-equipo" className="hero-secondary">Arma tu equipo</a>
         </nav>
         <ul className="hero-benefits">
           <li>

@@ -79,6 +79,9 @@ export default function CatalogPage() {
     <section id="catalogo" className="products-section" aria-labelledby="catalog-heading">
       <header className="section-header">
         <h1 id="catalog-heading">Nuestro Catálogo</h1>
+        <a className="btn btn-outline" href="/arma-tu-equipo">
+          Arma tu equipo
+        </a>
       </header>
       {comparison.length > 0 && (
         <ProductComparison products={comparison} clear={() => setComparison([])} />

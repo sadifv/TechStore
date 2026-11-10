@@ -3,6 +3,8 @@ import { decodeRouteSegment } from './routeSegments.js';
 const exactRoutes = {
   '/': 'home',
   '/catalogo': 'catalog',
+  '/arma-tu-equipo': 'buildKit',
+  '/arma-tu-pc': 'buildKit',
   '/login': 'login',
   '/register': 'register',
   '/profile': 'profile',
