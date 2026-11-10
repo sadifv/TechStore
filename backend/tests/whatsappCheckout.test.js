@@ -26,6 +26,41 @@ const call = async (method, req) => {
 };
 beforeEach(reset);
 
+test('checkout de invitado exige clave y valida los límites antes de tocar inventario', async () => {
+  const { checkoutKey: _key, ...withoutKey } = payload();
+  const ids = ['a', 'b', 'c', 'd', 'e'].map((digit) => digit.repeat(24));
+  for (const id of ids) addProduct(id, 20);
+
+  assert.equal((await call('createOrder', { body: withoutKey })).statusCode, 400);
+  const repeated = [
+    { productId, quantity: 3 },
+    { productId: productId.toUpperCase(), quantity: 3 },
+  ];
+  assert.equal(
+    (await call('createOrder', { body: { ...payload(), items: repeated } })).statusCode,
+    400,
+  );
+  const items = ids.map((id) => ({ productId: id, quantity: 5 }));
+  assert.equal((await call('createOrder', { body: { ...payload(), items } })).statusCode, 400);
+  assert.equal(state.orders.length, 0);
+  for (const id of ids) assert.equal(state.products.get(id).stock, 20);
+
+  const accepted = { ...payload(), items: items.slice(0, 4) };
+  assert.equal((await call('createOrder', { body: accepted })).statusCode, 201);
+  assert.equal((await call('createOrder', { body: accepted })).statusCode, 200);
+  assert.equal(state.orders.length, 1);
+});
+
+test('checkout autenticado conserva su cantidad máxima y admite clientes sin clave', async () => {
+  addProduct(productId, 99);
+  const req = {
+    session: { user: { id: '123456789012345678901234' } },
+    body: { items: [{ productId, quantity: 99 }] },
+  };
+  assert.equal((await call('createOrder', req)).statusCode, 201);
+  assert.equal(state.products.get(productId).stock, 0);
+});
+
 test('crea un pedido pendiente, reserva stock y prepara un mensaje codificado con ID y total', async () => {
   addProduct(productId, 5);
   const res = await call('createOrder', { body: payload() });

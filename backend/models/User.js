@@ -15,7 +15,10 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      validate: { validator: isSingleEmail, message: 'Por favor, ingresa un correo electrónico válido' },
+      validate: {
+        validator: isSingleEmail,
+        message: 'Por favor, ingresa un correo electrónico válido',
+      },
     },
     password: {
       type: String,
@@ -44,6 +47,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    emailVerificationRequired: { type: Boolean, select: false },
     verificationToken: { type: String, select: false },
     verificationTokenExpires: { type: Date, select: false },
     resetPasswordToken: { type: String, select: false },

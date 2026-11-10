@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { randomUUID } = require('node:crypto');
 const mongoose = require('mongoose');
 const { startLocalReplicaSet } = require('./helpers/localReplicaSet');
 const enabled = process.env.TECHSTORE_INTEGRATION === '1';
@@ -34,7 +35,7 @@ async function checkout(body) {
       return this;
     },
   };
-  await createOrder({ body }, res, (error) => {
+  await createOrder({ body: { checkoutKey: randomUUID(), ...body } }, res, (error) => {
     throw error;
   });
   return res;

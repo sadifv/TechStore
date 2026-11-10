@@ -118,12 +118,14 @@ const sendTemplateEmail = async ({ to, subject, templateName, templateData = {} 
 };
 
 // Restablecimiento de Contraseña
-const sendPasswordResetEmail = async (userEmail, resetUrl) => {
+const sendPasswordResetEmail = async (userEmail, resetUrl, { activation = false } = {}) => {
   return sendTemplateEmail({
     to: userEmail,
-    subject: '🔐 Restablecimiento de contraseña | TechStore',
+    subject: activation
+      ? 'Activa tu cuenta | TechStore'
+      : '🔐 Restablecimiento de contraseña | TechStore',
     templateName: 'email-reset-password',
-    templateData: { resetUrl },
+    templateData: { resetUrl, activation },
   });
 };
 

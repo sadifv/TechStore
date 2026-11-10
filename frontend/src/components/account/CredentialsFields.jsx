@@ -28,25 +28,25 @@ export default function CredentialsFields({ register = false, next }) {
           placeholder="correo@ejemplo.com"
         />
       </fieldset>
-      <fieldset className="form-group">
-        <label htmlFor="auth-password">Contraseña</label>
-        <PasswordInput
-          id="auth-password"
-          name="password"
-          minLength={register ? 12 : undefined}
-          maxLength="100"
-          required
-          autoComplete={register ? 'new-password' : 'current-password'}
-          placeholder="••••••••"
-        />
-        {register && <small>Usa al menos 12 caracteres.</small>}
-      </fieldset>
       {!register && (
-        <p className="auth-forgot-link">
-          <a className="link-secondary" href="/forgot-password">
-            ¿Olvidaste tu contraseña?
-          </a>
-        </p>
+        <>
+          <fieldset className="form-group">
+            <label htmlFor="auth-password">Contraseña</label>
+            <PasswordInput
+              id="auth-password"
+              name="password"
+              maxLength="100"
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+            />
+          </fieldset>
+          <p className="auth-forgot-link">
+            <a className="link-secondary" href="/forgot-password">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </p>
+        </>
       )}
       <p className="auth-redirect">
         {register ? '¿Ya tienes una cuenta?' : '¿No tienes una cuenta?'}{' '}

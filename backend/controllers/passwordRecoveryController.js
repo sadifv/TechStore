@@ -6,6 +6,9 @@ const logger = require('../config/logger');
 const { getFrontendBaseUrl } = require('../config/frontendUrl');
 const { isAcceptablePassword } = require('../services/passwordPolicy');
 
+const resetTokenLifetimeMs = 60 * 60 * 1000;
+const resetResendCooldownMs = 5 * 60 * 1000;
+
 const forgotPassword = (req, res) => {
   const email = String(req.body?.email || '')
     .trim()
@@ -20,17 +23,29 @@ const forgotPassword = (req, res) => {
 
   // Resolve accounts and send email after the generic response so account lookup,
   // database writes, and SMTP latency cannot distinguish registered addresses.
-  Promise.resolve()
+  return Promise.resolve()
     .then(async () => {
-      const user = await User.findOne({ email }).select(
-        '+resetPasswordToken +resetPasswordExpires',
+      const expires = Date.now() + resetTokenLifetimeMs;
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      // The token expiry also records when it was issued. Claim the resend
+      // window atomically so concurrent requests only send one email.
+      const user = await User.findOneAndUpdate(
+        {
+          email,
+          $or: [
+            { resetPasswordExpires: null },
+            { resetPasswordExpires: { $lte: new Date(expires - resetResendCooldownMs) } },
+          ],
+        },
+        {
+          $set: {
+            resetPasswordToken: crypto.createHash('sha256').update(resetToken).digest('hex'),
+            resetPasswordExpires: new Date(expires),
+          },
+        },
+        { projection: { email: 1 } },
       );
       if (!user) return;
-
-      const resetToken = crypto.randomBytes(32).toString('hex');
-      user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-      user.resetPasswordExpires = Date.now() + 3600000;
-      await user.save();
 
       await sendPasswordResetEmail(user.email, `${frontendUrl}/reset-password/${resetToken}`);
       logger.info('Correo de recuperación enviado.');
@@ -66,9 +81,9 @@ const resetPassword = async (req, res, next) => {
     const user = await User.findOneAndUpdate(
       { resetPasswordToken: hashedToken, resetPasswordExpires: { $gt: new Date() } },
       {
-        $set: { password: passwordHash },
+        $set: { password: passwordHash, isVerified: true },
         $inc: { authVersion: 1 },
-        $unset: { resetPasswordToken: '', resetPasswordExpires: '' },
+        $unset: { resetPasswordToken: '', resetPasswordExpires: '', emailVerificationRequired: '' },
       },
       { returnDocument: 'after', runValidators: true },
     );

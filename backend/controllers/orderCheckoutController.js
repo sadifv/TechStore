@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 const crypto = require('node:crypto');
 const { isSingleEmail } = require('../services/emailAddress');
 const { getWhatsappPhone, buildWhatsappOrderUrl } = require('../config/whatsapp');
-const { orderEvent } = require('../services/orderAudit');
+const GUEST_MAX_UNITS_PER_PRODUCT = 5;
+const GUEST_MAX_UNITS_PER_ORDER = 20;
 
 const respondToRetry = (order, requestHash, req, res) => {
   if (order.checkoutRequestHash !== requestHash) {
@@ -55,7 +56,7 @@ const createOrder = async (req, res, next) => {
       checkoutKey: key,
     } = req.body || {};
     const userId = req.session?.user?.id || req.session?.user?._id;
-    if (key !== undefined) {
+    if (!userId || key !== undefined) {
       if (typeof key !== 'string' || !/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(key))
         return res
           .status(400)
@@ -78,6 +79,8 @@ const createOrder = async (req, res, next) => {
         .status(400)
         .json({ success: false, error: 'La orden debe incluir entre 1 y 50 productos.' });
     const normalized = new Map();
+    const maxQuantity = userId ? 99 : GUEST_MAX_UNITS_PER_PRODUCT;
+    let totalUnits = 0;
     for (const item of items) {
       if (!mongoose.isObjectIdOrHexString(item?.productId))
         return res
@@ -86,12 +89,19 @@ const createOrder = async (req, res, next) => {
       const quantity = Number(item.quantity ?? 1);
       const productId = String(item.productId).toLowerCase();
       const total = (normalized.get(productId) || 0) + quantity;
-      if (!Number.isInteger(quantity) || quantity < 1 || total > 99)
-        return res
-          .status(400)
-          .json({ success: false, error: 'La cantidad por producto debe ser entre 1 y 99.' });
+      if (!Number.isInteger(quantity) || quantity < 1 || total > maxQuantity)
+        return res.status(400).json({
+          success: false,
+          error: `La cantidad por producto debe ser entre 1 y ${maxQuantity}.`,
+        });
       normalized.set(productId, total);
+      totalUnits += quantity;
     }
+    if (!userId && totalUnits > GUEST_MAX_UNITS_PER_ORDER)
+      return res.status(400).json({
+        success: false,
+        error: `Los pedidos como invitado admiten hasta ${GUEST_MAX_UNITS_PER_ORDER} unidades en total.`,
+      });
     if (
       !userId &&
       (typeof guestInfo?.name !== 'string' ||

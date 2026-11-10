@@ -28,7 +28,13 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
-      - key: SMTP_USER
+      - key: EMAIL_TRANSPORT
+        value: gmail-api
+      - key: GMAIL_USER
         sync: false
-      - key: SMTP_PASS
+      - key: GMAIL_OAUTH_CLIENT_ID
+        sync: false
+      - key: GMAIL_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_OAUTH_REFRESH_TOKEN
         sync: false

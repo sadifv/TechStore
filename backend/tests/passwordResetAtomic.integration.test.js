@@ -23,10 +23,11 @@ test(
       email: 'reset-atomic@example.invalid',
       password: 'original-password-test',
       authVersion: 4,
+      emailVerificationRequired: true,
       resetPasswordToken: crypto.createHash('sha256').update(token).digest('hex'),
       resetPasswordExpires: new Date(Date.now() + 60000),
     });
-    const { resetPassword } = require('../controllers/authController');
+    const { forgotPassword, resetPassword } = require('../controllers/authController');
     const call = async (password) => {
       const res = {
         statusCode: 200,
@@ -47,9 +48,11 @@ test(
     const results = await Promise.all([call('first-password-test'), call('second-password-test')]);
     assert.deepEqual(results.map((r) => r.statusCode).sort(), [200, 400]);
     const current = await User.findById(user._id).select(
-      '+password +authVersion +resetPasswordToken +resetPasswordExpires',
+      '+password +authVersion +resetPasswordToken +resetPasswordExpires +emailVerificationRequired',
     );
     assert.equal(current.authVersion, 5);
+    assert.equal(current.isVerified, true);
+    assert.equal(current.emailVerificationRequired, undefined);
     assert.equal(current.resetPasswordToken, undefined);
     assert.equal(current.resetPasswordExpires, undefined);
     assert.equal(
@@ -76,5 +79,27 @@ test(
     assert.equal(unchanged.resetPasswordToken, tokenHash);
     assert.equal((await call('valid-password-after-rejection')).statusCode, 200);
     assert.equal((await User.findById(user._id).select('+authVersion')).authVersion, 6);
+
+    const recover = async () => {
+      const res = {
+        status(code) {
+          assert.equal(code, 200);
+          return this;
+        },
+        json(body) {
+          assert.equal(body.success, true);
+        },
+      };
+      await forgotPassword(
+        { body: { email: user.email }, protocol: 'https', get: () => 'shop.example.test' },
+        res,
+      );
+    };
+    await recover();
+    const issued = await User.findById(user._id).select('+resetPasswordToken');
+    assert.match(issued.resetPasswordToken, /^[a-f0-9]{64}$/);
+    await Promise.all([recover(), recover()]);
+    const retained = await User.findById(user._id).select('+resetPasswordToken');
+    assert.equal(retained.resetPasswordToken, issued.resetPasswordToken);
   },
 );

@@ -35,6 +35,8 @@ test('multipart uploads let the browser set its boundary and retain HTTP errors'
 test('safeReturnTo only permits same-origin paths', () => {
   globalThis.window = { location: { origin: 'http://localhost:5173' } };
   assert.equal(safeReturnTo('/profile?tab=orders#recent'), '/profile?tab=orders#recent');
+  assert.equal(safeReturnTo('/catalogo/../profile'), '/profile');
+  assert.equal(safeReturnTo('/catalogo/..//', '/catalogo'), '/catalogo');
   assert.equal(safeReturnTo('//example.com/steal-session'), '/');
   assert.equal(safeReturnTo('/\\\\example.com'), '/');
   assert.equal(safeReturnTo('https://example.com'), '/');

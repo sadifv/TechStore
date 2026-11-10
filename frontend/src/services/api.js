@@ -45,7 +45,7 @@ export function safeReturnTo(value, fallback = '/') {
     return fallback;
   try {
     const destination = new URL(value, window.location.origin);
-    return destination.origin === window.location.origin
+    return destination.origin === window.location.origin && !destination.pathname.startsWith('//')
       ? `${destination.pathname}${destination.search}${destination.hash}`
       : fallback;
   } catch {

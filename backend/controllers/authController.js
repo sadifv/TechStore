@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const logger = require('../config/logger');
 const { regenerateSession, saveSession, createSessionUser } = require('../services/authSession');
-const { isAcceptablePassword } = require('../services/passwordPolicy');
+const { getFrontendBaseUrl } = require('../config/frontendUrl');
 const { logoutUser, getMe } = require('./authSessionController');
 const { forgotPassword, resetPassword } = require('./passwordRecoveryController');
 const {
@@ -19,40 +19,52 @@ const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex
 const MAX_LOGIN_PASSWORD_LENGTH = 100;
 
 const registrationMessage =
-  'Solicitud procesada. Si puedes crear una cuenta con este correo, ya está lista; también puedes intentar iniciar sesión.';
+  'Si el correo está disponible, recibirás un enlace para activar tu cuenta y establecer tu contraseña. Si ya tienes una cuenta, puedes iniciar sesión o solicitar un nuevo enlace desde recuperación.';
 
 // ==========================================
 // REGISTRO
 // ==========================================
 const registerUser = async (req, res, next) => {
   try {
-    const { name, password } = req.body;
+    const { name } = req.body;
     const email = String(req.body?.email || '')
       .trim()
       .toLowerCase();
-    if (!isAcceptablePassword(password)) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'La contraseña no puede superar 72 bytes UTF-8.' });
-    }
-
+    const provisionalPassword = crypto.randomBytes(32).toString('hex');
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       // Match the password hashing work for new accounts to reduce timing clues.
-      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+      await bcrypt.compare(provisionalPassword, DUMMY_PASSWORD_HASH);
       return res.status(202).json({ success: true, message: registrationMessage });
     }
 
-    const newUser = new User({ name, email, password, role: 'user' });
+    const activationToken = crypto.randomBytes(32).toString('hex');
+    const newUser = new User({
+      name,
+      email,
+      password: provisionalPassword,
+      role: 'user',
+      emailVerificationRequired: true,
+      resetPasswordToken: crypto.createHash('sha256').update(activationToken).digest('hex'),
+      resetPasswordExpires: new Date(Date.now() + 3600000),
+    });
     await newUser.save();
 
     logger.info('Nuevo usuario registrado.');
 
     res.status(202).json({ success: true, message: registrationMessage });
     Promise.resolve()
-      .then(() => require('../config/mailer').sendWelcomeEmail(newUser.email, newUser.name))
+      .then(() => {
+        const frontendUrl = getFrontendBaseUrl();
+        if (!frontendUrl) throw new Error('Falta la URL del frontend.');
+        return require('../config/mailer').sendPasswordResetEmail(
+          newUser.email,
+          `${frontendUrl}/reset-password/${activationToken}`,
+          { activation: true },
+        );
+      })
       .catch((emailError) => {
-        logger.warn('No se pudo enviar el correo de bienvenida.', {
+        logger.warn('No se pudo enviar el correo de activación.', {
           errorCode: emailError.code || emailError.name,
         });
       });
@@ -83,7 +95,9 @@ const loginUser = async (req, res) => {
       return invalidCredentials(res);
     }
 
-    const user = await User.findOne({ email }).select('+password +authVersion +adminMfaEnabledAt');
+    const user = await User.findOne({ email }).select(
+      '+password +authVersion +adminMfaEnabledAt +emailVerificationRequired',
+    );
     if (!user) {
       await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
       return invalidCredentials(res);
@@ -94,7 +108,7 @@ const loginUser = async (req, res) => {
         ? await user.comparePassword(password)
         : await bcrypt.compare(password, user.password);
 
-    if (!isMatch) return invalidCredentials(res);
+    if (!isMatch || user.emailVerificationRequired) return invalidCredentials(res);
 
     if (isStaff(user.role)) {
       await regenerateSession(req);

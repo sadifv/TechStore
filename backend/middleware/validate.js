@@ -22,7 +22,6 @@ const validationRules = {
   '/api/auth/register': {
     name: { required: true, min: 2, max: 80, label: 'El nombre' },
     email: { required: true, email: true, label: 'El correo' },
-    password: { required: true, min: 12, max: 100, label: 'La contraseña' },
   },
   '/api/auth/login': {
     email: { required: true, email: true, label: 'El correo' },

@@ -17,10 +17,11 @@ const userLookup = new Promise((resolve) => {
 });
 let lookupUser = () => userLookup;
 const sentResetEmails = [];
-const savedUsers = [];
+const updates = [];
 const User = {
-  findOne() {
-    return { select: () => lookupUser() };
+  findOneAndUpdate(filter, update, options) {
+    updates.push({ filter, update, options });
+    return lookupUser();
   },
 };
 const dependencies = new Map([
@@ -84,9 +85,6 @@ test('answers password recovery before looking up the account', async () => {
 test('still emails a registered account after returning the generic response', async () => {
   const user = {
     email: 'registered@example.test',
-    async save() {
-      savedUsers.push(this);
-    },
   };
   lookupUser = () => Promise.resolve(user);
   const response = {
@@ -113,9 +111,14 @@ test('still emails a registered account after returning the generic response', a
   await new Promise(setImmediate);
 
   assert.equal(response.statusCode, 200);
-  assert.equal(savedUsers.length, 1);
-  assert.match(user.resetPasswordToken, /^[a-f0-9]{64}$/);
-  assert.equal(user.resetPasswordExpires - Date.now() <= 3600000, true);
+  const { filter, update, options } = updates.at(-1);
+  assert.equal(filter.email, user.email);
+  assert.deepEqual(options.projection, { email: 1 });
+  assert.match(update.$set.resetPasswordToken, /^[a-f0-9]{64}$/);
+  assert.equal(
+    update.$set.resetPasswordExpires - filter.$or[1].resetPasswordExpires.$lte,
+    5 * 60 * 1000,
+  );
   assert.equal(sentResetEmails.length, 1);
   assert.equal(sentResetEmails[0].email, 'registered@example.test');
   assert.match(

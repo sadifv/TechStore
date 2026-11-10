@@ -33,7 +33,7 @@ export function RegisterPage() {
   return (
     <AccountForm
       title="Crear Cuenta"
-      description="Regístrate para comenzar a comprar en TechStore."
+      description="Confirma tu correo para activar tu cuenta y elegir tu contraseña."
       onSubmit={submit}
       status={status}
       statusType={statusType}
