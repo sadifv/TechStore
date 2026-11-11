@@ -1,3 +1,5 @@
+import { requestJson } from '../../services/api.js';
+
 export const GUEST_CART_KEY = 'techstore_guest_cart';
 
 export function readGuestCart(storage = globalThis.localStorage) {
@@ -44,12 +46,8 @@ export async function syncGuestCartToUser(
   const cart = readGuestCart(storage);
   if (!cart.length) return { syncedCount: 0, failedCount: 0 };
   const getCart = async () => {
-    const response = await fetcher('/api/cart', {
-      cache: 'no-store',
-      headers: { Accept: 'application/json' },
-    });
-    const data = await response.json();
-    if (!response.ok || !data.success || !Array.isArray(data.items))
+    const data = await requestJson('/api/cart', { cache: 'no-store' }, fetcher);
+    if (!Array.isArray(data.items))
       throw new Error(data.error || 'No se pudo consultar el carrito de la cuenta.');
     return new Map(
       data.items.map((item) => [
@@ -76,14 +74,14 @@ export async function syncGuestCartToUser(
     }
     const before = quantities.get(id) || 0;
     try {
-      const response = await fetcher('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ productId: id, quantity }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success)
-        throw new Error(data.error || 'No se pudo añadir el producto.');
+      await requestJson(
+        '/api/cart/add',
+        {
+          method: 'POST',
+          body: JSON.stringify({ productId: id, quantity }),
+        },
+        fetcher,
+      );
       removeGuestQuantity(id, quantity, storage);
       quantities.set(id, before + quantity);
       syncedCount += 1;

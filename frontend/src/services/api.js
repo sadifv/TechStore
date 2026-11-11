@@ -14,7 +14,7 @@ export function backendAssetUrl(path) {
   return apiUrl(path);
 }
 
-export async function requestJson(url, options = {}) {
+export async function requestJson(url, options = {}, fetcher = globalThis.fetch) {
   const headers = new Headers(options.headers || {});
   headers.set('Accept', 'application/json');
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -23,7 +23,7 @@ export async function requestJson(url, options = {}) {
 
   let response;
   try {
-    response = await fetch(apiUrl(url), { credentials: 'include', ...options, headers });
+    response = await fetcher(apiUrl(url), { credentials: 'include', ...options, headers });
   } catch {
     throw new Error('No se pudo conectar con el servidor. Comprueba que el backend esté activo.');
   }

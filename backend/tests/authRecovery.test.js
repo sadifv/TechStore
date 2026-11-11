@@ -17,6 +17,7 @@ const userLookup = new Promise((resolve) => {
 });
 let lookupUser = () => userLookup;
 const sentResetEmails = [];
+let frontendUrl = 'https://shop.example.test';
 const updates = [];
 const User = {
   findOneAndUpdate(filter, update, options) {
@@ -36,7 +37,7 @@ const dependencies = new Map([
     },
   ],
   ['../config/logger', { warn() {}, info() {} }],
-  ['../config/frontendUrl', { getFrontendBaseUrl: () => 'https://shop.example.test' }],
+  ['../config/frontendUrl', { getFrontendBaseUrl: () => frontendUrl }],
 ]);
 
 Module._load = function (request, parent, isMain) {
@@ -79,6 +80,34 @@ test('answers password recovery before looking up the account', async () => {
   } finally {
     resolveUserLookup(null);
     await new Promise(setImmediate);
+  }
+});
+
+test('missing frontend URL never uses Host or creates a reset token', async () => {
+  frontendUrl = null;
+  const beforeUpdates = updates.length;
+  const beforeEmails = sentResetEmails.length;
+  let statusCode;
+  try {
+    await forgotPassword(
+      {
+        body: { email: 'registered@example.test' },
+        protocol: 'https',
+        get: () => 'attacker.example.test',
+      },
+      {
+        status(code) {
+          statusCode = code;
+          return this;
+        },
+        json() {},
+      },
+    );
+    assert.equal(statusCode, 200);
+    assert.equal(updates.length, beforeUpdates);
+    assert.equal(sentResetEmails.length, beforeEmails);
+  } finally {
+    frontendUrl = 'https://shop.example.test';
   }
 });
 

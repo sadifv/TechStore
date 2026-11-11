@@ -70,6 +70,10 @@ test('password recovery renders the real template with the supplied reset URL', 
   const url = 'https://store.example.invalid/reset-password/test-only';
   await mailer.sendPasswordResetEmail('recipient@example.invalid', url);
   assert.ok(messages.at(-1).html.includes(url));
+  assert.ok(messages.at(-1).html.includes('Restablecer mi contraseña'));
+  await mailer.sendPasswordResetEmail('recipient@example.invalid', url, { activation: true });
+  assert.ok(messages.at(-1).html.includes('Activar mi cuenta'));
+  assert.ok(messages.at(-1).html.includes(url));
 });
 
 test('mail transport rejects recipient lists instead of sharing private links', async () => {

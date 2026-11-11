@@ -10,6 +10,8 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+- **Enlaces de recuperación y activación:** el destino procede de `FRONTEND_URL` o, en producción, de `APP_URL` como respaldo. Se validan protocolo, credenciales y ausencia de query/fragmento; producción requiere HTTPS. Si falta una URL válida, recuperación conserva su respuesta genérica y no genera un token ni utiliza el encabezado `Host`.
+
 - **Vistas previas de imágenes:** la CSP de Netlify permite `blob:` únicamente en `img-src` para archivos seleccionados localmente. No habilita scripts blob ni scripts inline; una prueba de Chromium aplica la cabecera real para verificar este límite.
 
 - **Historial administrativo:** consulta solo owner/MFA, eventos con lista cerrada de acciones y campos, sin cuerpos HTTP, secretos ni textos personales. Las mutaciones auditadas se confirman con su evento; los fallos revierten la operación. El historial no es resistente a modificaciones directas por administradores de MongoDB y no reconstruye el pasado.
@@ -54,7 +56,7 @@ La cancelación del cliente tiene un límite persistente específico y conserva 
 - El manejador central registra clasificación/código/ruta, sin mensajes o stacks crudos que puedan contener valores enviados. Los errores de JSON mal formado responden con un mensaje genérico sin fragmentos del cuerpo.
 - Los enlaces de recuperación de contraseña caducan en una hora. La respuesta genérica del formulario no confirma que el correo se haya enviado.
 - El restablecimiento consume el token, cambia el hash de contraseña e incrementa `authVersion` en una única actualización condicionada. Dos solicitudes concurrentes con el mismo token solo permiten un cambio; los intentos rechazados no consumen un token vigente.
-- Verificar copias de seguridad y restauraciones con procedimientos del proveedor. El repositorio no demuestra por sí solo que exista un respaldo válido.
+- Ejecutar y registrar copias y ensayos de restauración siguiendo [el procedimiento de respaldo](docs/backup-and-restore.md). La verificación exige conteos durables, índices, integridad y evidencia de una restauración aislada.
 
 ## Dependencias y verificación
 
@@ -72,4 +74,4 @@ Los lockfiles de `backend/` y `frontend/` forman parte del proyecto; usar `npm c
 
 El frontend fija mediante `overrides` la rama corregida de `minimatch` (>=11.0.1) usada por ESLint y su configuración, por GHSA-g3hv-75wg-m249. Es una dependencia de desarrollo; no forma parte del JavaScript del cliente. El lockfile resuelve la versión concreta y lint/build verifican compatibilidad. Revisar si se puede retirar este override cuando los paquetes superiores incorporen la corrección.
 
-CI ejecuta pruebas en Node.js 22 y 24; la auditoría de ambos proyectos se ejecuta en el trabajo de Node.js 24. Un trabajo verde de Node.js 22, por sí solo, no confirma el resultado de la auditoría. Consultar [AGENTS.md](AGENTS.md) para los comandos de verificación.
+CI ejecuta pruebas en Node.js 22 y 24. El mínimo admitido es 22.13.0 en la rama 22. El job 24 ejecuta integración con MongoDB aislado y la auditoría de ambos paquetes con `--audit-level=high`: altas y críticas hacen fallar el job, y las menores se revisan y registran durante mantenimiento. Un trabajo verde de Node.js 22, por sí solo, no confirma integración ni auditoría. Consultar [AGENTS.md](AGENTS.md) para los comandos.

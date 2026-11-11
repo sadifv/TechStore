@@ -13,7 +13,7 @@ const forgotPassword = (req, res) => {
   const email = String(req.body?.email || '')
     .trim()
     .toLowerCase();
-  const frontendUrl = getFrontendBaseUrl() || `${req.protocol}://${req.get('host')}`;
+  const frontendUrl = getFrontendBaseUrl();
 
   res.status(200).json({
     success: true,
@@ -25,6 +25,10 @@ const forgotPassword = (req, res) => {
   // database writes, and SMTP latency cannot distinguish registered addresses.
   return Promise.resolve()
     .then(async () => {
+      if (!frontendUrl) {
+        logger.warn('Recuperación de contraseña sin una URL de frontend válida configurada.');
+        return;
+      }
       const expires = Date.now() + resetTokenLifetimeMs;
       const resetToken = crypto.randomBytes(32).toString('hex');
       // The token expiry also records when it was issued. Claim the resend

@@ -39,7 +39,8 @@ jobs:
           if-no-files-found: ignore
   test:
     name: Tests (Node.js ${{ matrix.node-version }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -63,6 +64,18 @@ jobs:
         working-directory: frontend
       - name: Run tests
         run: npm test
+        working-directory: backend
+      - name: Install MongoDB for isolated integration tests
+        if: matrix.node-version == 24
+        run: |
+          curl --fail --silent --show-error https://pgp.mongodb.com/server-8.0.asc | sudo gpg --dearmor --output /usr/share/keyrings/mongodb-server-8.0.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-org-server
+          mongod --version
+      - name: Run isolated backend integration tests
+        if: matrix.node-version == 24
+        run: npm run test:integration
         working-directory: backend
       - name: Lint, test, and build frontend
         run: npm run lint && npm test && npm run build

@@ -10,7 +10,7 @@ Estas instrucciones se aplican a todo TechStore. Antes de editar, revisa el cód
 
 ## Entorno y comandos
 
-El proyecto usa npm con un `package.json` y un lockfile en cada aplicación. No hay un paquete npm en la raíz. Usar Node.js 22 o 24; CI verifica ambas ramas. Consultar los requisitos `engines` de las dependencias antes de cambiar de runtime.
+El proyecto usa npm con un `package.json` y un lockfile en cada aplicación. No hay un paquete npm en la raíz. Usar Node.js 22.13+ o 24; CI verifica ambas ramas. Consultar los requisitos `engines` de las dependencias antes de cambiar de runtime.
 
 Ejecutar desde `backend/`:
 

@@ -9,7 +9,7 @@ TechStore es una plataforma e-commerce full-stack moderna y accesible orientada 
 - **Backend:** Node.js y Express.js (las plantillas EJS se conservan para correos).
 - **Base de Datos:** MongoDB con Mongoose y sesiones persistentes vía `connect-mongo`.
 - **Seguridad & Middleware:** Helmet, CORS, Express Rate Limit, Express Slow Down, Express Validator, Bcryptjs.
-- **Integraciones:** pedidos por WhatsApp, Google Gemini API (Asistente TechBot), correo SMTP para recuperación de contraseña y campañas, Winston (logging estructurado).
+- **Integraciones:** pedidos por WhatsApp, Google Gemini API (Asistente TechBot), Gmail API por HTTPS o SMTP para correos, Winston (logging estructurado).
 - **Frontend:** React, Vite, CSS y Remix Icon.
 
 ---
@@ -18,7 +18,7 @@ TechStore es una plataforma e-commerce full-stack moderna y accesible orientada 
 
 Asegúrate de tener instalado en tu sistema:
 
-- **Node.js** (v20.19.0 o superior, o v22.12.0 o superior)
+- **Node.js** 22.13.0 o superior de la rama 22, o la rama 24. Usar el parche vigente de una de esas ramas. Ambos paquetes declaran este rango en `engines`.
 - **npm** (v9.0.0 o superior)
 - **MongoDB** en replica set (local) o MongoDB Atlas. Checkout, carrito y cambios de inventario requieren transacciones; una instancia standalone no es suficiente.
 
@@ -44,11 +44,12 @@ Asegúrate de tener instalado en tu sistema:
 ## Despliegue frontend/backend
 
 - Compila React con `npm run build` desde `frontend/` y publica `frontend/dist/` en un hosting estático. Express se despliega como servicio Node.js independiente desde `backend/`.
-- Para el despliegue actual con Netlify y Render, `frontend/public/_redirects` reenvía `/api/*` y `/uploads/*` al backend de Render y mantiene la regla SPA al final. El destino incluido corresponde al nombre `techstore-backend` de `render.yaml`; si el dominio público que muestra Render es distinto, actualiza esas dos reglas. En Netlify deja `VITE_API_BASE_URL` vacío o elimina esa variable para que el navegador use rutas relativas del mismo sitio. Después de cambiarlo, vuelve a desplegar el frontend.
+- Para Netlify y Render, `frontend/public/_redirects` contiene el destino de respaldo actual. Configura `NETLIFY_BACKEND_URL` en el entorno de build de Netlify con el origen HTTPS público de Render. `npm run build` valida ese origen y sustituye únicamente los destinos de `/api/*` y `/uploads/*` en `dist/_redirects`. Conserva al final la regla SPA. Al cambiar de servicio Render, actualizar esa variable y recompilar basta. Si la variable está ausente, se conserva el destino del archivo fuente. En Netlify deja `VITE_API_BASE_URL` vacío para las llamadas relativas con cookies del mismo sitio.
 - En Render, configura `FRONTEND_URL`, `APP_URL` y `ALLOWED_ORIGINS` con el origen HTTPS exacto del sitio Netlify. `API_URL` debe seguir siendo el origen público HTTPS de Render (`RENDER_EXTERNAL_URL`). Las reglas de Netlify envían las solicitudes API a Render y mantienen las llamadas bajo el origen de la tienda para las cookies `SameSite=Lax`.
 - Si React y Express usan subdominios separados del mismo dominio (por ejemplo, `tienda.tu-dominio.com` y `api.tu-dominio.com`), define `VITE_API_BASE_URL=https://api.tu-dominio.com` **antes de compilar**. En Express, `API_URL` apunta a `https://api.tu-dominio.com`, `ALLOWED_ORIGINS` contiene `https://tienda.tu-dominio.com`, y `APP_URL` y `FRONTEND_URL` apuntan a React. Mantén HTTPS y ambos subdominios bajo el mismo sitio para que las cookies de sesión `SameSite=Lax` funcionen.
 - No despliegues React y API en dominios de sitios distintos sin cambiar y validar la política de cookies: los navegadores pueden bloquear esas cookies en solicitudes entre sitios.
 - `BACKEND_PROXY_TARGET` solo configura el proxy de desarrollo de Vite. No cambia la URL del backend en el bundle de producción.
+- Tras desplegar, comprobar el commit en el proveedor, la raíz de la tienda, `/api/products/home` y una imagen `/uploads/...` existente. Un build correcto no demuestra que el destino de Render esté disponible. La sincronización del carrito invitado usa el mismo cliente, base API y cookies que el resto del frontend.
 
 ## Pruebas
 
@@ -56,7 +57,7 @@ Asegúrate de tener instalado en tu sistema:
 - El uso del historial owner/MFA, las especificaciones de productos y la preparación explícita de índices se documentan en [historial y especificaciones](docs/admin-history-and-specifications.md).
 
 - Ejecuta `npm test` desde `backend/` para las pruebas automatizadas del servidor.
-- Ejecuta `npm run test:integration` desde `backend/` para las pruebas con un replica set temporal real. Requiere `mongod` disponible (en Windows busca MongoDB Server 9.0; puedes indicar su ejecutable con `MONGOD_BINARY`). Crea y elimina su propia base temporal; no utiliza `MONGO_URI` ni datos de Atlas. La suite normal omite estos casos.
+- Ejecuta `npm run test:integration` desde `backend/` para las pruebas con un replica set temporal real. Requiere `mongod` disponible (en Windows busca MongoDB Server 9.0; puedes indicar su ejecutable con `MONGOD_BINARY`). Crea y elimina su propia base temporal; no utiliza `MONGO_URI` ni datos de Atlas. La suite normal omite estos casos. CI instala MongoDB 8.0 en Ubuntu 24.04 y ejecuta integración con Node.js 24.
 - Ejecuta `npm test`, `npm run lint` y `npm run build` desde `frontend/` para comprobar React.
 - `npm run db:ensure-reservation-ttl` desde `backend/` muestra una vista previa del índice TTL de `reservations`; no cambia nada por defecto. Para aplicarlo explícitamente, ejecuta `npm run db:ensure-reservation-ttl -- --apply`. MongoDB eliminará automáticamente documentos con `expiresAt` vencido; revisa el conteo antes de aplicar.
 - `npm run db:ensure-catalog-indexes` desde `backend/` muestra los índices propuestos para productos activos y reservas. Solo `npm run db:ensure-catalog-indexes -- --apply` los crea en la base configurada. No borra índices existentes; si un nombre está ocupado por otra definición, aborta. Su aplicación en Atlas es una operación posterior al release.
@@ -77,7 +78,8 @@ Asegúrate de tener instalado en tu sistema:
 - Los pedidos pendientes se pueden cancelar desde el panel, liberando inventario y cupón. El plazo de 24 horas se cuenta desde la creación, aunque se registre contacto. Después de ese plazo no se acepta la confirmación de pago, incluso antes de la siguiente ejecución del cron.
 - El navegador conserva una clave por intento de checkout para recuperar una respuesta perdida sin crear otra orden. El backend espera la inicialización del índice único de `checkoutKey` antes de aceptar tráfico. Si el navegador bloquea la ventana, la página del pedido permite abrir WhatsApp de nuevo.
 - Las pruebas cubren checkout, reintentos, permisos de administrador, confirmaciones, cancelaciones, inventario y ventanas bloqueadas. Combinan persistencia simulada con integración opcional en MongoDB temporal y no envían mensajes reales a WhatsApp.
-- GitHub Actions comprueba backend y frontend en Node.js 22 y 24, y ejecuta `npm audit` en ambos proyectos en cada push y pull request.
+- GitHub Actions comprueba backend y frontend en Node.js 22 y 24. En el job 24 ejecuta integración y `npm audit --audit-level=high` en ambos proyectos. Las vulnerabilidades altas y críticas bloquean el job. Revisar también las alertas bajas y moderadas, registrar su tratamiento y comprobar compatibilidad antes de actualizar.
+- El procedimiento de respaldo, restauración aislada y registro de evidencia está en [docs/backup-and-restore.md](docs/backup-and-restore.md). La política propuesta requiere ejecución y verificación por el propietario.
 
 ## Boletín, campañas y cupones
 

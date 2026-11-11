@@ -54,16 +54,31 @@ test('keeps failed products in the guest cart when account-cart synchronization 
     await import('../../frontend/src/features/cart/guestCart.js');
   const fetchMock = async (url, options = {}) => {
     if (url === '/api/cart' && !options.method) {
-      return { ok: true, json: async () => ({ success: true, items: [] }) };
+      return {
+        ok: true,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: async () => ({ success: true, items: [] }),
+      };
     }
     if (url === '/api/cart/add') {
       const productId = JSON.parse(options.body).productId;
-      if (productId === 'product-a') return { ok: true, json: async () => ({ success: true }) };
-      return { ok: false, json: async () => ({ success: false, error: 'Stock insuficiente' }) };
+      if (productId === 'product-a') {
+        return {
+          ok: true,
+          headers: new Headers({ 'Content-Type': 'application/json' }),
+          json: async () => ({ success: true }),
+        };
+      }
+      return {
+        ok: false,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: async () => ({ success: false, error: 'Stock insuficiente' }),
+      };
     }
     if (url === '/api/cart') {
       return {
         ok: true,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ success: true, items: [{ product: 'product-a', quantity: 2 }] }),
       };
     }
