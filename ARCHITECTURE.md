@@ -101,7 +101,7 @@ Los modelos nuevos tienen `autoIndex:false`; la unicidad crítica depende de `_i
 
 ## Despliegue y observación
 
-Render instala desde `backend/` con `npm ci` e inicia con `npm start`, según `render.yaml`. Netlify publica `frontend/dist/`. El build permite definir `NETLIFY_BACKEND_URL` para generar los destinos API/uploads, conservando la regla SPA final. GitHub Actions verifica Node.js 22 y 24; el job 24 ejecuta integración con MongoDB temporal. Los paquetes requieren Node.js 22.13+ o 24. [AGENTS.md](AGENTS.md) documenta comandos y publicación.
+Render instala desde `backend/` con `npm ci` e inicia con `npm start`, según `render.yaml`. Netlify publica `frontend/dist/`. El build de Netlify exige `NETLIFY_BACKEND_URL` (en local es opcional) para generar los destinos API/uploads, conservando la regla SPA final. GitHub Actions verifica Node.js 22 y 24; el job 24 ejecuta integración con MongoDB temporal. Los paquetes requieren Node.js 22.13+ o 24. [AGENTS.md](AGENTS.md) documenta comandos y publicación.
 
 `GET /health` devuelve 200 cuando Mongoose está conectado y 503 cuando no lo está; no comprueba correo, IA ni todos los procesos de negocio. Winston emite logs y archivos rotados. Un HTTP 502 exige correlacionar la hora con los registros del proxy y del backend; por sí solo no demuestra suspensión por inactividad, un error MongoDB ni un fallo SMTP.
 

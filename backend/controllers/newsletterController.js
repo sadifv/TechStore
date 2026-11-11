@@ -3,6 +3,11 @@ const crypto = require('crypto');
 const logger = require('../config/logger');
 const { isSingleEmail } = require('../services/emailAddress');
 const { redirectToFrontend } = require('../config/frontendUrl');
+const subscriptionAccepted = (res) =>
+  res.status(201).json({
+    success: true,
+    message: 'Solicitud de suscripción recibida.',
+  });
 
 // @desc    Suscribir correo al newsletter
 // @route   POST /api/newsletter
@@ -25,10 +30,7 @@ const subscribeNewsletter = async (req, res, next) => {
 
     const existingSubscriber = await Newsletter.findOne({ email });
     if (existingSubscriber && existingSubscriber.isSubscribed !== false) {
-      return res.status(400).json({
-        success: false,
-        error: 'Este correo ya se encuentra suscrito.',
-      });
+      return subscriptionAccepted(res);
     }
 
     if (existingSubscriber) {
@@ -41,11 +43,9 @@ const subscribeNewsletter = async (req, res, next) => {
     }
     logger.info('Nuevo suscriptor al boletín.');
 
-    res.status(201).json({
-      success: true,
-      message: '¡Suscripción exitosa al boletín!',
-    });
+    return subscriptionAccepted(res);
   } catch (error) {
+    if (error.code === 11000 && error.keyPattern?.email) return subscriptionAccepted(res);
     next(error);
   }
 };

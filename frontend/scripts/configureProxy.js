@@ -2,8 +2,11 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import process from 'node:process';
 
-export function configureProxy(redirects, backendUrl) {
-  if (!backendUrl) return redirects;
+export function configureProxy(redirects, backendUrl, { required = false } = {}) {
+  if (!backendUrl || (typeof backendUrl === 'string' && !backendUrl.trim())) {
+    if (required) throw new Error('NETLIFY_BACKEND_URL es obligatoria en los builds de Netlify.');
+    return redirects;
+  }
   let target;
   try {
     target = new URL(backendUrl);
@@ -36,5 +39,10 @@ export function configureProxy(redirects, backendUrl) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const file = new URL('../dist/_redirects', import.meta.url);
   const redirects = await readFile(file, 'utf8');
-  await writeFile(file, configureProxy(redirects, process.env.NETLIFY_BACKEND_URL));
+  await writeFile(
+    file,
+    configureProxy(redirects, process.env.NETLIFY_BACKEND_URL, {
+      required: process.env.NETLIFY === 'true',
+    }),
+  );
 }

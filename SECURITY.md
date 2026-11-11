@@ -10,6 +10,9 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+- **Boletín público:** las solicitudes válidas nuevas, repetidas y reactivadas devuelven el mismo estado y mensaje, también ante inserciones concurrentes del mismo correo. Los errores de almacenamiento siguen siendo errores; no se garantiza igualdad de tiempos de respuesta.
+- **Identidad de invitados:** controlador y servicio de checkout validan el nombre (máximo 120 caracteres, sin controles ni caracteres de formato) antes de reservar inventario. La salida a WhatsApp limita y limpia nombres antiguos sin modificar pedidos históricos.
+
 - **Fichas en TechBot:** solo se enlazan productos cuyos nombres aparecen en la respuesta y pertenecen al catálogo consultado. El servidor limita los IDs, vuelve a consultar productos activos, serializa campos públicos y descuenta reservas. El historial guarda IDs, no copias de precios; al leerlo se actualizan las fichas y se omiten productos archivados. La disponibilidad final se comprueba durante checkout.
 
 - **Enlaces de recuperación y activación:** el destino procede de `FRONTEND_URL` o, en producción, de `APP_URL` como respaldo. Se validan protocolo, credenciales y ausencia de query/fragmento; producción requiere HTTPS. Si falta una URL válida, recuperación conserva su respuesta genérica y no genera un token ni utiliza el encabezado `Host`.

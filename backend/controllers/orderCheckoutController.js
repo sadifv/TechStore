@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const crypto = require('node:crypto');
-const { isSingleEmail } = require('../services/emailAddress');
+const { normalizeGuestInfo } = require('../services/guestInfo');
 const { getWhatsappPhone, buildWhatsappOrderUrl } = require('../config/whatsapp');
 const GUEST_MAX_UNITS_PER_PRODUCT = 5;
 const GUEST_MAX_UNITS_PER_ORDER = 20;
@@ -102,21 +102,11 @@ const createOrder = async (req, res, next) => {
         success: false,
         error: `Los pedidos como invitado admiten hasta ${GUEST_MAX_UNITS_PER_ORDER} unidades en total.`,
       });
-    if (
-      !userId &&
-      (typeof guestInfo?.name !== 'string' ||
-        !guestInfo.name.trim() ||
-        typeof guestInfo?.email !== 'string' ||
-        !isSingleEmail(guestInfo.email.trim()))
-    )
-      return res.status(400).json({
-        success: false,
-        error: 'Para compras como invitado se requiere nombre y correo válido.',
-      });
+    const normalizedGuestInfo = userId ? undefined : normalizeGuestInfo(guestInfo);
     const result = await createCheckout({
       items: [...normalized].map(([productId, quantity]) => ({ productId, quantity })),
       userId,
-      guestInfo,
+      guestInfo: normalizedGuestInfo,
       shippingAddress,
       savedAddressId,
       couponCode,

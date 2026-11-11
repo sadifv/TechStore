@@ -53,6 +53,7 @@ export default function CheckoutDialog({
                 name="guestName"
                 className="form-control"
                 placeholder="Ej. Juan Pérez"
+                maxLength={120}
                 required
               />
             </p>

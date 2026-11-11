@@ -22,3 +22,13 @@ test('build proxy changes only API/uploads destinations and preserves the final 
   }
   assert.throws(() => configureProxy('/* /index.html 200', 'https://backend.example.invalid'));
 });
+
+test('Netlify requires an explicit backend origin while local builds retain the fallback', () => {
+  const redirects = 'local fallback';
+  assert.equal(configureProxy(redirects, undefined), redirects);
+  assert.throws(
+    () => configureProxy(redirects, undefined, { required: true }),
+    /NETLIFY_BACKEND_URL/,
+  );
+  assert.throws(() => configureProxy(redirects, '   ', { required: true }), /NETLIFY_BACKEND_URL/);
+});

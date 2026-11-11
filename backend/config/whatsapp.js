@@ -1,3 +1,5 @@
+const { whatsappBuyerName } = require('../services/guestInfo');
+
 const getWhatsappPhone = () => {
   const phone = (process.env.WHATSAPP_BUSINESS_PHONE || '').trim();
   if (!/^\d{8,15}$/.test(phone)) {
@@ -12,7 +14,7 @@ const buildWhatsappOrderUrl = (order, buyer = {}) => {
   const message = [
     'Hola, quiero completar este pedido de TechStore:',
     `Pedido: ${order._id}`,
-    `Nombre: ${order.guestInfo?.name || buyer.name || 'Cliente'}`,
+    `Nombre: ${whatsappBuyerName(order.guestInfo?.name || buyer.name)}`,
     `Correo: ${order.guestInfo?.email || buyer.email || 'No proporcionado'}`,
     ...(order.shippingAddressProvided
       ? [

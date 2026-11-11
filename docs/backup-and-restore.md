@@ -6,6 +6,10 @@ Responsable de ejecución y custodia: propietario de TechStore. Este procedimien
 
 Objetivo operativo propuesto: una copia diaria, 7 diarias y 4 semanales, en almacenamiento cifrado separado del equipo y de Atlas. Esto limita la pérdida a un máximo de 24 horas si se cumple la frecuencia. El tiempo de recuperación se mide en cada ensayo; todavía no se establece un tiempo garantizado.
 
+**Estado de verificación:** pendiente. Este repositorio no contiene evidencia de una copia reciente ni de una restauración aceptada. No interpretar este procedimiento ni las pruebas de integración como prueba de que los respaldos de producción funcionan.
+
+Objetivos propuestos para aprobación operativa: RPO de 24 horas (pérdida de datos tolerada) y RTO de 4 horas (tiempo hasta restaurar y verificar el servicio). Son objetivos, no garantías ni resultados medidos. El propietario debe confirmar que encajan con el negocio y contrastarlos con un ensayo real antes de declararlos cumplidos.
+
 ## Preparación
 
 1. Instalar MongoDB Database Tools y mongosh en una máquina controlada. Registrar sus versiones y la versión/FCV del servidor. Restaurar en una versión mayor o FCV compatible con la de origen.
@@ -59,6 +63,26 @@ Requiere una autorización independiente. Restaurar primero en un destino nuevo 
 ## Registro de ejecución
 
 Guardar fuera del repositorio y sin datos personales: operador, autorización, fecha UTC, cluster/base origen, versión/FCV y herramientas, ventana sin escrituras, archivo/tamaño/SHA-256, ubicación cifrada, conteos e índices, destino de ensayo, resultado, tiempo de recuperación, diferencias justificadas y próxima verificación. Si falta cualquiera de las comprobaciones de aceptación, marcar el ensayo como pendiente o fallido.
+
+Plantilla de registro (completar en el almacenamiento operativo privado):
+
+```text
+Estado: PENDIENTE / FALLIDO / ACEPTADO
+Operador y autorización:
+Fecha UTC y origen verificado:
+Versiones / FCV / herramientas:
+Ventana sin escrituras:
+Copia: identificador, tamaño, SHA-256 y ubicación cifrada:
+Retención configurada y copia más reciente comprobada:
+Destino aislado de restauración:
+Inicio y fin de restauración y validación:
+Conteos e índices comparados:
+Comprobación de pedidos, inventario e imágenes:
+Diferencias justificadas:
+RPO observado / RTO medido:
+Objetivos aprobados y cumplimiento:
+Próximo ensayo y responsable:
+```
 
 ## Referencias
 

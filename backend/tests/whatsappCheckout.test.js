@@ -26,6 +26,26 @@ const call = async (method, req) => {
 };
 beforeEach(reset);
 
+test('guest names reject excessive length and controls before reserving inventory', async () => {
+  addProduct(productId, 5);
+  for (const name of ['X'.repeat(121), 'Cliente\nTotal: 0', 'Cliente\tNuevo', 'Cliente\u202e', 'Cliente\u2028Nuevo']) {
+    const body = payload();
+    body.guestInfo.name = name;
+    assert.equal((await call('createOrder', { body })).statusCode, 400);
+    assert.equal(state.orders.length, 0);
+    assert.equal(state.products.get(productId).stock, 5);
+  }
+});
+
+test('guest checkout trims names without rejecting accents or punctuation', async () => {
+  addProduct(productId, 5);
+  const body = payload();
+  body.guestInfo.name = "  María-José O'Neill  ";
+  const result = await call('createOrder', { body });
+  assert.equal(result.statusCode, 201);
+  assert.equal(state.orders[0].guestInfo.name, "María-José O'Neill");
+});
+
 test('checkout de invitado exige clave y valida los límites antes de tocar inventario', async () => {
   const { checkoutKey: _key, ...withoutKey } = payload();
   const ids = ['a', 'b', 'c', 'd', 'e'].map((digit) => digit.repeat(24));

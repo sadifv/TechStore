@@ -9,6 +9,7 @@ const { getEffectivePrice } = require('./productPricing');
 const { isProductArchived } = require('./productAvailability');
 const { orderEvent } = require('./orderAudit');
 const { reconcileOrderCart } = require('./orderPayment');
+const { normalizeGuestInfo } = require('./guestInfo');
 const invalid = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode });
 
 async function createCheckout({
@@ -21,6 +22,7 @@ async function createCheckout({
   checkoutKey,
   checkoutRequestHash,
 }) {
+  if (!userId) guestInfo = normalizeGuestInfo(guestInfo);
   const lease = await acquireProductReservationLocks(items.map((item) => item.productId));
   try {
     return await withInventoryTransaction(
