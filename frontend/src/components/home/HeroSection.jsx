@@ -6,7 +6,7 @@ import { placeholder } from '../../config/storeCatalog.js';
 const heroPointerMotion =
   '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)';
 
-export default function HeroSection({ product }) {
+export default function HeroSection({ product, signedIn }) {
   const image = product?.image !== placeholder && product?.image;
   function moveImage(event) {
     if (event.pointerType !== 'mouse' || !window.matchMedia(heroPointerMotion).matches) return;
@@ -45,7 +45,7 @@ export default function HeroSection({ product }) {
           </a>
         </nav>
       </article>
-      <HeroMascot />
+      <HeroMascot signedIn={signedIn} />
       {image && (
         <figure className="hero-media" onPointerMove={moveImage} onPointerLeave={resetImage}>
           <a className="hero-photo" href={`/producto/${product._id}`}>

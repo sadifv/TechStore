@@ -13,7 +13,10 @@ export default function HomeBelowFold({ user }) {
   return (
     <>
       <BuildExperience />
-      <AiAssistant key={user?.id || user?._id || user?.email || 'guest'} user={user} />
+      <AiAssistant
+        key={user?.id || user?._id || user?.email || 'guest'}
+        user={user}
+      />
       <NewsletterSection />
       <ContactSection />
     </>

@@ -10,6 +10,8 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+- **Fichas en TechBot:** solo se enlazan productos cuyos nombres aparecen en la respuesta y pertenecen al catálogo consultado. El servidor limita los IDs, vuelve a consultar productos activos, serializa campos públicos y descuenta reservas. El historial guarda IDs, no copias de precios; al leerlo se actualizan las fichas y se omiten productos archivados. La disponibilidad final se comprueba durante checkout.
+
 - **Enlaces de recuperación y activación:** el destino procede de `FRONTEND_URL` o, en producción, de `APP_URL` como respaldo. Se validan protocolo, credenciales y ausencia de query/fragmento; producción requiere HTTPS. Si falta una URL válida, recuperación conserva su respuesta genérica y no genera un token ni utiliza el encabezado `Host`.
 
 - **Vistas previas de imágenes:** la CSP de Netlify permite `blob:` únicamente en `img-src` para archivos seleccionados localmente. No habilita scripts blob ni scripts inline; una prueba de Chromium aplica la cabecera real para verificar este límite.

@@ -4,6 +4,7 @@ const logger = require('../config/logger');
 const Product = require('../models/Product');
 const { activeProductFilter } = require('../services/productAvailability');
 const { toPublicProduct } = require('../services/productPricing');
+const { findMentionedProductIds, resolveAiProducts } = require('../services/aiProducts');
 
 const processAiChat = async (req, res) => {
   try {
@@ -70,7 +71,7 @@ ${catalogContext}`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...sessionHistory,
+      ...sessionHistory.map(({ role, content }) => ({ role, content })),
       { role: 'user', content: normalizedMessage },
     ];
 
@@ -92,19 +93,18 @@ ${catalogContext}`;
       });
     }
 
-    if (!req.session.chatHistory) req.session.chatHistory = [];
-    req.session.chatHistory.push(
+    const mentionedIds = findMentionedProductIds(aiReply, products);
+    const mentionedProducts = await resolveAiProducts(mentionedIds);
+    const productIds = mentionedProducts.map((product) => String(product._id));
+    req.session.chatHistory = [
+      ...sessionHistory,
       { role: 'user', content: normalizedMessage },
-      { role: 'assistant', content: aiReply },
-    );
-
-    if (req.session.chatHistory.length > 20) {
-      req.session.chatHistory = req.session.chatHistory.slice(-20);
-    }
+      { role: 'assistant', content: aiReply, productIds },
+    ].slice(-20);
 
     logger.info(`El asistente respondió correctamente. Productos consultados: ${products.length}.`);
 
-    res.status(200).json({ success: true, reply: aiReply });
+    res.status(200).json({ success: true, reply: aiReply, products: mentionedProducts });
   } catch (error) {
     const isTimeout =
       error.name === 'APIConnectionTimeoutError' ||
@@ -137,7 +137,28 @@ ${catalogContext}`;
 
 const getChatHistory = async (req, res) => {
   try {
-    const history = req.session.chatHistory || [];
+    const entries = Array.isArray(req.session.chatHistory)
+      ? req.session.chatHistory
+          .filter(
+            (entry) =>
+              ['user', 'assistant'].includes(entry?.role) && typeof entry.content === 'string',
+          )
+          .slice(-20)
+      : [];
+    const ids = entries.flatMap((entry) =>
+      entry.role === 'assistant' && Array.isArray(entry.productIds)
+        ? entry.productIds.slice(0, 3)
+        : [],
+    );
+    const products = await resolveAiProducts(ids);
+    const history = entries.map(({ role, content, productIds }) => ({
+      role,
+      content,
+      products:
+        role === 'assistant' && Array.isArray(productIds)
+          ? products.filter((product) => productIds.slice(0, 3).includes(String(product._id)))
+          : [],
+    }));
     res.status(200).json({ success: true, history });
   } catch (error) {
     logger.error(`Error al obtener historial: ${error.message}`);

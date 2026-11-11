@@ -1,5 +1,101 @@
 import { test, expect, product } from './fixtures.js';
 
+test('TechBot conserva una respuesta nueva cuando el historial inicial llega tarde', async ({ page, mock }) => {
+  mock.role = 'user';
+  let releaseHistory;
+  mock.handlers.set('GET /api/ai/history', (route) => new Promise((resolve) => {
+    releaseHistory = async () => {
+      await route.fulfill({ json: {
+        success: true,
+        history: [{ role: 'assistant', content: 'Historial anterior de prueba' }],
+      } });
+      resolve();
+    };
+  }));
+  mock.handlers.set('POST /api/ai/chat', (route) =>
+    route.fulfill({ json: { success: true, reply: 'Respuesta nueva de prueba', products: [] } }),
+  );
+  await page.goto('/#ai-assistant');
+  await expect.poll(() => Boolean(releaseHistory)).toBe(true);
+  await page.locator('#ai-chat-input').fill('Consulta nueva');
+  await page.locator('#ai-chat-form').getByRole('button', { name: 'Enviar mensaje' }).click();
+  await expect(page.getByText('Respuesta nueva de prueba', { exact: true }).last()).toBeVisible();
+  await releaseHistory();
+  await expect(page.locator('.ai-history').getByText('Respuesta nueva de prueba')).toBeVisible();
+  await expect(page.locator('.ai-history').getByText('Historial anterior de prueba')).toHaveCount(0);
+});
+
+test('TechBot permite editar una sugerencia y muestra el producto de la respuesta', async ({
+  page,
+  mock,
+}) => {
+  mock.role = 'user';
+  mock.handlers.set('GET /api/ai/history', (route) =>
+    route.fulfill({ json: { success: true, history: [] } }),
+  );
+  mock.handlers.set('POST /api/ai/chat', (route) =>
+    route.fulfill({
+      json: {
+        success: true,
+        reply: 'Puedes consultar el Monitor de prueba.',
+        products: [product],
+      },
+    }),
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#ai-assistant');
+  const input = page.locator('#ai-chat-input');
+  await expect(page.getByRole('button', { name: 'Limpiar conversación' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Quiero una laptop' }).click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue('Busco una laptop para ___ y mi presupuesto es de $___');
+  expect(mock.requests.filter(({ key }) => key === 'POST /api/ai/chat')).toEqual([]);
+  await input.fill('Busco un monitor');
+  await page.locator('#ai-chat-form').getByRole('button', { name: 'Enviar mensaje' }).click();
+  await expect(page.locator('.ai-mentioned-products a')).toHaveAttribute(
+    'href',
+    `/producto/${product._id}`,
+  );
+  await expect(page.getByRole('button', { name: 'Limpiar conversación' })).toBeVisible();
+  await expect(page.locator('.shop-prompts')).toHaveCount(0);
+  const box = await input.boundingBox();
+  expect(box.width).toBeGreaterThan(50);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('TechBot pregunta por uso y presupuesto sin recomendar productos a invitados', async ({
+  page,
+  mock,
+}) => {
+  await page.goto('/#ai-assistant');
+  const preview = page.locator('.techbot-preview');
+  await expect(preview.getByRole('heading', { name: 'Ejemplo de conversación' })).toBeVisible();
+  await expect(preview.getByText('¿Qué programas vas a usar y cuál es tu presupuesto máximo?')).toBeVisible();
+  await expect(preview.locator('.techbot-example-product')).toHaveCount(0);
+  await expect(preview.getByRole('link', { name: 'Crear cuenta', exact: true })).toHaveAttribute(
+    'href',
+    '/register?next=%2F%23ai-assistant',
+  );
+  await expect(page.locator('#ai-chat-input')).toHaveCount(0);
+  expect(mock.requests.filter(({ key }) => key.includes('/api/ai/'))).toEqual([]);
+});
+
+test('TechBot conserva el chat y la carga de historial para usuarios con sesión', async ({
+  page,
+  mock,
+}) => {
+  mock.role = 'user';
+  mock.handlers.set('GET /api/ai/history', (route) =>
+    route.fulfill({ json: { success: true, history: [] } }),
+  );
+  await page.goto('/#ai-assistant');
+  await expect(page.locator('#ai-chat-input')).toBeVisible();
+  await expect(page.locator('.techbot-preview')).toHaveCount(0);
+  await expect
+    .poll(() => mock.requests.some(({ key }) => key === 'GET /api/ai/history'))
+    .toBe(true);
+});
+
 test('login de cliente envía credenciales y respeta el destino local', async ({ page, mock }) => {
   let submitted;
   mock.handlers.set('POST /api/auth/login', async (route) => {

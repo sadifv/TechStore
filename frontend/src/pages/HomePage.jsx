@@ -101,7 +101,10 @@ export default function HomePage({ user }) {
 
   return (
     <>
-      <HeroSection product={products.find((product) => product.image && product.image !== placeholder)} />
+      <HeroSection
+        product={products.find((product) => product.image && product.image !== placeholder)}
+        signedIn={Boolean(user)}
+      />
       <section
         id="destacados"
         className="products-section editorial-section"

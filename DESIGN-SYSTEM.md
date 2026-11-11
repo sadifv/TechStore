@@ -30,6 +30,10 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+- **TechBot sin sesión:** presenta una conversación de ejemplo que termina preguntando por uso y presupuesto, sin recomendaciones ni fichas de producto anticipadas. El chat real y su historial requieren sesión. El registro y el login conservan el retorno a la sección.
+
+- **TechBot con sesión:** las sugerencias iniciales rellenan el campo sin enviar. Solo el historial desplaza sus mensajes; el compositor queda fuera de ese contenedor. Las fichas corresponden a nombres mencionados en la respuesta y a IDs resueltos por el servidor; al recuperar el historial se consultan de nuevo precio, reservas y estado de archivado.
+
 - **Contacto:** WhatsApp es el canal principal, seguido por correo, ubicación y horario. El formulario identifica su finalidad y el correo como canal de respuesta. Una línea con el acento del tema entra al desplazarse en navegadores compatibles; con movimiento reducido permanece estática.
 
 - **Escena del configurador:** `BuildExperience.jsx` usa una ilustración SVG de placa, procesador y RAM. El desplazamiento ensambla las piezas en escritorio mediante una línea de tiempo CSS. Móvil, movimiento reducido y navegadores sin soporte muestran la composición ensamblada. Su enlace abre `/arma-tu-equipo`; la escena no determina compatibilidad ni disponibilidad.

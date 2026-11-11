@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function HeroMascot() {
+export default function HeroMascot({ signedIn = false }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -50,13 +50,15 @@ export default function HeroMascot() {
           </g>
         </svg>
         <span className="hero-mascot-preview" aria-hidden="true" hidden={open}>
-          ¡Hola! ¿Buscas algo?
+          {signedIn ? '¡Hola! ¿Buscas algo?' : 'Inicia sesión para conversar'}
         </span>
       </button>
       <p id="hero-mascot-greeting" className="hero-mascot-greeting" hidden={!open}>
-        ¡Hola! ¿Buscas algo?{' '}
+        {signedIn
+          ? '¡Hola! Cuéntame qué estás buscando.'
+          : '¡Hola! Inicia sesión para conversar conmigo.'}{' '}
         <a href="#ai-assistant" onClick={() => setOpen(false)}>
-          Abrir TechBot
+          {signedIn ? 'Abrir TechBot' : 'Conocer TechBot'}
         </a>
       </p>
     </aside>
