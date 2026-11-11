@@ -1,5 +1,6 @@
 import HeroBackground from './HeroBackground.jsx';
 import HeroMascot from './HeroMascot.jsx';
+import PurchaseGuide from './PurchaseGuide.jsx';
 import { backendAssetUrl } from '../../services/api.js';
 import { placeholder } from '../../config/storeCatalog.js';
 
@@ -43,6 +44,7 @@ export default function HeroSection({ product, signedIn }) {
           <a href="/catalogo" className="btn btn-primary">
             Explorar catálogo <span aria-hidden="true">→</span>
           </a>
+          <PurchaseGuide />
         </nav>
       </article>
       <HeroMascot signedIn={signedIn} />
