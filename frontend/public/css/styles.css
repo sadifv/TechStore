@@ -2315,6 +2315,7 @@ label.ai-sr-only {
   padding-block: 32px;
 }
 .contact-section {
+  scroll-margin-top: calc(76px + var(--space-6));
   margin: 0 auto;
   padding: var(--space-16) 0;
   max-width: 1240px;
@@ -2363,27 +2364,84 @@ label.ai-sr-only {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 .contact-header {
-  text-align: center;
+  text-align: left;
   margin-bottom: var(--space-12);
 }
-.contact-header h2 {
+.contact-section .contact-header h2 {
   color: var(--color-secondary);
   margin: 0 0 var(--space-3) 0;
-  font-weight: 800;
-  font-size: 27px;
-  letter-spacing: -0.8px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  font-size: clamp(2.2rem, 4vw, 3.7rem);
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  text-align: left;
+  max-width: 23ch;
 }
 .contact-header p {
   font-size: var(--font-size-lg);
   color: var(--color-text-muted);
-  margin: 0 auto;
+  margin: 0;
   max-width: 500px;
 }
+.contact-header .editorial-kicker {
+  font-size: 0.78rem;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+.contact-header > .editorial-kicker {
+  font-size: 0.78rem;
+}
 .contact-grid {
+  position: relative;
   display: grid;
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: 1fr;
   gap: 28px;
+  padding-top: 1.5rem;
+}
+.contact-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--editorial-accent);
+  transform-origin: left;
+  pointer-events: none;
+}
+.contact-channel-header,
+.contact-form-header {
+  position: relative;
+}
+.contact-channel-header h3,
+.contact-form-header h3 {
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
+  line-height: 1.25;
+  margin-bottom: 0.75rem;
+}
+.contact-channel-header p {
+  color: #ffffff;
+  margin: 0;
+  max-width: 36ch;
+}
+.contact-channel-header h3 {
+  color: #ffffff;
+}
+.contact-form-header p {
+  color: var(--color-text-muted);
+  margin: 0;
+  max-width: 48ch;
+}
+:root .contact-info .contact-whatsapp {
+  background: var(--editorial-accent);
+  border-color: var(--editorial-accent);
+  color: #0f172a;
+  align-self: flex-start;
+  min-height: 48px;
+  white-space: normal;
+}
+:root .contact-info .contact-whatsapp:hover {
+  background: color-mix(in srgb, var(--editorial-accent) 88%, white);
 }
 .contact-info {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
@@ -2422,6 +2480,21 @@ label.ai-sr-only {
   display: flex;
   align-items: flex-start;
   gap: var(--space-4);
+}
+.contact-email-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem var(--space-4);
+}
+.contact-email-item > div {
+  display: contents;
+}
+.contact-email-item h3 {
+  margin: 0;
+}
+.contact-email-item a {
+  grid-column: 1 / -1;
 }
 .contact-info-item i {
   font-size: 1.5rem;
@@ -2480,13 +2553,14 @@ label.ai-sr-only {
   display: flex;
   gap: var(--space-3);
   padding-top: var(--space-6);
+  margin-top: auto;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   position: relative;
   z-index: 1;
 }
 .contact-socials a {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2494,7 +2568,7 @@ label.ai-sr-only {
   border-radius: var(--radius-md);
   color: #ffffff;
   font-size: 1.25rem;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
   backdrop-filter: blur(8px);
 }
 .contact-socials a:hover {
@@ -2517,11 +2591,14 @@ label.ai-sr-only {
   color: var(--color-text);
   background-color: var(--color-background);
   outline: none;
-  transition: all var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   resize: vertical;
   border-radius: 10px;
   min-height: var(--control-height);
-  font-size: 14px;
+  font-size: 16px;
   padding: 10px 14px;
   border: 1px solid var(--color-border);
 }
@@ -2531,11 +2608,14 @@ label.ai-sr-only {
   color: var(--color-text);
   background-color: var(--color-background);
   outline: none;
-  transition: all var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   resize: vertical;
   border-radius: 10px;
   min-height: var(--control-height);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
   padding: 10px 14px;
   border: 1px solid var(--color-border);
@@ -4482,6 +4562,130 @@ dialog#checkout-modal {
   }
 }
 
+
+/* Escena del configurador. La versión base muestra las piezas ensambladas. */
+.build-experience {
+  color: var(--color-text);
+  background: var(--editorial-wash, var(--color-background));
+  border-block: 1px solid var(--color-border);
+}
+.build-experience-stage {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: clamp(2rem, 6vw, 5rem) max(1.25rem, 5vw);
+  display: grid;
+  align-items: center;
+  gap: 1.5rem;
+}
+.build-experience-copy h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.3rem, 4.3vw, 4.8rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  margin-block: 1rem;
+}
+.build-experience-copy > p:not(.editorial-kicker) {
+  max-width: 36ch;
+  margin-bottom: 1.5rem;
+}
+.build-experience-art {
+  margin: 0;
+  min-width: 0;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 67%);
+}
+.build-experience-art svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 18px 16px color-mix(in srgb, var(--color-secondary) 15%, transparent));
+}
+.build-board-edge { fill: var(--color-primary); }
+.build-board { fill: var(--color-secondary); }
+.build-traces { stroke: var(--editorial-accent); opacity: 0.5; }
+.build-board-metal { fill: #475569; }
+.build-socket { fill: #0f172a; stroke: #94a3b8; stroke-width: 3; }
+.build-slots { fill: #020617; }
+.build-fasteners { fill: #cbd5e1; }
+.build-board-label { fill: #cbd5e1; font: 11px monospace; letter-spacing: 1px; }
+.build-chip-base { fill: var(--editorial-accent); }
+.build-chip-metal { fill: #e2e8f0; stroke: #94a3b8; stroke-width: 2; }
+.build-chip-engraving { stroke: #334155; }
+.build-chip-node { fill: var(--color-primary); }
+.build-ram { fill: var(--color-primary); stroke: #94a3b8; }
+.build-ram-chips { fill: #0f172a; }
+.build-ram-light { stroke: var(--editorial-accent); }
+.build-experience-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.build-experience-steps li {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+}
+.build-experience-steps span {
+  display: block;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+.build-experience-steps strong { display: block; }
+.build-experience-steps p { font-size: 0.875rem; margin-top: 0.5rem; }
+
+@media (min-width: 900px) {
+  .build-experience-stage {
+    grid-template-columns: 1fr 1.15fr;
+  }
+  .build-experience-steps {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+    .build-experience {
+      height: 220svh;
+      view-timeline-name: --build-scene;
+      view-timeline-axis: block;
+    }
+    .build-experience-stage {
+      position: sticky;
+      top: 0;
+      min-height: 100svh;
+      box-sizing: border-box;
+    }
+    .build-piece-board,
+    .build-piece-cpu,
+    .build-piece-memory {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --build-scene;
+      animation-range: entry 90% exit 60%;
+    }
+    .build-piece-board { animation-name: build-board-assemble; }
+    .build-piece-cpu { animation-name: build-cpu-assemble; }
+    .build-piece-memory { animation-name: build-memory-assemble; }
+    @keyframes build-board-assemble {
+      from { transform: translateY(65px) rotate(-12deg) scale(0.88); }
+      70%, to { transform: none; }
+    }
+    @keyframes build-cpu-assemble {
+      from { transform: translate(-100px, -130px) rotate(-20deg) scale(1.6); }
+      60%, to { transform: none; }
+    }
+    @keyframes build-memory-assemble {
+      from { transform: translate(100px, -95px) rotate(18deg) scale(1.2); }
+      80%, to { transform: none; }
+    }
+  }
+}
+
 /* 18. Adaptaciones progresivas · tablet y escritorio
 Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 
@@ -6353,6 +6557,20 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .contact-grid::before {
+      animation: contact-line-enter linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+    @keyframes contact-line-enter {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
     }
   }
 }

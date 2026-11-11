@@ -105,16 +105,22 @@ export function ContactSection() {
   return (
     <section id="contacto" className="contact-section" aria-labelledby="contact-title">
       <header className="contact-header">
-        <h2 id="contact-title">Contáctanos</h2>
-        <p>¿Tienes alguna pregunta? Estamos aquí para ayudarte</p>
+        <p className="editorial-kicker">Hablemos de tu próximo equipo</p>
+        <h2 id="contact-title">¿Encontraste lo que buscabas? Hablemos.</h2>
+        <p>Consulta sobre un producto o coordina tu pedido con TechStore.</p>
       </header>
       <div className="contact-grid">
         <aside className="contact-info" aria-label="Información de contacto">
+          <header className="contact-channel-header">
+            <h3>Conversemos por WhatsApp</h3>
+            <p>Cuéntanos qué producto te interesa y te ayudamos a preparar tu pedido.</p>
+          </header>
+          <WhatsappLink className="btn contact-whatsapp">Abrir WhatsApp</WhatsappLink>
           <ul className="contact-info-list">
-            <li className="contact-info-item">
+            <li className="contact-info-item contact-email-item">
               <i className="ri-mail-line" aria-hidden="true" />
               <div>
-                <h3>Email</h3>
+                <h3>Correo electrónico</h3>
                 <a href="mailto:sadiflores20201@gmail.com">sadiflores20201@gmail.com</a>
               </div>
             </li>
@@ -157,10 +163,19 @@ export function ContactSection() {
             >
               <i className="ri-instagram-line" aria-hidden="true" />
             </a>
-            <WhatsappLink />
           </nav>
         </aside>
-        <form id="contact-form" className="contact-form" onSubmit={sendContact}>
+        <form
+          id="contact-form"
+          className="contact-form"
+          onSubmit={sendContact}
+          aria-labelledby="contact-form-title"
+          aria-busy={busy}
+        >
+          <header className="contact-form-header">
+            <h3 id="contact-form-title">Déjanos tu consulta</h3>
+            <p>Si prefieres escribirnos aquí, responderemos al correo que indiques.</p>
+          </header>
           <fieldset className="form-field">
             <legend className="sr-only">Nombre</legend>
             <label htmlFor="contact-name">Nombre</label>
@@ -176,8 +191,8 @@ export function ContactSection() {
             />
           </fieldset>
           <fieldset className="form-field">
-            <legend className="sr-only">Email</legend>
-            <label htmlFor="contact-email">Email</label>
+            <legend className="sr-only">Correo electrónico</legend>
+            <label htmlFor="contact-email">Correo electrónico</label>
             <input
               type="email"
               id="contact-email"

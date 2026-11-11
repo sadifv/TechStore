@@ -1,6 +1,7 @@
 import AiAssistant from '../assistant/AiAssistant.jsx';
 import { ContactSection, NewsletterSection } from './FormsSections.jsx';
 import { useEffect } from 'react';
+import BuildExperience from './BuildExperience.jsx';
 
 export default function HomeBelowFold({ user }) {
   useEffect(() => {
@@ -11,6 +12,7 @@ export default function HomeBelowFold({ user }) {
 
   return (
     <>
+      <BuildExperience />
       <AiAssistant key={user?.id || user?._id || user?.email || 'guest'} user={user} />
       <NewsletterSection />
       <ContactSection />
