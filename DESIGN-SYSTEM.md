@@ -30,6 +30,8 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+- **Mi cuenta:** presenta datos informativos y accesos a pedidos, favoritos y direcciones. Las compras aparecen primero, con referencia, fecha, estado, pago y total visibles; un desplegable nativo permite consultar productos, seguimiento y acciones. Favoritos muestra grupos de ocho con contador y mueve el foco al primer producto revelado. Se conservan los permisos y las confirmaciones de las acciones existentes.
+
 - **Cómo comprar:** el acceso abre una presentación de TechStore y cuatro pasos de compra en un diálogo nativo. La narración opcional usa cinco MP3 locales en español ecuatoriano, sin reproducción automática ni descarga al abrir. Pausar conserva la posición y reanudar continúa desde ella; cambiar de escena, ocultar la pestaña o cerrar detiene el audio. Las escenas usan datos ficticios y no crean pedidos, reservan inventario ni abren WhatsApp. Texto y controles permanecen disponibles sin audio y con movimiento reducido. Se conserva el foco y la adaptación de los tres temas. Procedencia y transcripciones en `docs/frontend/guia-compra-audio.md`.
 
 - **TechBot sin sesión:** presenta una conversación de ejemplo que termina preguntando por uso y presupuesto, sin recomendaciones ni fichas de producto anticipadas. El chat real y su historial requieren sesión. El registro y el login conservan el retorno a la sección.

@@ -1,9 +1,12 @@
 import { useFavorites } from './FavoritesContext.js';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ProductCard from '../catalog/ProductCard.jsx';
 import FavoriteButton from './FavoriteButton.jsx';
 export default function FavoritesSection() {
   const f = useFavorites();
+  const [visibleCount, setVisibleCount] = useState(8);
+  const list = useRef(null);
+  const previousVisibleCount = useRef(8);
   const heading = useRef(null);
   const previousCount = useRef(0);
   const count = f?.items.length || 0;
@@ -11,6 +14,12 @@ export default function FavoritesSection() {
     if (previousCount.current > count && document.activeElement === document.body) heading.current?.focus();
     previousCount.current = count;
   }, [count]);
+  useEffect(() => {
+    if (visibleCount > previousVisibleCount.current) {
+      list.current?.children[previousVisibleCount.current]?.querySelector('a, button')?.focus();
+    }
+    previousVisibleCount.current = visibleCount;
+  }, [visibleCount]);
   if (!f?.user) return null;
   return (
     <section className="favorites-section" aria-labelledby="favorites-heading">
@@ -32,8 +41,8 @@ export default function FavoritesSection() {
               Aún no tienes favoritos. <a href="/catalogo">Explorar catálogo</a>
             </p>
           )}
-          <ul className="products-grid">
-            {f.items.map((product) =>
+          <ul className="products-grid" ref={list}>
+            {f.items.slice(0, visibleCount).map((product) =>
               product.unavailable ? (
                 <li key={product._id}>
                   <article className="order-card">
@@ -46,6 +55,12 @@ export default function FavoritesSection() {
               ),
             )}
           </ul>
+          {count > 0 && <p role="status">Mostrando {Math.min(visibleCount, count)} de {count} favoritos.</p>}
+          {count > visibleCount && (
+            <button type="button" className="btn btn-outline" onClick={() => setVisibleCount((current) => current + 8)}>
+              Ver más favoritos
+            </button>
+          )}
         </>
       )}
     </section>

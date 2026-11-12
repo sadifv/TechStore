@@ -26,6 +26,11 @@ async function scrollCheckout(page, dialog, width, distance) {
         await page.evaluate(() => new Promise(requestAnimationFrame));
       }
       await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      // Stop swiping once the edge is reached instead of spending time on inert gestures.
+      const atEdge = await dialog.evaluate((element, direction) => direction > 0
+        ? element.scrollTop + element.clientHeight >= element.scrollHeight - 1
+        : element.scrollTop <= 0, direction);
+      if (atEdge) break;
     }
   } finally {
     await session.detach();

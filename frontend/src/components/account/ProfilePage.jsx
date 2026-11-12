@@ -5,7 +5,7 @@ import { formatCurrency } from './utils.js';
 import OrderTracking from './OrderTracking.jsx';
 import FavoritesSection from '../favorites/FavoritesSection.jsx';
 import AddressBookSection from './AddressBookSection.jsx';
-import { orderShippingLabel } from './orderTracking.js';
+import { orderPaymentLabel, orderShippingLabel } from './orderTracking.js';
 
 export function ProfilePage({ user }) {
   const [orders, setOrders] = useState(null);
@@ -27,10 +27,10 @@ export function ProfilePage({ user }) {
   }, [loadAttempt]);
   return (
     <section className="container profile-container" aria-labelledby="profile-heading">
-      <section className="profile-card">
-        <figure className="profile-avatar">
+      <header className="profile-card">
+        <span className="profile-avatar" aria-hidden="true">
           <i className="ri-user-3-line" aria-hidden="true" />
-        </figure>
+        </span>
         <article className="profile-details">
           <h1 id="profile-heading">Mi Cuenta</h1>
           <p>
@@ -40,11 +40,14 @@ export function ProfilePage({ user }) {
             <strong>Correo:</strong> {user?.email || '—'}
           </p>
         </article>
-      </section>
-      <section className="orders-section">
-        <FavoritesSection />
-        <AddressBookSection />
-        <h2>Historial de Compras</h2>
+        <nav className="profile-navigation" aria-label="Secciones de mi cuenta">
+          <a href="#profile-orders">Mis pedidos</a>
+          <a href="#favorites-heading">Favoritos</a>
+          <a href="#address-book-heading">Direcciones</a>
+        </nav>
+      </header>
+      <section className="orders-section" id="profile-orders" aria-labelledby="profile-orders-heading">
+        <h2 id="profile-orders-heading">Historial de Compras</h2>
         {orders === null && !error && <p className="orders-status">Cargando tus pedidos…</p>}
         {error && (
           <section aria-label="Error al cargar pedidos">
@@ -92,49 +95,64 @@ export function ProfilePage({ user }) {
                       {orderShippingLabel(order)}
                     </span>
                   </header>
-                  <ul className="order-body">
-                    {(order.items || []).map((item, index) => (
-                      <li
-                        className="order-item"
-                        key={`${item.product?._id || item.product || index}-${index}`}
-                      >
-                        <span>
-                          {getOrderItemName(item)} (×{item.quantity || 1})
-                        </span>
-                        <span>
-                          {formatCurrency(
-                            Number(item.price ?? item.product?.price ?? 0) *
-                              Number(item.quantity || 1),
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <footer className="order-footer">
-                    <span>
-                      Método:{' '}
-                      <strong>
-                        {order.paymentMethod === 'whatsapp' ? 'WhatsApp' : 'No disponible'}
-                      </strong>
-                    </span>
-                    <span className="order-total">
-                      Total: <strong>{formatCurrency(total)}</strong>
-                    </span>
-                  </footer>
-                  <OrderTracking
-                    order={order}
-                    onUpdate={(updated) =>
-                      setOrders((current) =>
-                        current.map((item) => (item._id === updated._id ? updated : item)),
-                      )
-                    }
-                  />
+                  <dl className="profile-order-summary">
+                    <div>
+                      <dt>Pago</dt>
+                      <dd>{orderPaymentLabel(order)}</dd>
+                    </div>
+                    <div>
+                      <dt>Total</dt>
+                      <dd>{formatCurrency(total)}</dd>
+                    </div>
+                  </dl>
+                  <details className="order-details">
+                    <summary>Ver detalles</summary>
+                    <ul className="order-body">
+                      {(order.items || []).map((item, index) => (
+                        <li
+                          className="order-item"
+                          key={`${item.product?._id || item.product || index}-${index}`}
+                        >
+                          <span>
+                            {getOrderItemName(item)} (×{item.quantity || 1})
+                          </span>
+                          <span>
+                            {formatCurrency(
+                              Number(item.price ?? item.product?.price ?? 0) *
+                                Number(item.quantity || 1),
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <footer className="order-footer">
+                      <span>
+                        Método:{' '}
+                        <strong>
+                          {order.paymentMethod === 'whatsapp' ? 'WhatsApp' : 'No disponible'}
+                        </strong>
+                      </span>
+                      <span className="order-total">
+                        Total: <strong>{formatCurrency(total)}</strong>
+                      </span>
+                    </footer>
+                    <OrderTracking
+                      order={order}
+                      onUpdate={(updated) =>
+                        setOrders((current) =>
+                          current.map((item) => (item._id === updated._id ? updated : item)),
+                        )
+                      }
+                    />
+                  </details>
                 </article>
               </li>
             );
           })}
         </ul>
       </section>
+      <FavoritesSection />
+      <AddressBookSection />
     </section>
   );
 }
