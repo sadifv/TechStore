@@ -208,7 +208,7 @@ export default function AddressBookSection() {
           setReload((n) => n + 1);
         }}
       >
-        Actualizar direcciones
+        Recargar direcciones
       </button>
       <p role="status">{message}</p>
     </section>

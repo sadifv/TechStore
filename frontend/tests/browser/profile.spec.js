@@ -27,7 +27,7 @@ for (const [theme, width] of [
     const favorites = Array.from({ length: 10 }, (_, index) => ({
       ...product,
       _id: index.toString(16).padStart(24, '0'),
-      name: `Favorito ${index + 1}`,
+      name: `Favorito ${index + 1}: Monitor ultrawide para trabajo y videojuegos con accesorios`,
     }));
     mock.handlers.set('GET /api/orders', (route) =>
       route.fulfill({ json: { success: true, orders: [order] } }),
@@ -60,7 +60,23 @@ for (const [theme, width] of [
     await page.locator('.order-details summary').click();
     await expect(card.getByRole('heading', { name: 'Seguimiento del pedido' })).not.toBeVisible();
     const favoritesSection = page.locator('.favorites-section');
-    await expect(favoritesSection.locator('.products-grid > li')).toHaveCount(8);
+    await expect(favoritesSection.locator('.products-grid > li')).toHaveCount(4);
+    const columns = await favoritesSection.locator('.products-grid').evaluate((element) =>
+      getComputedStyle(element).gridTemplateColumns.split(' ').length);
+    expect(columns).toBe(width < 521 ? 1 : 4);
+    await expect(page.getByRole('button', { name: 'Recargar direcciones', exact: true })).toBeVisible();
+    const addressReads = mock.requests.filter(({ key }) => key === 'GET /api/addresses').length;
+    await page.getByRole('button', { name: 'Recargar direcciones', exact: true }).click();
+    await expect.poll(() => mock.requests.filter(({ key }) => key === 'GET /api/addresses').length)
+      .toBe(addressReads + 1);
+    if (width === 1440) {
+      for (const [screenWidth, expectedColumns] of [[520, 1], [521, 2], [1000, 2], [1001, 4]]) {
+        await page.setViewportSize({ width: screenWidth, height: 844 });
+        await expect.poll(() => favoritesSection.locator('.products-grid').evaluate((element) =>
+          getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(expectedColumns);
+      }
+      await page.setViewportSize({ width, height: 844 });
+    }
     const contrast = await page
       .locator('.profile-details p')
       .first()
@@ -88,6 +104,10 @@ for (const [theme, width] of [
       fullPage: true,
       animations: 'disabled',
     });
+    await favoritesSection.getByRole('button', { name: /Ver más/ }).click();
+    await expect(favoritesSection.locator('.products-grid > li')).toHaveCount(8);
+    await expect(favoritesSection.getByRole('status')).toContainText('8 de 10');
+    await expect(favoritesSection.locator('.products-grid > li').nth(4).locator('a').first()).toBeFocused();
     await favoritesSection.getByRole('button', { name: /Ver más/ }).click();
     await expect(favoritesSection.locator('.products-grid > li')).toHaveCount(10);
     await expect(favoritesSection.getByRole('status')).toContainText('10 de 10');

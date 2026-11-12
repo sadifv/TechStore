@@ -2,16 +2,20 @@ import { useFavorites } from './FavoritesContext.js';
 import { useEffect, useRef, useState } from 'react';
 import ProductCard from '../catalog/ProductCard.jsx';
 import FavoriteButton from './FavoriteButton.jsx';
+
+const FAVORITES_PAGE_SIZE = 4;
+
 export default function FavoritesSection() {
   const f = useFavorites();
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [visibleCount, setVisibleCount] = useState(FAVORITES_PAGE_SIZE);
   const list = useRef(null);
-  const previousVisibleCount = useRef(8);
+  const previousVisibleCount = useRef(FAVORITES_PAGE_SIZE);
   const heading = useRef(null);
   const previousCount = useRef(0);
   const count = f?.items.length || 0;
   useEffect(() => {
-    if (previousCount.current > count && document.activeElement === document.body) heading.current?.focus();
+    if (previousCount.current > count && document.activeElement === document.body)
+      heading.current?.focus();
     previousCount.current = count;
   }, [count]);
   useEffect(() => {
@@ -23,7 +27,9 @@ export default function FavoritesSection() {
   if (!f?.user) return null;
   return (
     <section className="favorites-section" aria-labelledby="favorites-heading">
-      <h2 id="favorites-heading" ref={heading} tabIndex={-1}>Mis favoritos</h2>
+      <h2 id="favorites-heading" ref={heading} tabIndex={-1}>
+        Mis favoritos
+      </h2>
       <p>Guarda hasta 100 productos para consultarlos después. Guardarlos no reserva inventario.</p>
       {f.loading ? (
         <p role="status">Cargando favoritos…</p>
@@ -55,9 +61,17 @@ export default function FavoritesSection() {
               ),
             )}
           </ul>
-          {count > 0 && <p role="status">Mostrando {Math.min(visibleCount, count)} de {count} favoritos.</p>}
+          {count > 0 && (
+            <p role="status">
+              Mostrando {Math.min(visibleCount, count)} de {count} favoritos.
+            </p>
+          )}
           {count > visibleCount && (
-            <button type="button" className="btn btn-outline" onClick={() => setVisibleCount((current) => current + 8)}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setVisibleCount((current) => current + FAVORITES_PAGE_SIZE)}
+            >
               Ver más favoritos
             </button>
           )}
