@@ -134,8 +134,8 @@ export function LoginPage() {
         headingRef={mfaHeadingRef}
       >
         {enrollment && mfaSetup && (
-          <div className="form-group">
-            <p id="mfa-secret-label">Secreto para la aplicación autenticadora</p>
+          <fieldset className="form-group">
+            <legend id="mfa-secret-label">Secreto para la aplicación autenticadora</legend>
             <code aria-labelledby="mfa-secret-label" className="mfa-secret">
               {mfaSetup.secret}
             </code>
@@ -143,7 +143,7 @@ export function LoginPage() {
               <summary>URI de configuración manual</summary>
               <code className="mfa-secret">{mfaSetup.otpauthUri}</code>
             </details>
-          </div>
+          </fieldset>
         )}
         <fieldset className="form-group">
           <label htmlFor="mfa-code">

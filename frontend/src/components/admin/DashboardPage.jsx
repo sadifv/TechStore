@@ -32,7 +32,7 @@ export function AdminDashboardPage({ user }) {
       {user?.role === 'owner' && <AppearanceSettings />}
       <header className="admin-header dashboard-header">
         <h1 id="admin-dashboard-heading">
-          <i className="ri-dashboard-line" /> Panel de Administración
+          <i aria-hidden="true" className="ri-dashboard-line" /> Panel de Administración
         </h1>
         <nav className="admin-header-actions" aria-label="Gestión de administración">
           {user?.role === 'owner' && (

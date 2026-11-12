@@ -13,7 +13,7 @@ TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base 
 - `frontend/src/features/`: módulos de dominio compartidos: tema en `appearance/` y checkout/carrito invitado en `cart/`. Sus pruebas están en `frontend/tests/`, reflejando la estructura de `src/`. `src/config/` contiene la cadencia de solicitudes y `tests/assets/` las comprobaciones generales de recursos.
 - `frontend/src/components/`: componentes agrupados por responsabilidad: `layout/`, `home/`, `cart/`, `assistant/`, `feedback/`, `dialogs/`, `catalog/`, `marketing/`, `contact/`, `account/`, `admin/`, `favorites/` y `reviews/`. Las pruebas específicas están en `frontend/tests/`, agrupadas por el módulo que verifican. Los archivos de reexportación de cuenta y administración se conservan dentro de su grupo.
 - `frontend/public/`: estilos, fuentes, imágenes estáticas y configuración de Netlify.
-- La portada mantiene el bloque inferior en un chunk independiente, con estructura disponible antes del scroll. Las colecciones se consultan al acercarse a su sección; las variantes de la foto principal y las fuentes se sirven localmente. Véase [rendimiento del frontend](docs/frontend-performance.md).
+- La portada mantiene el bloque inferior en un chunk independiente, con estructura disponible antes del scroll. Las colecciones se consultan al acercarse a su sección; las variantes de la foto principal y las fuentes se sirven localmente. Véase [rendimiento del frontend](docs/frontend/frontend-performance.md).
 - `backend/server.js`: configura middleware, sesiones, rutas, salud y arranque de servicios.
 - `backend/routes/`: conecta métodos HTTP con autorización, validación y controladores.
 - `backend/controllers/`: atiende solicitudes y construye respuestas.
@@ -26,7 +26,7 @@ TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base 
 
 ## Navegación y comunicación
 
-El historial administrativo usa `AdminAuditEvent` y `services/adminAudit.js`; su consulta `/api/admin/audit` exige owner con MFA. Los controladores auditados comparten una transacción con el evento; pago y cancelación registran desde las transacciones existentes. `Product.specifications` se valida con `services/productSpecifications.js` y se serializa mediante una lista pública explícita. Uso, límites y operación de índices están en `docs/admin-history-and-specifications.md`. Las pruebas de Chromium están en `frontend/tests/browser/` y se ejecutan en un trabajo independiente de CI.
+El historial administrativo usa `AdminAuditEvent` y `services/adminAudit.js`; su consulta `/api/admin/audit` exige owner con MFA. Los controladores auditados comparten una transacción con el evento; pago y cancelación registran desde las transacciones existentes. `Product.specifications` se valida con `services/productSpecifications.js` y se serializa mediante una lista pública explícita. Uso, límites y operación de índices están en `docs/features/admin-history-and-specifications.md`. Las pruebas de Chromium están en `frontend/tests/browser/` y se ejecutan en un trabajo independiente de CI.
 
 El navegador abre una ruta de página como `/catalogo` o `/admin/users`. Netlify entrega `index.html` y React selecciona la pantalla. Las solicitudes de datos usan `/api/*`; Netlify las reenvía a Render conservando el prefijo. `/uploads/*` también se reenvía al backend para servir imágenes guardadas en MongoDB.
 
@@ -38,7 +38,7 @@ En desarrollo Vite realiza el proxy hacia Express mediante `BACKEND_PROXY_TARGET
 
 El registro crea un usuario con contraseña hasheada y rol `user`. Al iniciar sesión se comprueba el hash. Para clientes se crea una sesión; para `admin` y `owner` se abre primero un desafío MFA con caducidad y solo después se autentica la sesión administrativa.
 
-Las sesiones se almacenan en la colección `sessions` mediante `connect-mongo`. La cookie tiene una duración configurada de 24 horas. En cada ruta protegida se vuelve a comprobar la cuenta y `authVersion`; una contraseña o permiso cambiado invalida sesiones anteriores. El rol `owner` solo se configura mediante una operación de mantenimiento explícita. Véase [docs/owner-roles.md](docs/owner-roles.md).
+Las sesiones se almacenan en la colección `sessions` mediante `connect-mongo`. La cookie tiene una duración configurada de 24 horas. En cada ruta protegida se vuelve a comprobar la cuenta y `authVersion`; una contraseña o permiso cambiado invalida sesiones anteriores. El rol `owner` solo se configura mediante una operación de mantenimiento explícita. Véase [docs/operations/owner-roles.md](docs/operations/owner-roles.md).
 
 La recuperación cambia el hash, consume el token vigente e incrementa la versión en una sola operación MongoDB condicionada por token y caducidad. El middleware `privateResponses` se monta antes de CORS y los limitadores para impedir almacenamiento en caché de respuestas privadas, incluidos errores y desafíos MFA. La validación por ruta conserva la coincidencia sin distinción de mayúsculas usada por Express.
 
@@ -94,7 +94,7 @@ Los avisos vencen a los 90 días; las confirmaciones no completadas a las 24 hor
 
 Los modelos nuevos tienen `autoIndex:false`; la unicidad crítica depende de `_id` nativo, no de una migración automática. Los índices secundarios de consulta se preparan con `node scripts/ensureRestockIndexes.js` desde backend en modo lectura por defecto. Aplicarlos requiere autorización de destino y `--apply --database=TechStore` (nombre exacto de la base configurada). Este desarrollo solo los verificó/aplicó en MongoDB temporal.
 
-- **Correo:** `EMAIL_TRANSPORT` selecciona Gmail API por HTTPS con OAuth o Gmail SMTP. Nodemailer compone el mensaje y EJS genera bienvenida, recuperación y campañas. Las campañas se procesan en una cola persistida en MongoDB. La prueba de campaña requiere admin con MFA y solo envía a su propia cuenta, sin crear campaña ni consultar suscriptores. Gmail API requiere configuración completa y no recurre a SMTP si falla; solo SMTP sin credenciales en desarrollo permite simulación. Los errores Gmail se reducen a códigos seguros en consola. Véase [docs/gmail-api.md](docs/gmail-api.md).
+- **Correo:** `EMAIL_TRANSPORT` selecciona Gmail API por HTTPS con OAuth o Gmail SMTP. Nodemailer compone el mensaje y EJS genera bienvenida, recuperación y campañas. Las campañas se procesan en una cola persistida en MongoDB. La prueba de campaña requiere admin con MFA y solo envía a su propia cuenta, sin crear campaña ni consultar suscriptores. Gmail API requiere configuración completa y no recurre a SMTP si falla; solo SMTP sin credenciales en desarrollo permite simulación. Los errores Gmail se reducen a códigos seguros en consola. Véase [docs/operations/gmail-api.md](docs/operations/gmail-api.md).
 - **TechBot:** usa el SDK `openai` para Chat Completions contra la configuración de Gemini. Requiere la clave del proveedor; las pruebas sin proveedor no acreditan respuestas reales.
 - **Imágenes:** el backend valida los archivos y guarda bytes en `ProductImage`; sirve URLs opacas bajo `/uploads/products/`.
 - **Mantenimiento:** las tareas programadas gestionan estados y vencimientos. Sus bloqueos y actualizaciones condicionadas evitan repetir operaciones críticas.
@@ -107,3 +107,5 @@ Render instala desde `backend/` con `npm ci` e inicia con `npm start`, según `r
 `GET /health` devuelve 200 cuando Mongoose está conectado y 503 cuando no lo está; no comprueba correo, IA ni todos los procesos de negocio. Winston emite logs y archivos rotados. Un HTTP 502 exige correlacionar la hora con los registros del proxy y del backend; por sí solo no demuestra suspensión por inactividad, un error MongoDB ni un fallo SMTP.
 
 Un push a `main` no acredita el estado de producción. Verificar el commit desplegado en cada proveedor. Las migraciones y cambios de datos no forman parte automática del push.
+
+La guía de compra separa la coordinación del diálogo y la narración en `components/home/PurchaseGuide.jsx`, las escenas ilustrativas en `GuideScene.jsx` y el contenido de los cinco pasos en `purchaseGuideSteps.js`. La vista y la explicación comparten esos datos; la narración sigue en `useGuideNarration.js`.

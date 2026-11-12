@@ -50,7 +50,7 @@ export default function CartDrawer({
         >
           {items.length === 0 ? (
             <article className="cart-empty-state">
-              <i className="ri-shopping-cart-line" />
+              <i aria-hidden="true" className="ri-shopping-cart-line" />
               <p>Tu carrito está vacío</p>
             </article>
           ) : (
@@ -93,7 +93,7 @@ export default function CartDrawer({
                   aria-label={`Eliminar ${item.name}`}
                   onClick={() => remove(item.id, item.cartItemId)}
                 >
-                  <i className="ri-delete-bin-line" />
+                  <i aria-hidden="true" className="ri-delete-bin-line" />
                 </button>
               </article>
             ))

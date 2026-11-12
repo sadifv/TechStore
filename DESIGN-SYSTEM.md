@@ -8,11 +8,11 @@ Los temas estacionales están en `frontend/public/css/halloween.css` y `frontend
 
 Reutilizar las variables CSS existentes:
 
-- Acción principal: `--color-primary` (`#2563eb`), oscuro `--color-primary-dark` (`#1d4ed8`) y claro `--color-primary-light` (`#3b82f6`).
+- Acción principal: `--color-primary` (`#2563eb`), oscuro `--color-primary-dark` (`#1d4ed8`) y claro `--color-primary-light` (`#91b6ff`).
 - Fondo normal efectivo: `--color-background` (`#090f1b`); superficie: `--color-surface` (`#121c2c`); superficie interactiva: `--color-surface-hover` (`#1c2940`).
 - Texto normal efectivo: `--color-text` y `--color-secondary` (`#edf1fa`); texto secundario: `--color-text-muted` (`#b6c2d4`).
 - Bordes: `--color-border` (`#34455f`).
-- Estados: `--color-error` (`#ef4444`), `--color-success` (`#10b981`) y `--color-warning` (`#f59e0b`).
+- Estados sobre superficies oscuras: `--color-error` (`#ff9da6`), `--color-success` (`#6ee7b7`) y `--color-warning` (`#ffcf73`).
 
 No comunicar un estado solo con color. Acompañar las insignias de texto y comprobar el contraste de cada combinación, tamaño y estado interactivo; la existencia de un token no garantiza su conformidad WCAG.
 
@@ -30,7 +30,7 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
-- **Cómo comprar:** el acceso abre una presentación de TechStore y cuatro pasos de compra en un diálogo nativo. La narración opcional usa cinco MP3 locales en español ecuatoriano, sin reproducción automática ni descarga al abrir. Pausar conserva la posición y reanudar continúa desde ella; cambiar de escena, ocultar la pestaña o cerrar detiene el audio. Las escenas usan datos ficticios y no crean pedidos, reservan inventario ni abren WhatsApp. Texto y controles permanecen disponibles sin audio y con movimiento reducido. Se conserva el foco y la adaptación de los tres temas. Procedencia y transcripciones en `docs/guia-compra-audio.md`.
+- **Cómo comprar:** el acceso abre una presentación de TechStore y cuatro pasos de compra en un diálogo nativo. La narración opcional usa cinco MP3 locales en español ecuatoriano, sin reproducción automática ni descarga al abrir. Pausar conserva la posición y reanudar continúa desde ella; cambiar de escena, ocultar la pestaña o cerrar detiene el audio. Las escenas usan datos ficticios y no crean pedidos, reservan inventario ni abren WhatsApp. Texto y controles permanecen disponibles sin audio y con movimiento reducido. Se conserva el foco y la adaptación de los tres temas. Procedencia y transcripciones en `docs/frontend/guia-compra-audio.md`.
 
 - **TechBot sin sesión:** presenta una conversación de ejemplo que termina preguntando por uso y presupuesto, sin recomendaciones ni fichas de producto anticipadas. El chat real y su historial requieren sesión. El registro y el login conservan el retorno a la sección.
 
@@ -42,7 +42,7 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 - **Marca:** `LogoMark.jsx` comparte la T con nodo entre cabecera, entrada y pie. El trazo toma el color primario y el nodo el acento del tema. `frontend/public/favicon.svg` conserva esa geometría en azul y coral. El avatar exportado para redes está en `docs/brand/techstore-avatar.png`, con símbolo blanco y nodo coral sobre fondo oscuro. Al cambiar la geometría, revisar las tres representaciones.
 
-- **Portada:** la escena cinematográfica de audio usa dos renders ilustrativos locales: auriculares completos, vista desplegada y acercamiento. El scroll nativo controla la transición en ventanas amplias; móvil, ventanas bajas y movimiento reducido permiten elegir las tres escenas mediante botones sin fijar la página. Conserva azul/coral y los tokens estacionales, catálogo, guía y TechBot. No asocia el render a un modelo ni inventa prestaciones. El video de fondo existente se conserva. Véase `docs/hero-cinematic.md`. Destacados sigue mostrando productos disponibles del catálogo.
+- **Portada:** la escena cinematográfica de audio usa dos renders ilustrativos locales: auriculares completos, vista desplegada y acercamiento. El scroll nativo controla la transición en ventanas amplias; móvil, ventanas bajas y movimiento reducido permiten elegir las tres escenas mediante botones sin fijar la página. Conserva azul/coral y los tokens estacionales, catálogo, guía y TechBot. No asocia el render a un modelo ni inventa prestaciones. El video de fondo existente se conserva. Véase `docs/frontend/hero-cinematic.md`. Destacados sigue mostrando productos disponibles del catálogo.
 
 - **Especificaciones:** editor de pares etiquetados, máximo 20, con foco preservado al añadir o eliminar. La ficha usa `dl`/`dt`/`dd` y permite partir valores largos. No mostrar una sección vacía en productos antiguos.
 - **Historial administrativo:** acceso de presentación reservado al owner, filtros etiquetados y registros de solo lectura, con estados de carga, vacío y error recuperable. Los responsables se identifican por ID y los detalles no contienen datos privados de clientes.
@@ -54,11 +54,20 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 - **Tablas:** mantener encabezados y relaciones semánticas. Usar el contenedor de desplazamiento existente cuando falte espacio; no ocultar acciones esenciales en móvil.
 - **Diálogos y carrito:** conservar el manejo de foco, el cierre disponible y el regreso a un control visible. No enfocar controles de un panel que ya se cerró.
 - **Iconos:** se usa Remix Icon con archivos locales. Los iconos decorativos deben ocultarse de tecnologías de asistencia; una acción que solo tenga icono necesita nombre accesible. No asumir que cualquier glifo está incluido en la fuente reducida del proyecto.
-- **Recursos:** Manrope variable y los iconos se sirven en WOFF2. La foto de referencia principal dispone de variantes WebP locales con `srcset`/`sizes`; una imagen nueva conserva su origen hasta preparar sus variantes. El hero reserva espacio durante la carga y mantiene prioridad alta para la foto. Procedimiento en [rendimiento del frontend](docs/frontend-performance.md).
+- **Recursos:** Manrope variable y los iconos se sirven en WOFF2. La foto de referencia principal dispone de variantes WebP locales con `srcset`/`sizes`; una imagen nueva conserva su origen hasta preparar sus variantes. El hero reserva espacio durante la carga y mantiene prioridad alta para la foto. Procedimiento en [rendimiento del frontend](docs/frontend/frontend-performance.md).
 
 ## Accesibilidad y adaptación
+
+`frontend/public/css/styles.css` mantiene estilos móviles como base y consultas de ancho al final, antes de impresión y movimiento reducido. Las hojas estacionales asignan tokens y no duplican el layout. Mantener controles accesibles, foco visible, campos editables de al menos 16 px, tablas con desplazamiento y respeto por `prefers-reduced-motion`.
 
 La paleta compartida se aplica en `body`: portada, catálogo, ficha, configurador, cuenta, administración, carrito y diálogos. Usa superficies azul noche, acciones azul eléctrico, coral en precios y violeta moderado en bordes y paneles. Los tokens del hero se capturan en `:root` y se restauran en `.hero-cinema` para conservar su aspecto, incluidos los temas estacionales. Los estados funcionales conservan colores diferenciados y las fotografías mantienen sus colores originales.
 
 
 Las variantes estacionales conservan superficies oscuras: Halloween usa fondo `#100b1a`, superficies `#191328`, violeta `#a78bfa` y verde ácido `#b7f34a`; Navidad usa fondo `#081610`, superficies `#10241c`, esmeralda `#34a879` y dorado `#d8b66a`. Los botones estacionales usan texto oscuro sobre el color protagonista para mantener contraste. La paleta normal mantiene azul y coral; errores, éxito y advertencias conservan sus colores semánticos. Las hojas estacionales solo asignan tokens, sin duplicar componentes ni consultas de layout.
+
+
+## HTML semántico
+
+Usar `header` para encabezados de bloques, `hgroup` para título y subtítulo relacionados, `figure`/`figcaption` para ilustraciones con su explicación y `fieldset`/`legend` para grupos de formulario. Las secuencias de elementos usan listas. Los iconos decorativos llevan `aria-hidden="true"` y los enlaces de navegación conservan su comportamiento nativo.
+
+Los `div` se reservan para agrupaciones necesarias: rejillas, alineación de texto e iconos, envoltorios de campos, paneles con desplazamiento y capas decorativas. Dentro de `dl` también pueden agrupar `dt` y `dd`; no sustituirlos por `section`, `article` o párrafos que invaliden la lista de definiciones. Un contenedor neutro justificado es preferible a crear regiones sin significado.

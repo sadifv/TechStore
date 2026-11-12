@@ -70,15 +70,15 @@ export function AdminUsersPage() {
   return (
     <section className="admin-container container admin-users-page">
       <header className="admin-header">
-        <div>
+        <hgroup>
           <h1>
-            <i className="ri-user-settings-line" /> Gestión de Usuarios
+            <i aria-hidden="true" className="ri-user-settings-line" /> Gestión de Usuarios
           </h1>
           <p className="text-muted">
             La presencia se actualiza automáticamente cada {ADMIN_REFRESH_INTERVAL_MS / 1000}{' '}
             segundos.
           </p>
-        </div>
+        </hgroup>
         <a href="/admin/dashboard" className="btn btn-outline btn-sm">
           ← Volver al Dashboard
         </a>

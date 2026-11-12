@@ -1,8 +1,8 @@
 export default function BuildExperience() {
   return (
     <section className="build-experience" aria-labelledby="build-experience-title">
-      <div className="build-experience-stage">
-        <header className="build-experience-copy">
+      <figure className="build-experience-stage">
+        <figcaption className="build-experience-copy">
           <p className="editorial-kicker">Arma tu equipo</p>
           <h2 id="build-experience-title">
             Cada pieza cuenta.
@@ -13,7 +13,7 @@ export default function BuildExperience() {
           <a className="btn btn-primary" href="/arma-tu-equipo">
             Explorar el configurador <span aria-hidden="true">↗</span>
           </a>
-        </header>
+        </figcaption>
         <figure
           className="build-experience-art"
           aria-label="Ilustración de una placa, un procesador y dos módulos de RAM que se ensamblan"
@@ -92,7 +92,7 @@ export default function BuildExperience() {
             <p>Completa la base de tu equipo.</p>
           </li>
         </ol>
-      </div>
+      </figure>
     </section>
   );
 }

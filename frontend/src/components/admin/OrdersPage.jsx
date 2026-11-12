@@ -31,7 +31,7 @@ export function AdminOrdersPage() {
     <section className="admin-container container admin-orders-page">
       <header className="admin-header">
         <h1>
-          <i className="ri-shopping-bag-line" /> Gestión de Órdenes
+          <i aria-hidden="true" className="ri-shopping-bag-line" /> Gestión de Órdenes
         </h1>
         <nav className="admin-filter-nav" aria-label="Filtro de estados">
           {filters.map(([value, label]) => (

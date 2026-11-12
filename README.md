@@ -35,7 +35,7 @@ Asegúrate de tener instalado en tu sistema:
 
 2. **Configurar el backend:** copia `backend/.env.example` a `backend/.env` y completa las credenciales necesarias. En producción, `APP_URL` y `FRONTEND_URL` deben ser la URL pública de React, `API_URL` la URL pública de Express y `ALLOWED_ORIGINS` debe incluir el origen exacto de React (por ejemplo, `https://tienda.tu-dominio.com`). Configura `TRUST_PROXY_HOPS=1` si Express solo recibe tráfico desde un Nginx confiable; mantén el puerto de Express inaccesible desde Internet.
 
-   Para enviar correos desde Render Free, configura `EMAIL_TRANSPORT=gmail-api` y las credenciales OAuth del remitente siguiendo [docs/gmail-api.md](docs/gmail-api.md). Ese plan bloquea SMTP. En entornos que lo permiten, `EMAIL_TRANSPORT=smtp` usa `SMTP_USER` y `SMTP_PASS` con una contraseña de aplicación Gmail.
+   Para enviar correos desde Render Free, configura `EMAIL_TRANSPORT=gmail-api` y las credenciales OAuth del remitente siguiendo [docs/operations/gmail-api.md](docs/operations/gmail-api.md). Ese plan bloquea SMTP. En entornos que lo permiten, `EMAIL_TRANSPORT=smtp` usa `SMTP_USER` y `SMTP_PASS` con una contraseña de aplicación Gmail.
 
 3. **Instalar dependencias:** ejecuta `npm ci` dentro de `backend/` y dentro de `frontend/`.
 
@@ -54,7 +54,7 @@ Asegúrate de tener instalado en tu sistema:
 ## Pruebas
 
 - Desde `frontend/`, prepara Chromium con `npx playwright install chromium` y ejecuta `npm run test:browser`. La suite usa APIs ficticias y bloquea destinos externos; detalles en [las instrucciones de navegador](frontend/tests/browser/README.md). GitHub Actions tiene un trabajo Chromium independiente.
-- El uso del historial owner/MFA, las especificaciones de productos y la preparación explícita de índices se documentan en [historial y especificaciones](docs/admin-history-and-specifications.md).
+- El uso del historial owner/MFA, las especificaciones de productos y la preparación explícita de índices se documentan en [historial y especificaciones](docs/features/admin-history-and-specifications.md).
 
 - Ejecuta `npm test` desde `backend/` para las pruebas automatizadas del servidor.
 - Ejecuta `npm run test:integration` desde `backend/` para las pruebas con un replica set temporal real. Requiere `mongod` disponible (en Windows busca MongoDB Server 9.0; puedes indicar su ejecutable con `MONGOD_BINARY`). Crea y elimina su propia base temporal; no utiliza `MONGO_URI` ni datos de Atlas. La suite normal omite estos casos. CI instala MongoDB 8.0 en Ubuntu 24.04 y ejecuta integración con Node.js 24.
@@ -79,10 +79,14 @@ Asegúrate de tener instalado en tu sistema:
 - El navegador conserva una clave por intento de checkout para recuperar una respuesta perdida sin crear otra orden. El backend espera la inicialización del índice único de `checkoutKey` antes de aceptar tráfico. Si el navegador bloquea la ventana, la página del pedido permite abrir WhatsApp de nuevo.
 - Las pruebas cubren checkout, reintentos, permisos de administrador, confirmaciones, cancelaciones, inventario y ventanas bloqueadas. Combinan persistencia simulada con integración opcional en MongoDB temporal y no envían mensajes reales a WhatsApp.
 - GitHub Actions comprueba backend y frontend en Node.js 22 y 24. En el job 24 ejecuta integración y `npm audit --audit-level=high` en ambos proyectos. Las vulnerabilidades altas y críticas bloquean el job. Revisar también las alertas bajas y moderadas, registrar su tratamiento y comprobar compatibilidad antes de actualizar.
-- El procedimiento de respaldo, restauración aislada y registro de evidencia está en [docs/backup-and-restore.md](docs/backup-and-restore.md). La política propuesta requiere ejecución y verificación por el propietario.
+- El procedimiento de respaldo, restauración aislada y registro de evidencia está en [docs/operations/backup-and-restore.md](docs/operations/backup-and-restore.md). La política propuesta requiere ejecución y verificación por el propietario.
 
 ## Boletín, campañas y cupones
 
 - El boletín es gratuito; la página `/admin/marketing` permite administrar cupones promocionales y enviar campañas a suscriptores que dieron consentimiento. Los mensajes incluyen un enlace de baja.
 - Solo en desarrollo, usando el transporte SMTP sin credenciales, se simulan los envíos. En producción o al seleccionar Gmail API, la configuración incompleta falla explícitamente.
 - Los cupones se validan en el servidor y su uso se reserva durante el checkout; si un pedido vence o se cancela, el cupón vuelve a estar disponible.
+
+## Documentación
+
+El [índice de documentación](docs/README.md) reúne las guías vigentes de operación, funcionalidades, frontend y marca. Los planes históricos de implementación se consultan en el historial de Git.

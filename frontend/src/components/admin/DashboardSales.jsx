@@ -19,12 +19,12 @@ export function DashboardSalesOverview({ data, orders }) {
         ))}
       </section>
       <section className="dashboard-orders">
-        <div className="section-heading">
+        <header className="section-heading">
           <h2 className="section-title">Órdenes recientes</h2>
           <a href="/admin/orders" className="btn btn-sm btn-outline">
             Ver todas
           </a>
-        </div>
+        </header>
         <div className="admin-table-wrapper">
           <table className="admin-table">
             <thead>

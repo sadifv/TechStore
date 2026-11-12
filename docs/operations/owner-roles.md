@@ -6,7 +6,9 @@ No existe una API para asignar, retirar o transferir `owner`. El índice parcial
 
 Cada cambio de rol incrementa `authVersion`, invalidando sesiones y verificaciones MFA pendientes. Un usuario promovido debe iniciar sesión de nuevo y completar/configurar MFA. Se conserva el secreto MFA existente al retirar permisos; cualquier nueva promoción sigue requiriendo MFA. Los eventos `user_role_changed` registran actor, destinatario y roles, sin contraseñas ni secretos.
 
-## Activación de la cuenta actual
+## Migración inicial de una instalación sin propietario
+
+Este procedimiento se conserva para instalaciones que todavía no tienen `owner`; no es una tarea pendiente ni se debe repetir sobre una instalación ya migrada. Requiere autorización y verificación del destino.
 
 1. Desplegar primero el backend y el frontend compatibles con `owner`. Cambiar el rol mientras corre la versión anterior bloquearía el acceso administrativo.
 2. Desde `backend`, usando la conexión correcta, ejecutar `node scripts/promoteOwner.js`. Es una simulación que identifica por ID al único administrador existente y no escribe datos. Verificar ese ID en Atlas antes de aplicar.

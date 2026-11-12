@@ -1,7 +1,9 @@
 # Recursos y carga de la portada
 
-Los cambios conservan colores, tipografía, temas y comportamiento comercial. El video,
-su poster y su reproducción no se modifican.
+Esta guía describe recursos y carga diferida del frontend actual. La optimización de
+fuentes e imágenes conserva el comportamiento comercial y no modifica el video,
+su poster ni su reproducción. Las paletas vigentes se documentan en el
+[sistema de diseño](../../DESIGN-SYSTEM.md).
 
 La comparación registrada aquí corresponde a la optimización previa a la nueva
 [portada cinematográfica](hero-cinematic.md). Sus renders y su comportamiento tienen
@@ -19,7 +21,7 @@ documentación propia; estas cifras no representan una medición de esa escena n
   `https://images.unsplash.com/photo-1593642632823-8f785ba67e45`.
   Sigue siendo una referencia visual, no una certificación del modelo fotografiado.
 - `src/services/productImages.js` reconoce únicamente esa URL de origen y ruta exactas,
-  independientemente de su query. Hero, tarjetas y categorías reutilizan sus variantes
+  independientemente de su query. Las tarjetas y categorías reutilizan sus variantes
   locales. Las fotos desconocidas y las subidas administrativas conservan su URL; no
   se inventan archivos derivados ni se cambia MongoDB. Cambiar la foto del producto
   por otra ruta deja de utilizar esta copia.
@@ -44,7 +46,7 @@ adelanta aproximadamente 5,5 KB comprimidos de JavaScript a cambio de estabiliza
 recorrido y las anclas. El historial de TechBot sigue condicionado a proximidad y sesión;
 la imagen del boletín usa carga diferida. No se oculta contenido al teclado o a búsqueda.
 
-El hero reserva el mismo alto para la imagen mientras se consulta el catálogo.
+La escena actual del hero reserva su espacio independientemente de la consulta al catálogo; sus renders y límites se describen en [portada cinematográfica](hero-cinematic.md).
 
 ## Comprobaciones
 

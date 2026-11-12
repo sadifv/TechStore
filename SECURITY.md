@@ -61,7 +61,7 @@ La cancelación del cliente tiene un límite persistente específico y conserva 
 - El manejador central registra clasificación/código/ruta, sin mensajes o stacks crudos que puedan contener valores enviados. Los errores de JSON mal formado responden con un mensaje genérico sin fragmentos del cuerpo.
 - Los enlaces de recuperación de contraseña caducan en una hora. La respuesta genérica del formulario no confirma que el correo se haya enviado.
 - El restablecimiento consume el token, cambia el hash de contraseña e incrementa `authVersion` en una única actualización condicionada. Dos solicitudes concurrentes con el mismo token solo permiten un cambio; los intentos rechazados no consumen un token vigente.
-- Ejecutar y registrar copias y ensayos de restauración siguiendo [el procedimiento de respaldo](docs/backup-and-restore.md). La verificación exige conteos durables, índices, integridad y evidencia de una restauración aislada.
+- Ejecutar y registrar copias y ensayos de restauración siguiendo [el procedimiento de respaldo](docs/operations/backup-and-restore.md). La verificación exige conteos durables, índices, integridad y evidencia de una restauración aislada.
 
 ## Dependencias y verificación
 

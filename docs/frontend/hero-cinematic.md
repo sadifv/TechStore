@@ -5,8 +5,8 @@ Referencia visual: reel público de `w.wearebrand`,
 vista desplegada de sus componentes, acercamiento al interior y recorrido por scroll.
 
 La adaptación de TechStore presenta auriculares ilustrativos, sin asociarlos a un SKU,
-precio o prestaciones del inventario. Mantiene los acentos azul/coral y utiliza los
-tokens de los temas estacionales. No modifica checkout, pedidos, autenticación ni el
+precio o prestaciones del inventario. El tema normal usa azul/coral; Halloween usa violeta y verde ácido, y Navidad
+esmeralda y dorado, mediante los tokens compartidos del [sistema de diseño](../../DESIGN-SYSTEM.md). No modifica checkout, pedidos, autenticación ni el
 archivo o la reproducción del video de fondo existente.
 
 ## Recursos y límites

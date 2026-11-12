@@ -39,7 +39,7 @@ export default function CheckoutDialog({
             aria-label="Cerrar modal"
             onClick={() => setCheckoutOpen(false)}
           >
-            <i className="ri-close-line" />
+            <i aria-hidden="true" className="ri-close-line" />
           </button>
         </header>
         {!user && (

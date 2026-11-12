@@ -79,10 +79,10 @@ export default function HeroSection({ signedIn }) {
           ))}
         </div>
         <footer className="cinema-footer">
-          <div className="cinema-chapter-copy">
+          <hgroup className="cinema-chapter-copy">
             <h2>{chapters[chapter][0]}</h2>
             <p>{chapters[chapter][1]}</p>
-          </div>
+          </hgroup>
           <nav className="cinema-chapters" aria-label="Escenas del producto">
             {chapters.map(([title], index) => (
               <button

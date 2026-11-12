@@ -2051,7 +2051,7 @@ summary:focus-visible {
   line-height: 1.05;
   letter-spacing: -0.04em;
 }
-.purchase-guide-overview-grid { display: grid; gap: 0.75rem; }
+.purchase-guide-overview-grid { display: grid; gap: 0.75rem; list-style: none; }
 .purchase-guide-overview-item {
   display: grid;
   grid-template-columns: auto 1fr;

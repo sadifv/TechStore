@@ -14,14 +14,14 @@ Las mutaciones auditadas y sus eventos se confirman juntos en MongoDB. Si falla 
 
 En **Nuevo producto** o **Editar**, añadir características con nombre y valor. Se permiten hasta 20 pares, nombres de 1–40 caracteres y valores de 1–200, sin HTML, caracteres de control ni nombres duplicados (ignorando mayúsculas y normalizando Unicode). Los productos anteriores siguen funcionando sin características.
 
-En la API, `specifications` es una lista de objetos `{ name, value }`. Los formularios multipart envían esa lista como JSON en un campo. Omitir el campo al editar conserva lo anterior; `[]` lo elimina explícitamente. La ficha pública usa una lista semántica y no muestra un bloque vacío. Filtros técnicos y comparador quedan fuera de esta entrega.
+En la API, `specifications` es una lista de objetos `{ name, value }`. Los formularios multipart envían esa lista como JSON en un campo. Omitir el campo al editar conserva lo anterior; `[]` lo elimina explícitamente. La ficha pública usa una lista semántica y no muestra un bloque vacío. El catálogo ya permite seleccionar productos para compararlos mediante `frontend/src/components/catalog/ProductComparison.jsx`; la comparación reutiliza estas especificaciones.
 
 ## Índices del historial
 
-El modelo no crea automáticamente sus índices secundarios. Desde `backend`, `npm run db:ensure-audit-indexes` revisa el destino configurado y muestra un plan sin modificar índices. Para aplicar se requiere `--apply --database=<nombre-exacto>` además de la autorización del destino correspondiente. No se han aplicado índices en Atlas durante este trabajo.
+El modelo no crea automáticamente sus índices secundarios. Desde `backend`, `npm run db:ensure-audit-indexes` revisa el destino configurado y muestra un plan sin modificar índices. Para aplicar se requiere `--apply --database=<nombre-exacto>` además de la autorización del destino correspondiente. La existencia de índices en Atlas debe comprobarse en el destino autorizado; esta guía y el código del modelo no acreditan su estado en producción.
 
 ## Pruebas
 
 Desde `backend`: `npm test` y `npm run test:integration`. La segunda suite crea replica sets temporales e incluye permisos owner/MFA, límites y privacidad de eventos, índices aislados y fallos inyectados de auditoría para comprobar rollback.
 
-Desde `frontend`: `npm run lint`, `npm test`, `npm run build` y `npm run test:browser`. La preparación de Chromium, el aislamiento de red y las limitaciones de las pruebas están en `frontend/tests/browser/README.md`. Las pruebas de navegador usan APIs ficticias; las pruebas de integración del backend verifican persistencia y permisos reales en datos locales.
+Desde `frontend`: `npm run lint`, `npm test`, `npm run build` y `npm run test:browser`. La preparación de Chromium, el aislamiento de red y las limitaciones de las pruebas están en [las instrucciones de navegador](../../frontend/tests/browser/README.md). Las pruebas de navegador usan APIs ficticias; las pruebas de integración del backend verifican persistencia y permisos reales en datos locales.

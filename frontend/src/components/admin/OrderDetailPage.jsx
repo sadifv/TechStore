@@ -59,10 +59,6 @@ export function AdminOrderDetailPage({ orderId }) {
           target="_blank"
           rel="noreferrer"
           className="btn btn-secondary"
-          onClick={(event) => {
-            event.preventDefault();
-            window.open(`/admin/orders/${order._id}/packing-slip`, '_blank', 'noopener');
-          }}
         >
           Imprimir Packing Slip
         </a>

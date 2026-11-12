@@ -48,9 +48,7 @@ export default function HomePage({ user }) {
           aria-labelledby="featured-heading"
         >
           <header className="section-header">
-            <div>
-              <h2 id="featured-heading">Productos destacados</h2>
-            </div>
+            <h2 id="featured-heading">Productos destacados</h2>
             <a className="section-view-all" href="/catalogo">
               Ver catálogo <span aria-hidden="true">↗</span>
             </a>

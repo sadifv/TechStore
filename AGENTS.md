@@ -40,7 +40,7 @@ La integración requiere `mongod` y crea un replica set temporal aislado. Se pue
 - Las solicitudes del frontend al backend deben usar `/api/...` mediante `requestJson` o `adminMutation`. Las imágenes subidas usan `/uploads/...`. Netlify solo reenvía esos prefijos al backend.
 - Los enlaces de navegación del panel usan `/admin/...`, sin `/api`. Mantener la regla SPA al final de `frontend/public/_redirects`.
 - Conservar las comprobaciones de sesión, rol y MFA en el backend. Ocultar un botón no concede ni revoca permisos.
-- Solo `owner` gestiona roles. No crear una API para asignar o retirar `owner`. Consultar `docs/owner-roles.md` para la migración explícita.
+- Solo `owner` gestiona roles. No crear una API para asignar o retirar `owner`. Consultar `docs/operations/owner-roles.md` para la migración explícita.
 - Mantener la atomicidad de inventario y cupones, las claves de idempotencia y los datos históricos de los pedidos. No ejecutar operaciones paralelas sobre una misma sesión de transacción MongoDB.
 - WhatsApp prepara el contacto; abrir su enlace no confirma envío del mensaje ni recepción del pago.
 - Preferir HTML semántico. Reservar `div` para agrupación o maquetación necesaria. No introducir `innerHTML`, `dangerouslySetInnerHTML`, `outerHTML` o `insertAdjacentHTML`; usar React o métodos DOM seguros.
