@@ -1,27 +1,31 @@
-# Narraciones de «Cómo comprar»
+# Narración de «Cómo comprar»
 
-Los cuatro MP3 se sirven desde `frontend/public/audio/como-comprar/`. La reproducción es manual y no requiere voces instaladas en Windows. No se precargan ni se solicitan servicios de síntesis durante el uso de la tienda.
+La guía presenta primero TechStore y luego acompaña cuatro escenas de compra. Cada MP3 local se reproduce en orden; el texto y la escena visible avanzan juntos. El audio solo inicia cuando la persona lo solicita, se puede pausar y retomar desde el mismo punto, y no se precarga al abrir la guía.
 
 ## Procedencia
 
-Audio sintético generado para TechStore con la voz `es-EC-AndreaNeural`, a velocidad `-5%`, mediante [edge-tts](https://github.com/rany2/edge-tts) 7.3.1 en un entorno Python temporal. Esta herramienta no forma parte de las dependencias del proyecto ni del despliegue. No se usaron voces clonadas ni datos de clientes.
+Audio sintético generado para TechStore con la voz masculina `es-EC-LuisNeural`, a velocidad `-5%`, mediante [edge-tts](https://github.com/rany2/edge-tts) 7.3.1 en un entorno Python temporal. Esta herramienta no forma parte de las dependencias del proyecto ni del despliegue. No se usaron voces clonadas ni datos de clientes.
 
-Si cambia el flujo, actualizar el texto visible y regenerar el MP3 correspondiente. Conservar el aviso de demostración y la aclaración sobre envío del mensaje y pago. La suite de navegador comprueba que los cuatro archivos existen y se decodifican, además de los controles de reproducción.
+Si cambia el flujo, actualizar el texto visible y regenerar el MP3 correspondiente. Conservar el aviso de demostración y la aclaración sobre el envío del mensaje y el pago. La suite de navegador comprueba que los cinco archivos existen y se decodifican, además de la sincronización y los controles de reproducción.
 
 ## Transcripciones
 
-### paso-1.mp3
+### paso-1.mp3 — Presentación
 
-Demostración de compra. Elige un producto. Explora el catálogo, revisa la ficha y pulsa Agregar al Carrito. Esta demostración no crea pedidos ni reserva productos.
+Bienvenido a TechStore. Aquí puedes explorar tecnología para tu día: laptops, audio y periféricos. También puedes armar tu PC con el configurador o consultar a TechBot según tu uso y presupuesto. Ahora mira cómo comprar.
 
-### paso-2.mp3
+### paso-2.mp3 — Elige un producto
 
-Revisa tu carrito. Comprueba productos, cantidades y subtotal. Después pulsa Proceder al Pago.
+Cuando encuentres lo que buscas, abre su ficha, revisa los detalles y selecciona Agregar al Carrito. Puedes seguir explorando y añadir otros productos antes de continuar.
 
-### paso-3.mp3
+### paso-3.mp3 — Revisa tu carrito
 
-Completa tus datos. Como invitado, indica tu nombre y correo de contacto. Revisa la dirección y, si tienes uno, tu cupón. Pulsa Continuar por WhatsApp para preparar el pedido y abrir el mensaje.
+En tu carrito, revisa cada producto, ajusta las cantidades y confirma el subtotal. Si todo está bien, pulsa Proceder al Pago para completar tus datos.
 
-### paso-4.mp3
+### paso-4.mp3 — Completa tus datos
 
-Coordina por WhatsApp. En la compra real se prepara un mensaje con tu pedido. Envíalo desde WhatsApp y coordina disponibilidad y pago con la tienda. Abrir WhatsApp no envía el mensaje ni confirma el pago.
+Indica tu nombre y correo de contacto. Completa la dirección si hace falta y agrega tu cupón, si tienes uno. Pulsa Continuar por WhatsApp para preparar el pedido y abrir el mensaje.
+
+### paso-5.mp3 — Coordina por WhatsApp
+
+WhatsApp abre un mensaje listo para revisar. Tú decides si lo envías y coordinas con la tienda la disponibilidad y el pago. Abrir WhatsApp no envía el mensaje ni confirma la compra. Gracias por acompañarme en este recorrido. Sigue revisando la tienda con calma y encuentra lo que buscas.

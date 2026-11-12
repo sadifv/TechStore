@@ -20,6 +20,7 @@ test('el propietario guarda una colección que puede ver un visitante', async ({
   expect(selection).toEqual({ key: 'setup', ids: [mock.product._id] });
   mock.role = 'guest';
   await page.goto('/');
+  await page.locator('.home-collections-slot').scrollIntoViewIfNeeded();
   const collection = page.getByRole('region', { name: 'Colecciones TechStore' });
   await expect(
     collection.getByRole('link', { name: `Ver detalles de ${mock.product.name}` }),

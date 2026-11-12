@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { backendAssetUrl } from '../../services/api.js';
+import { productImageSources } from '../../services/productImages.js';
 import { useCartActions } from '../cart/CartContext.js';
 import FavoriteButton from '../favorites/FavoriteButton.jsx';
 
@@ -33,7 +33,8 @@ export default function ProductCard({ product, featured = false, comparison }) {
         >
           <figure className="product-card-media">
             <img
-              src={backendAssetUrl(product.image || '/images/products/catalog-fallback.jpg')}
+              {...productImageSources(product.image)}
+              sizes="(min-width: 1001px) 25vw, (min-width: 601px) 45vw, 90vw"
               alt={product.name}
               loading="lazy"
             />

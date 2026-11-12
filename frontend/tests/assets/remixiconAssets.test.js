@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
@@ -8,6 +8,16 @@ const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const publicCss = path.join(frontendRoot, 'public', 'css', 'remixicon.css');
 const indexHtml = path.join(frontendRoot, 'index.html');
 const netlifyHeaders = path.join(frontendRoot, 'public', '_headers');
+
+test('las fuentes de la interfaz se sirven en WOFF2 dentro de 100 KiB', () => {
+  const fonts = path.join(frontendRoot, 'public', 'fonts');
+  const manrope = readFileSync(path.join(fonts, 'manrope-variable.woff2'));
+  const icons = readFileSync(path.join(fonts, 'remixicon.woff2'));
+  assert.equal(manrope.subarray(0, 4).toString(), 'wOF2');
+  assert.equal(icons.subarray(0, 4).toString(), 'wOF2');
+  assert.ok(manrope.length + icons.length < 100 * 1024);
+  assert.ok(statSync(path.join(fonts, 'MANROPE-OFL.txt')).size > 0);
+});
 
 function collectSourceFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

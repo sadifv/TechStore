@@ -1,80 +1,36 @@
-/* Navidad · cargar después de styles.css y activar data-theme="christmas" en html.
-   Base móvil. Decoración estática y controles compartidos. */
+/* Navidad · esmeralda y dorado suave.
+   Paleta oscura compartida. No modifica estructura, movimiento ni estados semánticos. */
 :root[data-theme='christmas'] {
-  --editorial-accent: #46a9c0;
-  --editorial-glow: #b9e7ed95;
-  --editorial-wash: #e8f0e6;
-  --color-primary: #20604c;
-  --color-primary-dark: #164735;
-  --color-primary-light: #2b745c;
-  --color-secondary: #123f35;
-  --color-background: #faf6e9;
-  --color-surface: #f4efdf;
-  --color-surface-hover: #e8f0e6;
-  --color-text: #203b32;
-  --color-text-muted: #52695f;
-  --color-border: #d2dfd5;
-  --shadow-card: 0 8px 28px rgb(18 63 53 / 7%);
-  --shadow-hover: 0 14px 32px rgb(18 63 53 / 13%);
+  --color-primary: #34a879;
+  --color-primary-dark: #55c492;
+  --color-primary-light: #72d8ab;
+  --color-secondary: #edf6ef;
+  --color-background: #081610;
+  --color-surface: #10241c;
+  --color-surface-hover: #19372b;
+  --color-text: #edf6ef;
+  --color-text-muted: #b9cfc1;
+  --color-border: #365c48;
+  --editorial-accent: #d8b66a;
+  --editorial-wash: #1e261b;
+  --editorial-glow: #d8b66a40;
 }
-html[data-theme='christmas'] .hero {
-  background: radial-gradient(ellipse at top right, #d1edf0, transparent 65%), #e8f0e6;
-  border-bottom: 1px solid var(--color-border);
-}
-html[data-theme='christmas'] .hero-media {
-  background: #fff6dd;
-  border-color: #dac59a;
-  box-shadow: 0 12px 40px rgb(18 63 53 / 12%);
-}
-html[data-theme='christmas'] .hero-eyebrow,
-html[data-theme='christmas'] .hero h1 span,
-html[data-theme='christmas'] .product-price,
-html[data-theme='christmas'] .product-detail-price {
-  color: var(--color-primary);
-}
-html[data-theme='christmas'] .navbar,
-html[data-theme='christmas'] .footer {
-  border-color: var(--color-border);
-  background: #fcf7e9;
-}
-html[data-theme='christmas'] .product-card,
-html[data-theme='christmas'] .auth-card,
-html[data-theme='christmas'] .login-card {
-  border-color: var(--color-border);
-}
-html[data-theme='christmas'] .ai-header,
-html[data-theme='christmas'] .contact-info {
-  background: linear-gradient(135deg, #123f35, #246049);
-  color: #ffffff;
-}
-html[data-theme='christmas'] .ai-header h2,
-html[data-theme='christmas'] .ai-header p,
-html[data-theme='christmas'] .contact-info a {
-  color: #ffffff;
-}
-html[data-theme='christmas'] .newsletter-container {
-  background: linear-gradient(135deg, #fff6dd, #e8f0e6);
-}
-html[data-theme='christmas'] .btn-primary {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #ffffff;
-}
-html[data-theme='christmas'] .btn-primary:hover {
-  background: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
-}
-html[data-theme='christmas'] :focus-visible {
-  outline-color: var(--color-primary);
-}
-/* Adaptaciones al final: mantienen el layout compartido. */
-@media (min-width: 768px) {
-  html[data-theme='christmas'] .hero {
-    background: radial-gradient(ellipse at 85% 20%, #d1edf0, transparent 50%), #e8f0e6;
-  }
-}
-@media print {
-  html[data-theme='christmas'] .hero {
-    background: #ffffff;
-  }
+html[data-theme='christmas'] body {
+  --store-ground: #081610;
+  --store-surface: #10241c;
+  --store-raised: #19372b;
+  --store-ink: #edf6ef;
+  --store-muted: #b9cfc1;
+  --store-line: #365c48;
+  --store-link: #72d8ab;
+  --store-violet: #d8b66a;
+  --store-violet-wash: #1e261b;
+  --store-coral: #d8b66a;
+  --store-action: #34a879;
+  --store-action-hover: #55c492;
+  --store-action-ink: #081610;
+  --store-nav: #07120d;
+  --store-field: #0a1b13;
+  --store-focus-border: #739784;
+  --store-accent-line: #847348;
 }

@@ -32,6 +32,8 @@ export function NewsletterSection() {
             src="/images/newsletter-tech.jpg"
             alt="Dispositivos tecnológicos y un sobre para recibir novedades"
             className="newsletter-img"
+            loading="lazy"
+            decoding="async"
           />
         </figure>
         <header className="newsletter-content">

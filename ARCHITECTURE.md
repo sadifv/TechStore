@@ -13,6 +13,7 @@ TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base 
 - `frontend/src/features/`: módulos de dominio compartidos: tema en `appearance/` y checkout/carrito invitado en `cart/`. Sus pruebas están en `frontend/tests/`, reflejando la estructura de `src/`. `src/config/` contiene la cadencia de solicitudes y `tests/assets/` las comprobaciones generales de recursos.
 - `frontend/src/components/`: componentes agrupados por responsabilidad: `layout/`, `home/`, `cart/`, `assistant/`, `feedback/`, `dialogs/`, `catalog/`, `marketing/`, `contact/`, `account/`, `admin/`, `favorites/` y `reviews/`. Las pruebas específicas están en `frontend/tests/`, agrupadas por el módulo que verifican. Los archivos de reexportación de cuenta y administración se conservan dentro de su grupo.
 - `frontend/public/`: estilos, fuentes, imágenes estáticas y configuración de Netlify.
+- La portada mantiene el bloque inferior en un chunk independiente, con estructura disponible antes del scroll. Las colecciones se consultan al acercarse a su sección; las variantes de la foto principal y las fuentes se sirven localmente. Véase [rendimiento del frontend](docs/frontend-performance.md).
 - `backend/server.js`: configura middleware, sesiones, rutas, salud y arranque de servicios.
 - `backend/routes/`: conecta métodos HTTP con autorización, validación y controladores.
 - `backend/controllers/`: atiende solicitudes y construye respuestas.

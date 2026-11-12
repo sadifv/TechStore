@@ -1,20 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { requestJson } from '../../services/api.js';
 import { storeCollections } from '../../config/storeCollections.js';
 import ProductCard from '../catalog/ProductCard.jsx';
 
 export default function HomeCollections() {
+  const sectionRef = useRef(null);
+  const [nearby, setNearby] = useState(
+    () => typeof window === 'undefined' || !('IntersectionObserver' in window),
+  );
   const [groups, setGroups] = useState({});
   const [selected, setSelected] = useState('');
   useEffect(() => {
+    if (nearby || !sectionRef.current) return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setNearby(true);
+        observer.disconnect();
+      },
+      { rootMargin: '400px' },
+    );
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, [nearby]);
+  useEffect(() => {
+    if (!nearby) return undefined;
     const controller = new AbortController();
     requestJson('/api/store/collections', { signal: controller.signal })
-      .then((result) => setGroups(result.collections || {}))
+      .then((result) => {
+        if (!controller.signal.aborted) setGroups(result.collections || {});
+      })
       .catch(() => {});
     return () => controller.abort();
-  }, []);
+  }, [nearby]);
   const visible = storeCollections.filter(([key]) => groups[key]?.length);
-  if (!visible.length) return null;
+  if (!visible.length) return <div ref={sectionRef} className="home-collections-slot" />;
   const active = visible.find(([key]) => key === selected) || visible[0];
   return (
     <section

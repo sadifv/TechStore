@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { categories } from '../../config/storeCatalog.js';
-import { backendAssetUrl } from '../../services/api.js';
+import { productImageSources } from '../../services/productImages.js';
 
 const categoryReferences = {
   Audio: '/images/products/shure-sm7b-ref.jpg',
@@ -43,12 +43,20 @@ export default function HomeCategoryGallery({ categoryImages }) {
       </header>
       <ul id="home-categories" className="editorial-category-list" ref={gallery}>
         {categories.map((category) => {
-          const image = categoryImages.find((item) => item._id === category)?.image
-            || categoryReferences[category];
+          const image =
+            categoryImages.find((item) => item._id === category)?.image ||
+            categoryReferences[category];
           return (
             <li key={category}>
               <a href={`/catalogo?category=${encodeURIComponent(category)}`}>
-                {image && <img src={backendAssetUrl(image)} alt="" loading="lazy" />}
+                {image && (
+                  <img
+                    {...productImageSources(image)}
+                    sizes="(min-width: 768px) 25vw, 75vw"
+                    alt=""
+                    loading="lazy"
+                  />
+                )}
                 <strong>{category}</strong>
                 <span aria-hidden="true">↗</span>
               </a>

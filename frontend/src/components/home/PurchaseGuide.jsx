@@ -3,6 +3,11 @@ import useGuideNarration from './useGuideNarration.js';
 
 const steps = [
   {
+    title: 'Conoce TechStore',
+    description:
+      'Explora laptops, audio y periféricos; arma una PC con el configurador o pídele a TechBot orientación según tu uso y presupuesto. Cuando encuentres lo que necesitas, así haces tu pedido.',
+  },
+  {
     title: 'Elige un producto',
     description: 'Explora el catálogo, revisa la ficha y pulsa «Agregar al Carrito».',
   },
@@ -18,7 +23,7 @@ const steps = [
   {
     title: 'Coordina por WhatsApp',
     description:
-      'En la compra real se prepara un mensaje con tu pedido. Envíalo desde WhatsApp y coordina disponibilidad y pago con la tienda.',
+      'En la compra real se prepara un mensaje con tu pedido. Envíalo desde WhatsApp y coordina disponibilidad y pago con la tienda. Gracias por acompañarme; sigue explorando la tienda y encuentra lo que buscas.',
   },
 ];
 
@@ -34,6 +39,7 @@ function ExampleProduct() {
 }
 
 function GuideScene({ step, playing }) {
+  const views = ['TechStore', 'Catálogo', 'Tu Carrito', 'Finalizar Compra', 'WhatsApp'];
   return (
     <section
       className="purchase-guide-scene"
@@ -44,12 +50,40 @@ function GuideScene({ step, playing }) {
     >
       <header className="purchase-guide-window">
         <span>
-          <b>TechStore</b> / {['Catálogo', 'Tu Carrito', 'Finalizar Compra', 'WhatsApp'][step]}
+          <b>TechStore</b> / {views[step]}
         </span>
-        <span>DEMO</span>
+        <span>VISTA GUIADA</span>
       </header>
       <div className="purchase-guide-stage">
         {step === 0 && (
+          <div className="purchase-guide-overview">
+            <div className="purchase-guide-overview-visual">
+              <img src="/images/products/lg-ultragear-27-ref.jpg" alt="" />
+            </div>
+            <header>
+              <span className="purchase-guide-overview-kicker">TECNOLOGÍA PARA TU DÍA</span>
+              <strong>Encuentra tu próximo equipo</strong>
+            </header>
+            <div className="purchase-guide-overview-grid">
+              <article className="purchase-guide-overview-item">
+                <span aria-hidden="true">01</span>
+                <strong>Explora el catálogo</strong>
+                <p>Laptops, audio y periféricos</p>
+              </article>
+              <article className="purchase-guide-overview-item">
+                <span aria-hidden="true">02</span>
+                <strong>Arma tu PC</strong>
+                <p>Revisa los componentes</p>
+              </article>
+              <article className="purchase-guide-overview-item">
+                <span aria-hidden="true">03</span>
+                <strong>Consulta a TechBot</strong>
+                <p>Busca según tu uso y presupuesto</p>
+              </article>
+            </div>
+          </div>
+        )}
+        {step === 1 && (
           <>
             <ExampleProduct />
             <span className="purchase-guide-action">
@@ -57,7 +91,7 @@ function GuideScene({ step, playing }) {
             </span>
           </>
         )}
-        {step === 1 && (
+        {step === 2 && (
           <>
             <ExampleProduct />
             <p className="purchase-guide-quantity">
@@ -71,7 +105,7 @@ function GuideScene({ step, playing }) {
             </span>
           </>
         )}
-        {step === 2 && (
+        {step === 3 && (
           <>
             <dl className="purchase-guide-fields">
               <dt>Nombre Completo</dt>
@@ -91,7 +125,7 @@ function GuideScene({ step, playing }) {
             </span>
           </>
         )}
-        {step === 3 && (
+        {step === 4 && (
           <>
             <p className="purchase-guide-message-label">Mensaje preparado · ejemplo</p>
             <blockquote className="purchase-guide-message">
@@ -105,7 +139,7 @@ function GuideScene({ step, playing }) {
             <p className="purchase-guide-payment">Pago pendiente de coordinar con la tienda</p>
           </>
         )}
-        {step < 3 && (
+        {step > 0 && step < 4 && (
           <svg className="purchase-guide-pointer" width="30" height="36" viewBox="0 0 30 36">
             <path
               d="M3 2v27l7-7 6 12 6-3-6-11 10-1Z"
@@ -126,8 +160,9 @@ function PurchaseGuideDialog({ onClose }) {
   const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
-  const [playing, setPlaying] = useState(false);
   const narration = useGuideNarration();
+  const playing = narration.speaking;
+  const stopNarration = narration.stop;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -137,10 +172,9 @@ function PurchaseGuideDialog({ onClose }) {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const updateMotion = () => {
       setReducedMotion(media.matches);
-      setPlaying(false);
     };
     const pauseWhenHidden = () => {
-      if (document.hidden) setPlaying(false);
+      if (document.hidden) stopNarration();
     };
     media.addEventListener('change', updateMotion);
     document.addEventListener('visibilitychange', pauseWhenHidden);
@@ -150,27 +184,24 @@ function PurchaseGuideDialog({ onClose }) {
       document.body.style.overflow = previousOverflow;
       dialog.close();
     };
-  }, []);
-
-  useEffect(() => {
-    if (!playing || reducedMotion) return undefined;
-    const timer = window.setTimeout(() => {
-      if (step === steps.length - 1) setPlaying(false);
-      else setStep(step + 1);
-    }, 6500);
-    return () => window.clearTimeout(timer);
-  }, [step, playing, reducedMotion]);
+  }, [stopNarration]);
 
   function selectStep(nextStep) {
     narration.stop();
-    setPlaying(false);
     setStep(nextStep);
   }
 
   function togglePlayback() {
-    narration.stop();
-    if (!playing && step === steps.length - 1) setStep(0);
-    setPlaying(!playing);
+    if (playing) {
+      narration.pause();
+      return;
+    }
+    if (narration.paused) {
+      narration.resume();
+      return;
+    }
+    const startStep = step === steps.length - 1 ? 0 : step;
+    narration.listen(startStep, setStep);
   }
 
   return (
@@ -212,55 +243,55 @@ function PurchaseGuideDialog({ onClose }) {
       </p>
       <div className="purchase-guide-layout">
         <GuideScene step={step} playing={playing && !reducedMotion} />
-        <section className="purchase-guide-explanation" aria-label="Pasos de compra">
-          <p className="editorial-kicker">Cómo comprar / 0{step + 1}</p>
+        <section className="purchase-guide-explanation" aria-label="Recorrido de TechStore">
+          <p className="editorial-kicker">
+            {step === 0 ? 'Conoce el proyecto' : `Cómo comprar / 0${step}`}
+          </p>
           <div role="status" aria-live="polite" aria-atomic="true">
             <h3>{steps[step].title}</h3>
             <p>{steps[step].description}</p>
           </div>
-          {step === 3 && (
+          {step === 4 && (
             <p className="purchase-guide-warning">
               Abrir WhatsApp no envía el mensaje ni confirma el pago.
             </p>
           )}
         </section>
-          <nav className="purchase-guide-steps" aria-label="Elegir paso de la demostración">
-            {steps.map((item, index) => (
-              <button
-                type="button"
-                key={item.title}
-                aria-label={`${index + 1}. ${item.title}`}
-                aria-current={step === index ? 'step' : undefined}
-                onClick={() => selectStep(index)}
-              >
-                <span aria-hidden="true">0{index + 1}</span>
-                {item.title}
-              </button>
-            ))}
-          </nav>
+        <nav className="purchase-guide-steps" aria-label="Elegir paso de la demostración">
+          {steps.map((item, index) => (
+            <button
+              type="button"
+              key={item.title}
+              aria-label={`${index === 0 ? 'Presentación' : `Paso ${index}`}. ${item.title}`}
+              aria-current={step === index ? 'step' : undefined}
+              onClick={() => selectStep(index)}
+            >
+              <span aria-hidden="true">{index === 0 ? '▶' : `0${index}`}</span>
+              {item.title}
+            </button>
+          ))}
+        </nav>
       </div>
       <footer className="purchase-guide-controls">
         <div className="purchase-guide-playback">
-        <section className="purchase-guide-narration" aria-label="Narración opcional">
           {narration.supported ? (
-            <button type="button" className="btn btn-secondary" onClick={() => {
-              if (narration.speaking) narration.stop();
-              else {
-                setPlaying(false);
-                narration.listen(`/audio/como-comprar/paso-${step + 1}.mp3`);
-              }
-            }}>
-              {narration.speaking ? 'Detener audio' : 'Escuchar este paso'}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={togglePlayback}
+              aria-pressed={playing || narration.paused}
+            >
+              {playing
+                ? 'Pausar narración'
+                : narration.paused
+                  ? 'Reanudar narración'
+                  : step === steps.length - 1
+                    ? 'Volver a escuchar'
+                    : 'Iniciar recorrido'}
             </button>
-          ) : <p>Audio no disponible en este navegador. Puedes leer todos los pasos.</p>}
-        </section>
-        {reducedMotion ? (
-          <p>Pasos estáticos: movimiento reducido activado.</p>
-        ) : (
-          <button type="button" className="btn btn-primary" onClick={togglePlayback}>
-            {playing ? 'Pausar' : step === steps.length - 1 ? 'Volver a reproducir' : 'Reproducir'}
-          </button>
-        )}
+          ) : (
+            <p>Audio no disponible. Puedes recorrer las escenas y leer cada paso.</p>
+          )}
         </div>
         <nav aria-label="Controles de la demostración">
           <button
@@ -280,8 +311,12 @@ function PurchaseGuideDialog({ onClose }) {
             Siguiente paso
           </button>
         </nav>
-        <p className="purchase-guide-voice-note">Narración en español.</p>
-        <p className="purchase-guide-audio-error" role="status">{narration.error}</p>
+        <p className="purchase-guide-voice-note">
+          Narración continua en español ecuatoriano. {reducedMotion ? 'Animaciones reducidas.' : ''}
+        </p>
+        <p className="purchase-guide-audio-error" role="status">
+          {narration.error}
+        </p>
       </footer>
     </dialog>
   );

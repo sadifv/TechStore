@@ -1,37 +1,18 @@
 import { test, expect } from './fixtures.js';
 
-test('la reproducción avanza, se puede pausar y termina sin repetir', async ({ page, mock }) => {
+test('el recorrido presenta TechStore y solo avanza al elegir una escena', async ({ page, mock }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
   await page.clock.install();
   await page.clock.runFor(14000);
-  await expect(dialog.getByRole('heading', { name: 'Elige un producto', exact: true })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Reproducir', exact: true }).click();
-  await page.clock.runFor(6600);
+  await expect(dialog.getByRole('heading', { name: 'Conoce TechStore', exact: true })).toBeVisible();
   await expect(
-    dialog.getByRole('heading', { name: 'Revisa tu carrito', exact: true }),
+    dialog.locator('.purchase-guide-explanation').getByText(/configurador/),
   ).toBeVisible();
-  await dialog.getByRole('button', { name: 'Pausar', exact: true }).click();
-  await page.clock.runFor(14000);
+  await dialog.getByRole('button', { name: 'Paso 1. Elige un producto' }).click();
   await expect(
-    dialog.getByRole('heading', { name: 'Revisa tu carrito', exact: true }),
-  ).toBeVisible();
-  await dialog.getByRole('button', { name: 'Reproducir', exact: true }).click();
-  await page.clock.runFor(6600);
-  await expect(
-    dialog.getByRole('heading', { name: 'Completa tus datos', exact: true }),
-  ).toBeVisible();
-  await page.clock.runFor(6600);
-  await expect(
-    dialog.getByRole('heading', { name: 'Coordina por WhatsApp', exact: true }),
-  ).toBeVisible();
-  await page.clock.runFor(6600);
-  await expect(
-    dialog.getByRole('button', { name: 'Volver a reproducir', exact: true }),
-  ).toBeVisible();
-  await expect(
-    dialog.getByRole('heading', { name: 'Coordina por WhatsApp', exact: true }),
+    dialog.getByRole('heading', { name: 'Elige un producto', exact: true }),
   ).toBeVisible();
   expect(mock.requests.filter(({ key }) => !key.startsWith('GET '))).toEqual([]);
 });
@@ -47,13 +28,13 @@ for (const [theme, width] of [
     await page.goto('/');
     await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
-    await expect(dialog.getByRole('button', { name: 'Reproducir', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true })).toBeVisible();
     if (width < 761) {
       const explanation = dialog.locator('.purchase-guide-explanation');
       const content = await explanation.boundingBox();
       const controls = await dialog.locator('.purchase-guide-controls').boundingBox();
       expect(content.y + content.height).toBeLessThanOrEqual(controls.y);
-      const heading = explanation.getByRole('heading', { name: 'Elige un producto', exact: true });
+      const heading = explanation.getByRole('heading', { name: 'Conoce TechStore', exact: true });
       await expect(heading).toBeVisible();
       expect(await heading.evaluate((node) => {
         const bounds = node.getBoundingClientRect();
@@ -84,11 +65,15 @@ test('la guía recorre una compra ficticia sin mutaciones y devuelve el foco', a
   await expect(
     dialog.getByText('Demostración: no crea pedidos ni reserva productos.'),
   ).toBeVisible();
-  await dialog.getByRole('button', { name: '2. Revisa tu carrito' }).click();
+  await dialog.getByRole('button', { name: 'Paso 1. Elige un producto' }).click();
+  await expect(
+    dialog.getByRole('heading', { name: 'Elige un producto', exact: true }),
+  ).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Siguiente paso' }).click();
   await expect(
     dialog.getByRole('heading', { name: 'Revisa tu carrito', exact: true }),
   ).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Reproducir', exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Siguiente paso' }).click();
   await expect(
     dialog.getByRole('heading', { name: 'Completa tus datos', exact: true }),
@@ -98,6 +83,7 @@ test('la guía recorre una compra ficticia sin mutaciones y devuelve el foco', a
   await expect(
     dialog.getByText('Abrir WhatsApp no envía el mensaje ni confirma el pago.'),
   ).toBeVisible();
+  await expect(dialog.getByText(/Gracias por acompañarme/)).toBeVisible();
   expect(mock.requests.filter(({ key }) => !key.startsWith('GET '))).toEqual([]);
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
@@ -120,9 +106,9 @@ test('guía móvil con movimiento reducido conserva pasos estáticos y no desbor
   await dialog.locator('.purchase-guide-layout').evaluate((node) => { node.scrollTop = node.scrollHeight; });
   const scrolledBox = await nextButton.boundingBox();
   expect(scrolledBox.y).toBeCloseTo(nextBox.y, 0);
-  await expect(dialog.getByRole('button', { name: 'Reproducir', exact: true })).toHaveCount(0);
-  await expect(dialog.getByText('Pasos estáticos: movimiento reducido activado.')).toBeVisible();
-  await dialog.getByRole('button', { name: '4. Coordina por WhatsApp' }).click();
+  await expect(dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true })).toBeVisible();
+  await expect(dialog.getByText(/Animaciones reducidas/)).toBeVisible();
+  await dialog.getByRole('button', { name: 'Paso 4. Coordina por WhatsApp' }).click();
   await expect(
     dialog.getByRole('heading', { name: 'Coordina por WhatsApp', exact: true }),
   ).toBeVisible();

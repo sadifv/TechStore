@@ -1,60 +1,110 @@
 import HeroBackground from './HeroBackground.jsx';
 import HeroMascot from './HeroMascot.jsx';
 import PurchaseGuide from './PurchaseGuide.jsx';
-import { backendAssetUrl } from '../../services/api.js';
-import { placeholder } from '../../config/storeCatalog.js';
+import useCinematicHero from './useCinematicHero.js';
 
-const heroPointerMotion =
-  '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)';
+const chapters = [
+  ['El primer contacto.', 'Explora laptops, audio y periféricos en Ecuador.'],
+  ['Mira lo que hay dentro.', 'Una mirada distinta a la tecnología que eliges.'],
+  ['Encuentra lo que va contigo.', 'Explora el catálogo y coordina tu pedido por WhatsApp.'],
+];
 
-export default function HeroSection({ product, signedIn }) {
-  const image = product?.image !== placeholder && product?.image;
-  function moveImage(event) {
-    if (event.pointerType !== 'mouse' || !window.matchMedia(heroPointerMotion).matches) return;
-    const frame = event.currentTarget;
-    const bounds = frame.getBoundingClientRect();
-    frame.style.setProperty(
-      '--hero-offset-x',
-      `${((event.clientX - bounds.left) / bounds.width - 0.5) * 16}px`,
-    );
-    frame.style.setProperty(
-      '--hero-offset-y',
-      `${((event.clientY - bounds.top) / bounds.height - 0.5) * 12}px`,
-    );
-  }
-
-  function resetImage(event) {
-    event.currentTarget.style.removeProperty('--hero-offset-x');
-    event.currentTarget.style.removeProperty('--hero-offset-y');
-  }
-
+export default function HeroSection({ signedIn }) {
+  const { ref, chapter, animated, choose } = useCinematicHero();
   return (
-    <section id="inicio" className="hero editorial-hero">
-      <HeroBackground />
-      <article className="hero-content">
-        <header>
-          <span className="hero-eyebrow">TechStore Ecuador</span>
-          <h1 data-enter>
-            <span className="hero-title-lead">Laptops, audio y periféricos</span>{' '}
-            <span className="hero-title-accent">en Ecuador</span>
+    <section
+      ref={ref}
+      id="inicio"
+      className="hero-cinema"
+      data-scroll={animated}
+      data-chapter={chapter}
+      aria-labelledby="cinema-title"
+    >
+      <div className="cinema-stage">
+        <HeroBackground />
+        <header className="cinema-copy">
+          <p className="cinema-eyebrow">TECHSTORE / ECUADOR</p>
+          <h1 id="cinema-title">
+            Escucha cada <em>detalle.</em>
           </h1>
-          <p>Explora el catálogo y coordina tu pedido por WhatsApp.</p>
+          <p>Laptops, audio y periféricos. Tu próximo equipo empieza aquí.</p>
+          <nav className="cinema-actions" aria-label="Explorar productos">
+            <a href="/catalogo" className="btn btn-primary">
+              Ver catálogo <span aria-hidden="true">↗</span>
+            </a>
+            <PurchaseGuide />
+          </nav>
         </header>
-        <nav className="hero-actions" aria-label="Explorar productos">
-          <a href="/catalogo" className="btn btn-primary">
-            Explorar catálogo <span aria-hidden="true">→</span>
-          </a>
-          <PurchaseGuide />
-        </nav>
-      </article>
-      <HeroMascot signedIn={signedIn} />
-      {image && (
-        <figure className="hero-media" onPointerMove={moveImage} onPointerLeave={resetImage}>
-          <a className="hero-photo" href={`/producto/${product._id}`}>
-            <img src={backendAssetUrl(image)} alt={product.name} fetchPriority="high" />
-          </a>
+        <figure
+          className="cinema-art"
+          aria-label="Visualización ilustrativa de auriculares completos y sus componentes separados"
+        >
+          <img
+            className="cinema-assembled"
+            src="/images/experience/audio-assembled-1280.webp"
+            srcSet="/images/experience/audio-assembled-640.webp 640w, /images/experience/audio-assembled-1280.webp 1280w"
+            sizes="(min-width: 900px) 85vw, 100vw"
+            alt="Auriculares de referencia en grafito, con detalles azules"
+            fetchPriority="high"
+            width="1774"
+            height="887"
+          />
+          <img
+            className="cinema-exploded"
+            src="/images/experience/audio-exploded-1280.webp"
+            srcSet="/images/experience/audio-exploded-640.webp 640w, /images/experience/audio-exploded-1280.webp 1280w"
+            sizes="(min-width: 900px) 85vw, 100vw"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            width="1774"
+            height="887"
+          />
+          <span className="cinema-part cinema-part--band" aria-hidden="true">
+            Diadema
+          </span>
+          <span className="cinema-part cinema-part--driver" aria-hidden="true">
+            Altavoz
+          </span>
+          <span className="cinema-part cinema-part--pad" aria-hidden="true">
+            Almohadilla
+          </span>
         </figure>
-      )}
+        <div className="cinema-orbit" aria-hidden="true">
+          {Array.from({ length: 16 }, (_, i) => (
+            <span
+              key={i}
+              style={{ '--particle': i, left: `${(i * 37) % 100}%`, top: `${(i * 23) % 100}%` }}
+            />
+          ))}
+        </div>
+        <footer className="cinema-footer">
+          <div className="cinema-chapter-copy">
+            <h2>{chapters[chapter][0]}</h2>
+            <p>{chapters[chapter][1]}</p>
+          </div>
+          <nav className="cinema-chapters" aria-label="Escenas del producto">
+            {chapters.map(([title], index) => (
+              <button
+                key={title}
+                type="button"
+                aria-label={`Ver escena ${index + 1}`}
+                aria-current={chapter === index ? 'step' : undefined}
+                onClick={() => choose(index)}
+              >
+                <span>0{index + 1}</span>
+                <span className="cinema-chapter-line" aria-hidden="true" />
+              </button>
+            ))}
+          </nav>
+          <p className="cinema-disclaimer">
+            Render ilustrativo. Modelos y disponibilidad en el catálogo.
+          </p>
+        </footer>
+        <div className="cinema-assistant">
+          <HeroMascot signedIn={signedIn} />
+        </div>
+      </div>
     </section>
   );
 }
