@@ -17,7 +17,7 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 - **Enlaces de recuperación y activación:** el destino procede de `FRONTEND_URL` o, en producción, de `APP_URL` como respaldo. Se validan protocolo, credenciales y ausencia de query/fragmento; producción requiere HTTPS. Si falta una URL válida, recuperación conserva su respuesta genérica y no genera un token ni utiliza el encabezado `Host`.
 
-- **Vistas previas de imágenes:** la CSP de Netlify permite `blob:` únicamente en `img-src` para archivos seleccionados localmente. No habilita scripts blob ni scripts inline; una prueba de Chromium aplica la cabecera real para verificar este límite.
+- **Vistas previas de imágenes:** la CSP del alojamiento frontend (Netlify y Vercel) permite `blob:` únicamente en `img-src` para archivos seleccionados localmente. No habilita scripts blob ni scripts inline; una prueba de Chromium aplica la cabecera real para verificar este límite.
 
 - **Historial administrativo:** consulta solo owner/MFA, eventos con lista cerrada de acciones y campos, sin cuerpos HTTP, secretos ni textos personales. Las mutaciones auditadas se confirman con su evento; los fallos revierten la operación. El historial no es resistente a modificaciones directas por administradores de MongoDB y no reconstruye el pasado.
 - **Especificaciones:** pares estrictos de texto plano con límites, nombres no repetidos, rechazo de HTML/objetos y serialización pública explícita de nombre/valor. La autorización sigue en el servidor.
@@ -80,3 +80,5 @@ Los lockfiles de `backend/` y `frontend/` forman parte del proyecto; usar `npm c
 El frontend fija mediante `overrides` la rama corregida de `minimatch` (>=11.0.1) usada por ESLint y su configuración, por GHSA-g3hv-75wg-m249. Es una dependencia de desarrollo; no forma parte del JavaScript del cliente. El lockfile resuelve la versión concreta y lint/build verifican compatibilidad. Revisar si se puede retirar este override cuando los paquetes superiores incorporen la corrección.
 
 CI ejecuta pruebas en Node.js 22 y 24. El mínimo admitido es 22.13.0 en la rama 22. El job 24 ejecuta integración con MongoDB aislado y la auditoría de ambos paquetes con `--audit-level=high`: altas y críticas hacen fallar el job, y las menores se revisan y registran durante mantenimiento. Un trabajo verde de Node.js 22, por sí solo, no confirma integración ni auditoría. Consultar [AGENTS.md](AGENTS.md) para los comandos.
+
+La configuración de Vercel desactiva caché compartida para `/api/*` y mantiene las cabeceras de seguridad del frontend. Cambiar el dominio requiere autorizar su origen exacto en Render; no se habilitan comodines para previews. Véase [transición a Vercel](docs/operations/vercel-deployment.md).

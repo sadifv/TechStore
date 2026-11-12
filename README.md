@@ -43,6 +43,8 @@ Asegúrate de tener instalado en tu sistema:
 
 ## Despliegue frontend/backend
 
+Para alojar el frontend en Vercel manteniendo Render y Atlas, seguir la [guía de transición](docs/operations/vercel-deployment.md). La configuración versionada está en `frontend/vercel.json`.
+
 - Compila React con `npm run build` desde `frontend/` y publica `frontend/dist/` en un hosting estático. Express se despliega como servicio Node.js independiente desde `backend/`.
 - Para Netlify y Render, `frontend/public/_redirects` contiene el destino de respaldo actual. Configura `NETLIFY_BACKEND_URL` en el entorno de build de Netlify con el origen HTTPS público de Render. `npm run build` valida ese origen y sustituye únicamente los destinos de `/api/*` y `/uploads/*` en `dist/_redirects`. Conserva al final la regla SPA. Al cambiar de servicio Render, actualizar esa variable y recompilar basta. En Netlify (`NETLIFY=true`), la variable es obligatoria: si falta, el build falla para evitar publicar un proxy obsoleto. Solo los builds locales conservan el destino del archivo fuente cuando falta la variable. En Netlify deja `VITE_API_BASE_URL` vacío para las llamadas relativas con cookies del mismo sitio.
 - En Render, configura `FRONTEND_URL`, `APP_URL` y `ALLOWED_ORIGINS` con el origen HTTPS exacto del sitio Netlify. `API_URL` debe seguir siendo el origen público HTTPS de Render (`RENDER_EXTERNAL_URL`). Las reglas de Netlify envían las solicitudes API a Render y mantienen las llamadas bajo el origen de la tienda para las cookies `SameSite=Lax`.

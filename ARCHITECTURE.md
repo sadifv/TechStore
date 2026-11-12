@@ -28,7 +28,7 @@ TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base 
 
 El historial administrativo usa `AdminAuditEvent` y `services/adminAudit.js`; su consulta `/api/admin/audit` exige owner con MFA. Los controladores auditados comparten una transacción con el evento; pago y cancelación registran desde las transacciones existentes. `Product.specifications` se valida con `services/productSpecifications.js` y se serializa mediante una lista pública explícita. Uso, límites y operación de índices están en `docs/features/admin-history-and-specifications.md`. Las pruebas de Chromium están en `frontend/tests/browser/` y se ejecutan en un trabajo independiente de CI.
 
-El navegador abre una ruta de página como `/catalogo` o `/admin/users`. Netlify entrega `index.html` y React selecciona la pantalla. Las solicitudes de datos usan `/api/*`; Netlify las reenvía a Render conservando el prefijo. `/uploads/*` también se reenvía al backend para servir imágenes guardadas en MongoDB.
+El navegador abre una ruta de página como `/catalogo` o `/admin/users`. El alojamiento del frontend entrega `index.html` y React selecciona la pantalla. Las solicitudes de datos usan `/api/*`; Netlify o Vercel las reenvía a Render conservando el prefijo. `/uploads/*` también se reenvía al backend para servir imágenes guardadas en MongoDB.
 
 Los destinos se definen en `frontend/public/_redirects`; la regla SPA va al final. No usar `/admin/...` para una mutación del frontend: esas rutas son navegación del sitio. `backend/routes/adminMutationRoutes.js` comparte los controladores de escritura bajo `/api/admin` y las rutas anteriores del backend. Los endpoints específicos de roles y pedidos también se montan desde `apiRoutes.js`.
 
@@ -109,3 +109,5 @@ Render instala desde `backend/` con `npm ci` e inicia con `npm start`, según `r
 Un push a `main` no acredita el estado de producción. Verificar el commit desplegado en cada proveedor. Las migraciones y cambios de datos no forman parte automática del push.
 
 La guía de compra separa la coordinación del diálogo y la narración en `components/home/PurchaseGuide.jsx`, las escenas ilustrativas en `GuideScene.jsx` y el contenido de los cinco pasos en `purchaseGuideSteps.js`. La vista y la explicación comparten esos datos; la narración sigue en `useGuideNarration.js`.
+
+La configuración alternativa de Vercel está en `frontend/vercel.json`, con Root Directory `frontend`, proxy al mismo Render, cabeceras equivalentes y fallback SPA al final. No despliega el backend ni mueve Atlas. La transición y los cambios de dominio están en [despliegue en Vercel](docs/operations/vercel-deployment.md).

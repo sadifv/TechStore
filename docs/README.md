@@ -14,6 +14,8 @@ estado de Atlas, el correo, los respaldos o los despliegues de producción.
 
 ## Operación
 
+- [Frontend en Vercel](operations/vercel-deployment.md): configuración, transición desde Netlify y validación del dominio.
+
 - [Gmail API](operations/gmail-api.md): OAuth, variables del backend y comprobación de entrega.
 - [Propietario y administradores](operations/owner-roles.md): permisos y migración inicial explícita.
 - [Respaldos y restauración](operations/backup-and-restore.md): ejecución, ensayo aislado y evidencia pendiente.

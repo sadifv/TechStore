@@ -28,7 +28,7 @@ Vite serves the existing shared stylesheet and public assets from the project `p
 
 For production, publish `dist/` as the React site and run Express separately. Set backend `APP_URL` and `FRONTEND_URL` to the public React URL, and set `ALLOWED_ORIGINS` to that exact origin. Use HTTPS and keep the frontend and API on the same site so the session cookie works. See the root README for the deployment setup and environment examples.
 
-On Netlify, `NETLIFY_BACKEND_URL` can select the HTTPS Render origin at build time. The build updates API/uploads destinations in `dist/_redirects` and keeps the SPA rule last. If unset, the source redirect destinations remain in use. This variable does not replace `VITE_API_BASE_URL` or the local Vite proxy.
+On Netlify, `NETLIFY_BACKEND_URL` can select the HTTPS Render origin at build time. The build updates API/uploads destinations in `dist/_redirects` and keeps the SPA rule last. This variable is required in Netlify builds; only local builds retain the source redirect destinations when it is unset. This variable does not replace `VITE_API_BASE_URL` or the local Vite proxy.
 
 ## Checks
 
@@ -36,3 +36,11 @@ On Netlify, `NETLIFY_BACKEND_URL` can select the HTTPS Render origin at build ti
 npm run lint
 npm run build
 ```
+
+## Vercel
+
+Import only this directory with the Vite preset, npm ci, npm run build and dist.
+The versioned vercel.json preserves API/uploads proxying to Render, SPA deep links,
+legacy image redirects and security headers. Leave VITE_API_BASE_URL unset or empty.
+NETLIFY_BACKEND_URL does not configure Vercel. See the [migration guide](../docs/operations/vercel-deployment.md)
+for the required Render origin/URL updates and post-deployment verification.
