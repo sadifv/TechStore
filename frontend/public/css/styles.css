@@ -1737,7 +1737,7 @@ summary:focus-visible {
   width: 100%;
   display: block;
   object-fit: contain;
-  mix-blend-mode: multiply;
+  mix-blend-mode: normal;
   background: var(--color-background);
   border-radius: 14px;
   aspect-ratio: 1.12;
@@ -4401,6 +4401,14 @@ dialog#checkout-modal {
   left: 50%;
   transform: translate(-50%, -50%);
   margin: 0;
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-padding-block: 1rem;
+}
+html:has(#checkout-modal[open]),
+body:has(#checkout-modal[open]) {
   overflow: hidden;
 }
 .modal-container {
@@ -5710,9 +5718,6 @@ html:root body .btn-danger {
 html:root body .profile-avatar {
   background: var(--store-raised);
   color: var(--store-link);
-}
-html:root body .product-detail-image img {
-  mix-blend-mode: normal;
 }
 
 html:root body :is(h1, h4, h5, h6):not(.hero-cinema *) {
