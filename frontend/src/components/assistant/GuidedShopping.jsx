@@ -32,7 +32,7 @@ export default function GuidedShopping() {
       });
       if (!current.signal.aborted) {
         setProducts(result.products);
-        requestAnimationFrame(() => results.current?.focus());
+        requestAnimationFrame(() => results.current?.focus({ preventScroll: true }));
       }
     } catch (requestError) {
       if (!current.signal.aborted) setError(requestError.message);
@@ -58,7 +58,7 @@ export default function GuidedShopping() {
   }
   return (
     <section className="guided-shopping" aria-labelledby="guided-shopping-title">
-      <header>
+      <header className="guided-shopping-heading">
         <h3 id="guided-shopping-title">Encuentra opciones para ti</h3>
         <p>Elige qué buscas, para qué lo necesitas y cuánto quieres gastar.</p>
       </header>
@@ -118,7 +118,7 @@ export default function GuidedShopping() {
           {busy ? 'Buscando opciones…' : 'Buscar opciones'}
         </button>
       </form>
-      <p>
+      <p className="guided-shopping-note">
         Orientación basada en datos del catálogo, sin garantizar rendimiento ni compatibilidad.
         Consultar no reserva stock.
       </p>
@@ -128,7 +128,7 @@ export default function GuidedShopping() {
         </p>
       )}
       {products !== null && (
-        <section ref={results} tabIndex={-1} aria-label="Resultados de compra guiada">
+        <section className="guided-shopping-results" ref={results} tabIndex={-1} aria-label="Resultados de compra guiada">
           <p role="status">
             {products.length
               ? `${products.length} opciones disponibles al consultar.`
@@ -139,28 +139,27 @@ export default function GuidedShopping() {
           )}
           <ul className="guided-shopping-products">
             {products.map((product) => (
-              <li key={product._id}>
-                <ul
+              <ProductCard
+                key={product._id}
+                product={product}
+                comparison={{
+                  selected: comparison.some((item) => item._id === product._id),
+                  disabled: Boolean(
+                    comparison.length && comparison[0].category !== product.category,
+                  ),
+                  toggle,
+                }}
+              >
+                <section
                   className="guided-shopping-reasons"
                   aria-label={`Por qué aparece ${product.name}`}
                 >
-                  {product.reasons.map((reason, index) => (
-                    <li key={index}>{reason}</li>
-                  ))}
-                </ul>
-                <ul className="guided-shopping-card">
-                  <ProductCard
-                    product={product}
-                    comparison={{
-                      selected: comparison.some((item) => item._id === product._id),
-                      disabled: Boolean(
-                        comparison.length && comparison[0].category !== product.category,
-                      ),
-                      toggle,
-                    }}
-                  />
-                </ul>
-              </li>
+                  <h4>Por qué aparece</h4>
+                  <ul>
+                    {product.reasons.map((reason, index) => <li key={index}>{reason}</li>)}
+                  </ul>
+                </section>
+              </ProductCard>
             ))}
           </ul>
         </section>
