@@ -46,7 +46,7 @@ for (const [theme, width] of [
     await page.goto('/profile');
     await expect(page.getByRole('navigation', { name: 'Secciones de mi cuenta' })).toBeVisible();
     const headings = await page.locator('.profile-container h2').allTextContents();
-    expect(headings).toEqual(['Historial de Compras', 'Mis favoritos', 'Mis direcciones']);
+    expect(headings).toEqual(['Mis pedidos', 'Mis favoritos', 'Mis direcciones', 'Datos y seguridad']);
     const card = page.locator('.orders-list .order-card');
     await expect(
       card
@@ -158,6 +158,7 @@ test('mi cuenta reintenta errores y conserva actualización y cancelación confi
   expect(mock.requests.filter(({ key }) => key === 'POST /api/orders/cancel')).toHaveLength(0);
   await page.getByRole('button', { name: 'Sí, cancelar pedido', exact: true }).click();
   await expect(page.locator('.order-header')).toContainText('Cancelado');
+  await expect(page.getByRole('heading', { name: 'Anteriores (1)', exact: true })).toBeFocused();
   await expect(page.getByRole('button', { name: 'Cancelar pedido', exact: true })).toHaveCount(0);
   await expect(
     page.getByText('Tu pedido se canceló correctamente.', { exact: true }),

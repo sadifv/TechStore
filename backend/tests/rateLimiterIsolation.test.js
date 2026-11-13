@@ -23,6 +23,16 @@ test('public sensitive operations use independent rate-limit buckets', () => {
   assert.equal(new Set(limiters).size, limiters.length);
 });
 
+test('account writes require authentication before the persistent security limiter', () => {
+  const { accountSecurityLimiter } = require('../middleware/rateLimiter');
+  const { requireAuth } = require('../middleware/authMiddleware');
+  for (const path of ['/auth/account/name', '/auth/account/password', '/auth/account/email', '/auth/account/email/confirm']) {
+    const route = apiRouter.stack.find((layer) => layer.route?.path === path)?.route;
+    assert.equal(route.stack[0].handle, requireAuth);
+    assert.equal(route.stack[1].handle, accountSecurityLimiter);
+  }
+});
+
 test('checkout and login use separate persistent Mongo buckets with their approved limits', () => {
   assert.notEqual(rateLimitStores.checkout, rateLimitStores.login);
   assert.equal(rateLimitStores.checkout.bucket, 'checkout');

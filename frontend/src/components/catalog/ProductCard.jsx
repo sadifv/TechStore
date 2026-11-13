@@ -3,7 +3,7 @@ import { productImageSources } from '../../services/productImages.js';
 import { useCartActions } from '../cart/CartContext.js';
 import FavoriteButton from '../favorites/FavoriteButton.jsx';
 
-export default function ProductCard({ product, featured = false, comparison }) {
+export default function ProductCard({ product, featured = false, comparison, showAvailability = false }) {
   const { add, notify } = useCartActions();
   const [busy, setBusy] = useState(false);
   const [added, setAdded] = useState(false);
@@ -59,6 +59,7 @@ export default function ProductCard({ product, featured = false, comparison }) {
           <p className="product-price">${Number(product.price).toFixed(2)}</p>
         </a>
         <footer>
+          {showAvailability && <p className="favorite-availability">{stock > 0 ? 'Disponible' : 'Agotado'} · No se reserva al guardar</p>}
           {comparison && (
             <label>
               <input

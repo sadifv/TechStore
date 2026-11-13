@@ -1,158 +1,29 @@
-import { useEffect, useState } from 'react';
-import { requestJson } from '../../services/api.js';
-import { getOrderItemName } from './orderItemDisplay.js';
-import { formatCurrency } from './utils.js';
-import OrderTracking from './OrderTracking.jsx';
 import FavoritesSection from '../favorites/FavoritesSection.jsx';
 import AddressBookSection from './AddressBookSection.jsx';
-import { orderPaymentLabel, orderShippingLabel } from './orderTracking.js';
+import AccountSecuritySection from './AccountSecuritySection.jsx';
+import ProfileOrders from './ProfileOrders.jsx';
 
 export function ProfilePage({ user }) {
-  const [orders, setOrders] = useState(null);
-  const [error, setError] = useState('');
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  useEffect(() => {
-    let active = true;
-    requestJson('/api/orders')
-      .then((result) => {
-        if (!active) return;
-        setOrders(result.orders || []);
-      })
-      .catch((cause) => {
-        if (active) setError(cause.message);
-      });
-    return () => {
-      active = false;
-    };
-  }, [loadAttempt]);
   return (
     <section className="container profile-container" aria-labelledby="profile-heading">
       <header className="profile-card">
-        <span className="profile-avatar" aria-hidden="true">
-          <i className="ri-user-3-line" aria-hidden="true" />
-        </span>
+        <span className="profile-avatar" aria-hidden="true"><i className="ri-user-3-line" /></span>
         <article className="profile-details">
           <h1 id="profile-heading">Mi Cuenta</h1>
-          <p>
-            <strong>Nombre:</strong> {user?.name || 'Usuario'}
-          </p>
-          <p>
-            <strong>Correo:</strong> {user?.email || '—'}
-          </p>
+          <p><strong>Nombre:</strong> {user?.name || 'Usuario'}</p>
+          <p><strong>Correo:</strong> {user?.email || '—'}</p>
         </article>
         <nav className="profile-navigation" aria-label="Secciones de mi cuenta">
           <a href="#profile-orders">Mis pedidos</a>
           <a href="#favorites-heading">Favoritos</a>
           <a href="#address-book-heading">Direcciones</a>
+          <a href="#account-security-heading">Datos y seguridad</a>
         </nav>
       </header>
-      <section className="orders-section" id="profile-orders" aria-labelledby="profile-orders-heading">
-        <h2 id="profile-orders-heading">Historial de Compras</h2>
-        {orders === null && !error && <p className="orders-status">Cargando tus pedidos…</p>}
-        {error && (
-          <section aria-label="Error al cargar pedidos">
-            <p className="orders-status error" role="alert">
-              {error}
-            </p>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => {
-                setError('');
-                setLoadAttempt((current) => current + 1);
-              }}
-            >
-              Reintentar carga
-            </button>
-          </section>
-        )}
-        {orders?.length === 0 && <p className="empty-msg">Aún no has realizado ninguna compra.</p>}
-        <ul className="orders-list">
-          {orders?.map((order) => {
-            const total =
-              order.totalAmount ??
-              order.total ??
-              (order.items || []).reduce(
-                (sum, item) =>
-                  sum + Number(item.price ?? item.product?.price ?? 0) * Number(item.quantity || 1),
-                0,
-              );
-            return (
-              <li key={order._id}>
-                <article className="order-card">
-                  <header className="order-header">
-                    <section aria-label="Referencia del pedido">
-                      <h3 className="order-id">Orden #{String(order._id).slice(0, 8)}</h3>
-                      <time className="order-date" dateTime={order.createdAt}>
-                        {new Date(order.createdAt).toLocaleDateString('es-EC', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </time>
-                    </section>
-                    <span className={`order-status status-${order.status || 'completed'}`}>
-                      {orderShippingLabel(order)}
-                    </span>
-                  </header>
-                  <dl className="profile-order-summary">
-                    <div>
-                      <dt>Pago</dt>
-                      <dd>{orderPaymentLabel(order)}</dd>
-                    </div>
-                    <div>
-                      <dt>Total</dt>
-                      <dd>{formatCurrency(total)}</dd>
-                    </div>
-                  </dl>
-                  <details className="order-details">
-                    <summary>Ver detalles</summary>
-                    <ul className="order-body">
-                      {(order.items || []).map((item, index) => (
-                        <li
-                          className="order-item"
-                          key={`${item.product?._id || item.product || index}-${index}`}
-                        >
-                          <span>
-                            {getOrderItemName(item)} (×{item.quantity || 1})
-                          </span>
-                          <span>
-                            {formatCurrency(
-                              Number(item.price ?? item.product?.price ?? 0) *
-                                Number(item.quantity || 1),
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <footer className="order-footer">
-                      <span>
-                        Método:{' '}
-                        <strong>
-                          {order.paymentMethod === 'whatsapp' ? 'WhatsApp' : 'No disponible'}
-                        </strong>
-                      </span>
-                      <span className="order-total">
-                        Total: <strong>{formatCurrency(total)}</strong>
-                      </span>
-                    </footer>
-                    <OrderTracking
-                      order={order}
-                      onUpdate={(updated) =>
-                        setOrders((current) =>
-                          current.map((item) => (item._id === updated._id ? updated : item)),
-                        )
-                      }
-                    />
-                  </details>
-                </article>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      <ProfileOrders />
       <FavoritesSection />
       <AddressBookSection />
+      <AccountSecuritySection user={user} />
     </section>
   );
 }

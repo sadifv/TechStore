@@ -2,6 +2,8 @@
 
 ## Estructura
 
+«Mi cuenta» compone `ProfileOrders` (grupos activos/anteriores), `ProfileOrderCard` (resumen y seguimiento reutilizado), favoritos, direcciones y `AccountSecuritySection`. Los cambios de cuenta usan `/api/auth/account/{name,password,email,email/confirm}` y `accountSecurityController`; correo y contraseña se confirman en el servidor, revocan sesiones y conservan MFA. La verificación del correo usa un código copiado desde el mensaje, sin token en URLs ni mutaciones mediante GET. El cambio de nombre vuelve a consultar la sesión para actualizar la cabecera. No requiere nuevas variables de entorno ni índices.
+
 TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base MongoDB. El frontend React se compila con Vite y se publica en Netlify. El backend Express se ejecuta en Node.js en Render. Mongoose modela los datos de MongoDB Atlas. Las plantillas EJS del backend generan correos; la interfaz de la tienda se renderiza con React.
 
 - `frontend/src/main.jsx`: monta React y `AppErrorBoundary`.

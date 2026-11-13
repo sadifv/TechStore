@@ -5,8 +5,9 @@ import AccountForm from './AccountForm.jsx';
 import CredentialsFields from './CredentialsFields.jsx';
 
 export function LoginPage() {
-  const [status, setStatus] = useState('');
-  const [statusType, setStatusType] = useState('error');
+  const accountUpdated = new URLSearchParams(location.search).get('accountUpdated') === '1';
+  const [status, setStatus] = useState(accountUpdated ? 'Datos actualizados. Inicia sesión con tus nuevas credenciales.' : '');
+  const [statusType, setStatusType] = useState(accountUpdated ? 'success' : 'error');
   const [busy, setBusy] = useState(false);
   const [mfaStep, setMfaStep] = useState(null);
   const [mfaSetup, setMfaSetup] = useState(null);

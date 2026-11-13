@@ -59,6 +59,14 @@ test('restock templates escape product names and retain explicit confirmation an
   assert.ok(messages.at(-1).html.includes('&lt;script&gt;'));
 });
 
+test('account email verification renders a one-time code without a state-changing link', async () => {
+  await mailer.sendAccountEmailChange('recipient@example.invalid', 'a'.repeat(64));
+  const message = messages.at(-1);
+  assert.ok(message.html.includes('a'.repeat(64)));
+  assert.ok(message.html.includes('15 minutos'));
+  assert.ok(!message.html.includes('<a '));
+});
+
 test('welcome renders the real template with escaped user data and a catalog link', async () => {
   await mailer.sendWelcomeEmail('recipient@example.invalid', '<Example>');
   const message = messages.at(-1);

@@ -9,6 +9,10 @@ test('authentication secrets are excluded from user queries by default', () => {
     'verificationTokenExpires',
     'resetPasswordToken',
     'resetPasswordExpires',
+    'emailChangeTarget',
+    'emailChangeHash',
+    'emailChangeExpires',
+    'emailChangeVersion',
   ]) {
     assert.equal(User.schema.path(field).options.select, false, `${field} must default to hidden`);
   }

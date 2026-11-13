@@ -87,7 +87,8 @@ const resetPassword = async (req, res, next) => {
       {
         $set: { password: passwordHash, isVerified: true },
         $inc: { authVersion: 1 },
-        $unset: { resetPasswordToken: '', resetPasswordExpires: '', emailVerificationRequired: '' },
+        $unset: { resetPasswordToken: '', resetPasswordExpires: '', emailVerificationRequired: '',
+          emailChangeTarget: '', emailChangeHash: '', emailChangeExpires: '', emailChangeVersion: '' },
       },
       { returnDocument: 'after', runValidators: true },
     );

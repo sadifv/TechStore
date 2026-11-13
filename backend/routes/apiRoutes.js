@@ -144,6 +144,12 @@ router.post(
 router.post('/auth/admin/mfa/verify', adminMfaLimiter, requireAdminMfaPreauth, verifyAdminMfa);
 router.post('/auth/logout', logoutUser);
 router.get('/auth/me', requireAuth, getMe);
+const account = require('../controllers/accountSecurityController');
+const accountLimit = require('../middleware/rateLimiter').accountSecurityLimiter;
+router.patch('/auth/account/name', requireAuth, accountLimit, account.changeName);
+router.post('/auth/account/password', requireAuth, accountLimit, account.changePassword);
+router.post('/auth/account/email', requireAuth, accountLimit, account.requestEmailChange);
+router.post('/auth/account/email/confirm', requireAuth, accountLimit, account.confirmEmailChange);
 
 // ==========================================
 // RECUPERACIÓN DE CONTRASEÑA

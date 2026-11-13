@@ -154,6 +154,7 @@ const requireOptionalAuth = async (req, res, next) => {
 };
 
 module.exports = {
+  destroySession,
   loadCurrentUser,
   setUserLocals,
   requireAdmin,

@@ -163,6 +163,10 @@ const sendAdminCampaignTestEmail = ({ to, subject, name, content, couponCode }) 
   });
 
 module.exports = {
+  sendAccountEmailChange: (to, token) => sendTemplateEmail({
+    to, subject: 'Confirma tu nuevo correo | TechStore', templateName: 'email-account-change',
+    templateData: { token },
+  }),
   sendRestockConfirmationEmail: ({ to, productName, confirmUrl, unsubscribeUrl }) =>
     sendTemplateEmail({
       to,

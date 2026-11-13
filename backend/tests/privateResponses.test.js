@@ -15,6 +15,10 @@ test('private API responses cannot be cached, including anonymous errors and con
   const base = `http://127.0.0.1:${server.address().port}`;
   for (const path of [
     '/api/auth/me',
+    '/api/auth/account/name',
+    '/api/auth/account/password',
+    '/api/auth/account/email',
+    '/api/auth/account/email/confirm',
     '/API/AUTH/me',
     '/api/auth/admin/mfa/enroll',
     '/api/admin/users',

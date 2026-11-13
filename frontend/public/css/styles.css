@@ -3721,6 +3721,76 @@ button.login-register-action {
 .profile-container .favorites-section .products-grid {
   grid-template-columns: minmax(0, 1fr);
 }
+.favorites-search {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 480px;
+  margin-block: var(--space-4);
+  color: var(--color-text);
+  font-weight: 650;
+}
+.favorites-search input,
+.account-security input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.favorite-availability {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.profile-order-group {
+  margin-block: var(--space-6);
+}
+.profile-order-group > h3 {
+  margin-bottom: var(--space-4);
+}
+.order-next-step {
+  padding: var(--space-3);
+  border-inline-start: 3px solid var(--color-primary);
+  background: var(--color-background);
+  color: var(--color-text);
+  line-height: 1.7;
+}
+.account-security {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: clamp(16px, 3vw, 24px);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+.account-security > p {
+  margin-block: var(--space-3);
+  color: var(--color-text-muted);
+}
+.account-security summary {
+  min-height: var(--control-height);
+  padding-block: var(--space-3);
+  font-weight: 700;
+  cursor: pointer;
+}
+.account-security fieldset {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-3);
+  margin-block: var(--space-3);
+  padding: 0;
+  border: 0;
+}
+.account-security .password-field input {
+  padding-inline-end: 92px;
+}
+#account-security-heading {
+  scroll-margin-top: 110px;
+}
 .restock-request {
   margin: var(--space-6) 0;
   padding: var(--space-4);

@@ -129,7 +129,7 @@ const registerLimiter = rateLimit({
 });
 
 /** Crea un cupo persistente por IP y operación, compartido entre instancias. */
-const createSensitiveLimiter = (bucket, { windowMs = 15 * 60 * 1000, max = 10, store } = {}) =>
+const createSensitiveLimiter = (bucket, { windowMs = 15 * 60 * 1000, max = 10, store, keyGenerator } = {}) =>
   rateLimit({
     windowMs,
     max,
@@ -137,6 +137,7 @@ const createSensitiveLimiter = (bucket, { windowMs = 15 * 60 * 1000, max = 10, s
     standardHeaders: true,
     legacyHeaders: false,
     store: store || new MongoRateLimitStore(bucket),
+    ...(keyGenerator ? { keyGenerator } : {}),
     handler: (req, res) => {
       const errorMessage = `Demasiadas solicitudes. Inténtalo de nuevo en ${Math.ceil(windowMs / 60_000)} minutos.`;
       logger.warn(
@@ -172,8 +173,14 @@ const restockRequestLimiter = createSensitiveLimiter('restock-request');
 const restockConfirmLimiter = createSensitiveLimiter('restock-confirm');
 const restockUnsubscribeLimiter = createSensitiveLimiter('restock-unsubscribe');
 const customerOrderCancelLimiter = createSensitiveLimiter('customer-order-cancel', { max: 20 });
+const accountSecurityLimiter = createSensitiveLimiter('account-security', {
+  windowMs: 10 * 60 * 1000, max: 5,
+  store: new MongoRateLimitStore('account-security'),
+  keyGenerator: (req) => String(req.user.id),
+});
 
 module.exports = {
+  accountSecurityLimiter,
   reviewWriteLimiter,
   addressWriteLimiter,
   restockRequestLimiter,
