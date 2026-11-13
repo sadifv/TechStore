@@ -19,7 +19,8 @@ function getVisiblePages(currentPage, totalPages) {
 }
 
 export default function CatalogPage() {
-  const { search, committedSearch, category, sort, page, setSearch, setCategory, setSort, setPage } = useCatalogFilters();
+  const { search, committedSearch, category, sort, page, setSearch, setCategory, setSort, setPage, clearFilters } = useCatalogFilters();
+  const [retry, setRetry] = useState(0);
   const [data, setData] = useState({ key: '', products: [], pagination: null });
   const [error, setError] = useState('');
   const [comparison, setComparison] = useState([]);
@@ -40,6 +41,7 @@ export default function CatalogPage() {
     category,
     sort,
   }).toString();
+  const requestKey = `${query}:${retry}`;
 
   useEffect(() => {
     let active = true;
@@ -47,13 +49,13 @@ export default function CatalogPage() {
     requestJson(`/api/products?${query}`, { signal: controller.signal })
       .then((result) => {
         if (active) {
-          setData({ ...result, key: query });
+          setData({ ...result, key: requestKey });
           setError('');
         }
       })
       .catch((requestError) => {
         if (active) {
-          setData({ key: query, products: [], pagination: null });
+          setData({ key: requestKey, products: [], pagination: null });
           setError(requestError.message);
         }
       });
@@ -61,9 +63,9 @@ export default function CatalogPage() {
       active = false;
       controller.abort();
     };
-  }, [query]);
+  }, [query, requestKey]);
 
-  const loading = data.key !== query;
+  const loading = data.key !== requestKey;
   const visiblePages = data.pagination ? getVisiblePages(page, data.pagination.totalPages) : [];
   return (
     <section id="catalogo" className="products-section" aria-labelledby="catalog-heading">
@@ -136,6 +138,11 @@ export default function CatalogPage() {
             <option value="name_asc">Nombre (A - Z)</option>
           </select>
         </fieldset>
+        {(search !== '' || category !== 'all' || sort !== 'recent' || page !== 1) && (
+          <button className="btn btn-outline" type="button" onClick={clearFilters}>
+            Limpiar filtros
+          </button>
+        )}
       </form>
       <ul id="products-grid" className="products-grid" aria-live="polite">
         {loading ? (
@@ -145,6 +152,9 @@ export default function CatalogPage() {
         ) : error ? (
           <li className="empty-state-item">
             <p className="empty-msg">{error}</p>
+            <button className="btn btn-outline" type="button" onClick={() => setRetry((value) => value + 1)}>
+              Reintentar
+            </button>
           </li>
         ) : data.products.length ? (
           data.products.map((product) => {

@@ -32,6 +32,8 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 La búsqueda reemplaza la entrada actual del historial (`replaceState`); categoría, orden y página añaden una entrada (`pushState`). Así, volver atrás recupera cambios explícitos sin recorrer búsquedas parciales.
 
+El catálogo ofrece reintento tras un error conservando los filtros y una acción para limpiarlos cuando están activos, sin eliminar parámetros ajenos de la URL. El checkout y su confirmación aclaran que el costo de entrega no está incluido y se coordina por WhatsApp; no calculan una tarifa de transporte.
+
 - **Catálogo y compra:** búsqueda, categoría, orden y página se sincronizan con la URL sin perder parámetros ajenos ni navegación atrás/adelante. Las consultas siguen esperando 300 ms al escribir y cancelan solicitudes obsoletas. Los importes se presentan con `money` (USD, `es-EC`, dos decimales y separadores de miles) en toda la interfaz; el servidor conserva el cálculo de precios. «Continuar con el pedido» abre «Coordinación del pedido»: no es una pasarela de pago.
 - **Imágenes de catálogo:** tarjetas, ficha, miniaturas y carrito declaran dimensiones de sus marcos; CSS mantiene los tamaños adaptables y `object-fit: contain`. Se reutilizan las variantes locales existentes donde están disponibles. Las fotos subidas conservan su URL; no se generan variantes ficticias ni se promete una mejora de CLS sin medición.
 

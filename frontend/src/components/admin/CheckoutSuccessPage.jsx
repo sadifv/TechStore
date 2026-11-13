@@ -106,6 +106,7 @@ export function CheckoutSuccessPage() {
           <p>
             Total del pedido: <strong>{money(data.totalAmount)}</strong>
           </p>
+          <p>Costo de entrega no incluido; se coordina por WhatsApp.</p>
           {Number(data.discountAmount) > 0 && (
             <p>
               Cupón <strong>{data.couponCode}</strong>: descuento de{' '}

@@ -1,5 +1,29 @@
 import { test, expect, product } from './fixtures.js';
 
+test('reintenta sin perder filtros y los limpia sin perder parámetros ajenos', async ({ page, mock }) => {
+  let attempts = 0;
+  mock.handlers.set('GET /api/products', (route) => {
+    attempts += 1;
+    return route.fulfill(attempts === 1
+      ? { status: 502, json: { error: 'Fallo temporal de prueba' } }
+      : { json: { success: true, products: [product], pagination: { currentPage: 1, totalPages: 1 } } });
+  });
+  await page.goto('/catalogo?category=Monitores&sort=price_desc&search=monitor&utm_source=prueba');
+  await page.getByRole('button', { name: 'Reintentar', exact: true }).click();
+  await expect(page.locator('.product-card')).toHaveCount(1);
+  await expect(page.getByLabel('Categoría:', { exact: true })).toHaveValue('Monitores');
+  await expect(page.getByRole('searchbox')).toHaveValue('monitor');
+  expect(attempts).toBe(2);
+  await page.getByRole('searchbox').fill('borrador pendiente');
+  await page.getByRole('button', { name: 'Limpiar filtros', exact: true }).click();
+  await expect(page).toHaveURL(/\/catalogo\?utm_source=prueba$/);
+  await expect(page.getByRole('searchbox')).toHaveValue('');
+  await expect(page.getByLabel('Ordenar por:', { exact: true })).toHaveValue('recent');
+  await expect(page.getByRole('button', { name: 'Limpiar filtros', exact: true })).toHaveCount(0);
+  await page.goBack();
+  await expect(page.getByLabel('Categoría:', { exact: true })).toHaveValue('Monitores');
+});
+
 test('los filtros se comparten por URL y respetan recarga, atrás y adelante', async ({ page, mock }) => {
   mock.handlers.set('GET /api/products', (route) => {
     const query = new URL(route.request().url()).searchParams;
@@ -50,6 +74,7 @@ test('tarjeta, ficha y carrito comparten USD y reservan dimensiones para sus im�
   await expect(page.locator('.cart-item img')).toHaveAttribute('width', /\d+/);
   await page.getByRole('button', { name: 'Continuar con el pedido', exact: true }).click();
   await expect(page.getByText('Coordinación del pedido', { exact: true })).toBeVisible();
+  await expect(page.getByText('Costo de entrega no incluido; se coordina por WhatsApp.', { exact: true })).toBeVisible();
   await expect(page.locator('.checkout-summary-box strong')).toHaveText(expected);
 });
 

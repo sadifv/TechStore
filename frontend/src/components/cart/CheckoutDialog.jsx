@@ -100,6 +100,7 @@ export default function CheckoutDialog({
           <span>Subtotal antes del cupón:</span>
           <strong>{money(subtotal)}</strong>
         </section>
+        <p>Costo de entrega no incluido; se coordina por WhatsApp.</p>
         {status && (
           <output id="checkout-status" className="form-status error" role="status">
             {status}

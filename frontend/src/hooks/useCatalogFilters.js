@@ -35,5 +35,9 @@ export default function useCatalogFilters() {
     setCategory: (category) => commit({ ...filters, category, page: 1 }),
     setSort: (sort) => commit({ ...filters, sort, page: 1 }),
     setPage: (page) => commit({ ...filters, page }),
+    clearFilters: () => {
+      setSearch('');
+      commit({ search: '', category: 'all', sort: 'recent', page: 1 });
+    },
   };
 }
