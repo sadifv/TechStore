@@ -4,10 +4,12 @@ import { readCatalogFilters, catalogFilterUrl } from '../features/catalog/catalo
 export default function useCatalogFilters() {
   const [filters, setFilters] = useState(() => readCatalogFilters(location.search));
   const [search, setSearch] = useState(filters.search);
-  const commit = useCallback((next) => {
+  const commit = useCallback((next, replace = false) => {
     const url = catalogFilterUrl(location.href, next);
-    if (`${location.pathname}${location.search}${location.hash}` !== url)
-      history.pushState(history.state, '', url);
+    if (`${location.pathname}${location.search}${location.hash}` !== url) {
+      if (replace) history.replaceState(history.state, '', url);
+      else history.pushState(history.state, '', url);
+    }
     setFilters(next);
   }, []);
 
@@ -24,7 +26,7 @@ export default function useCatalogFilters() {
   useEffect(() => {
     const value = search.trim().slice(0, 100);
     if (value === filters.search) return undefined;
-    const timeout = setTimeout(() => commit({ ...filters, search: value, page: 1 }), 300);
+    const timeout = setTimeout(() => commit({ ...filters, search: value, page: 1 }, true), 300);
     return () => clearTimeout(timeout);
   }, [search, filters, commit]);
 

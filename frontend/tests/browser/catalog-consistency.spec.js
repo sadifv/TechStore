@@ -8,13 +8,19 @@ test('los filtros se comparten por URL y respetan recarga, atrás y adelante', a
     } } });
   });
   await page.goto('/catalogo?utm_source=prueba');
+  const initialHistoryLength = await page.evaluate(() => history.length);
   await page.getByLabel('Categoría:', { exact: true }).selectOption('Monitores');
   await expect(page).toHaveURL(/category=Monitores/);
   await page.getByLabel('Ordenar por:', { exact: true }).selectOption('price_desc');
+  expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength + 2);
+  await page.getByRole('searchbox', { name: 'Buscar productos' }).fill('Pantalla');
+  await expect.poll(() => new URL(page.url()).searchParams.get('search')).toBe('Pantalla');
   await page.getByRole('searchbox', { name: 'Buscar productos' }).fill('Pantalla & audio');
   await expect.poll(() => new URL(page.url()).searchParams.get('search')).toBe('Pantalla & audio');
+  expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength + 2);
   await page.getByRole('navigation', { name: 'Navegación de páginas' }).getByRole('button', { name: '2', exact: true }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('page')).toBe('2');
+  expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength + 3);
   await page.reload();
   await expect(page.getByRole('searchbox', { name: 'Buscar productos' })).toHaveValue('Pantalla & audio');
   await expect(page.getByLabel('Categoría:', { exact: true })).toHaveValue('Monitores');
@@ -23,6 +29,7 @@ test('los filtros se comparten por URL y respetan recarga, atrás y adelante', a
   await expect(page.locator('#pagination-controls button[aria-current="page"]')).toHaveText('1');
   await page.goBack();
   await expect(page.getByRole('searchbox', { name: 'Buscar productos' })).toHaveValue('');
+  await expect(page.getByLabel('Ordenar por:', { exact: true })).toHaveValue('recent');
   await page.goForward();
   await expect(page.getByRole('searchbox', { name: 'Buscar productos' })).toHaveValue('Pantalla & audio');
   expect(new URL(page.url()).searchParams.get('utm_source')).toBe('prueba');
