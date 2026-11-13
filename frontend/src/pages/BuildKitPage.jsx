@@ -3,6 +3,8 @@ import { backendAssetUrl, requestJson } from '../services/api.js';
 import { placeholder } from '../config/storeCatalog.js';
 import { useCartActions } from '../components/cart/CartContext.js';
 import { money as price } from '../utils/formatters.js';
+import BuildKitProgress from '../components/catalog/BuildKitProgress.jsx';
+import BuildKitPreview from '../components/catalog/BuildKitPreview.jsx';
 
 const kits = {
   pc: ['Arma la base de tu PC'],
@@ -41,6 +43,7 @@ const platforms = {
 };
 
 const stock = (product) => product.availableStock ?? product.stock ?? 0;
+const pcLabels = ['Procesador', 'Placa madre', 'Memoria RAM'];
 
 export default function BuildKitPage() {
   const { add } = useCartActions();
@@ -81,6 +84,46 @@ export default function BuildKitPage() {
   const chosen = selected.map((name) => products?.get(name)).filter(Boolean);
   const subtotal = chosen.reduce((total, item) => total + Number(item.price), 0);
   const hasSoldOut = chosen.some((product) => stock(product) < 1);
+  const steps =
+    kit === 'pc'
+      ? [
+          ...pcLabels.map((label, index) => ({
+            label,
+            target: `build-pc-${index}`,
+            state: selected[index] ? 'selected' : selected.length === index ? 'current' : 'pending',
+            disabled: !products || (index > 0 && !selected[index - 1]),
+          })),
+          {
+            label: 'Resumen',
+            target: 'build-kit-summary',
+            state: selected.length === 3 ? 'current' : 'pending',
+            disabled: !chosen.length,
+          },
+        ]
+      : [
+          { label: 'Tipo de equipo', target: 'build-kit-type', state: 'selected' },
+          {
+            label: 'Productos',
+            target: 'build-kit-products',
+            state: chosen.length ? 'selected' : 'current',
+            disabled: !products,
+          },
+          {
+            label: 'Resumen',
+            target: 'build-kit-summary',
+            state: chosen.length ? 'current' : 'pending',
+            disabled: !chosen.length,
+          },
+        ];
+  const previewSlots =
+    kit === 'pc'
+      ? pcLabels.map((label, index) => ({ label, product: products?.get(selected[index]) }))
+      : kits[kit]
+          .slice(1)
+          .map((label) => ({
+            label,
+            product: selected.includes(label) ? products?.get(label) : null,
+          }));
   const blockedReason = hasSoldOut
     ? 'Tu selección incluye productos agotados.'
     : kit === 'pc'
@@ -113,6 +156,7 @@ export default function BuildKitPage() {
         <h1 id="build-kit-heading">Arma tu equipo</h1>
         <p>Combina productos del catálogo para tu PC, escritorio o cocina.</p>
       </header>
+      <BuildKitProgress steps={steps} busy={busy} />
       <div className="build-kit-layout">
         <section className="build-kit-panel" aria-label="Opciones del equipo">
           <fieldset className="build-kit-types" disabled={busy}>
@@ -122,6 +166,7 @@ export default function BuildKitPage() {
                 <li key={key}>
                   <label>
                     <input
+                      id={key === 'pc' ? 'build-kit-type' : undefined}
                       type="radio"
                       name="equipment-kit"
                       checked={kit === key}
@@ -168,10 +213,13 @@ export default function BuildKitPage() {
                     >
                       <legend>{['1. Procesador', '2. Placa madre', '3. Memoria RAM'][step]}</legend>
                       <select
+                        id={`build-pc-${step}`}
                         aria-label={['Procesador', 'Placa madre', 'Memoria RAM'][step]}
                         value={selected[step] || ''}
                         onChange={(event) =>
-                          setSelected([...selected.slice(0, step), event.target.value])
+                          setSelected(event.target.value
+                            ? [...selected.slice(0, step), event.target.value]
+                            : selected.slice(0, step))
                         }
                       >
                         <option value="">Elige una opción</option>
@@ -191,7 +239,12 @@ export default function BuildKitPage() {
                   ))}
                 </>
               ) : (
-                <fieldset className="form-group" disabled={busy}>
+                <fieldset
+                  id="build-kit-products"
+                  tabIndex={-1}
+                  className="form-group"
+                  disabled={busy}
+                >
                   <legend>Productos del kit</legend>
                   <ul>
                     {kits[kit].slice(1).map((name) => {
@@ -226,7 +279,10 @@ export default function BuildKitPage() {
           )}
         </section>
         <aside className="build-kit-panel build-kit-summary" aria-labelledby="build-kit-summary">
-          <h2 id="build-kit-summary">Tu selección</h2>
+          <h2 id="build-kit-summary" tabIndex={-1}>
+            Tu selección
+          </h2>
+          <BuildKitPreview slots={previewSlots} />
           {chosen.length ? (
             <ul>
               {chosen.map((product) => (

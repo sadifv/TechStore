@@ -27,6 +27,7 @@ estado de Atlas, el correo, los respaldos o los despliegues de producción.
 
 ## Frontend
 
+- [Selección y comparación interactivas](frontend/interactive-shopping.md): pasos, diferencias y efectos decorativos accesibles.
 - [Rendimiento y recursos](frontend/frontend-performance.md): fuentes, imágenes adaptables y carga de colecciones; mediciones locales con contexto.
 - [Portada cinematográfica](frontend/hero-cinematic.md): renders ilustrativos, scroll y movimiento reducido.
 - [Guía de compra y narración](frontend/guia-compra-audio.md): procedencia de los cinco MP3 y transcripciones.

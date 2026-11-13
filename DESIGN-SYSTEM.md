@@ -30,6 +30,8 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+El configurador presenta pasos navegables con estados de selección y una vista de las piezas; no certifica compatibilidad. El comparador conserva tabla semántica y añade filtro de diferencias y destacado manual de columna, sin declarar una opción ganadora. Tarjetas y TechBot usan brillos de foco, barrido de luz y entradas breves de selección con los tokens del tema; los nuevos movimientos se aplican solo sin preferencia de movimiento reducido. Referencias y límites en `docs/frontend/interactive-shopping.md`.
+
 El TechBot autenticado usa un único contenedor `.ai-console` de hasta 960 px: encabezado, selector de modos y contenido comparten bordes y ancho. El selector ocupa dos columnas adaptables, con estado activo visible. La compra guiada integra las razones dentro de cada tarjeta; los resultados no provocan saltos automáticos al recibir foco. Mantener esta composición en los tres temas y comprobar anchos de 320 a 1440 px.
 
 TechBot ofrece «Chat libre» y «Compra guiada» a usuarios con sesión. El segundo modo carga bajo demanda; sus campos permanecen editables y descartan consultas anteriores al cambiar respuestas. Categoría, uso y presupuesto opcional generan hasta tres opciones con datos del catálogo, limitaciones explícitas, comparación por categoría y carrito reutilizados. Los controles usan tokens del tema, etiquetas y alturas de 48 px; el formulario pasa a columnas según el espacio disponible, sin animaciones nuevas.

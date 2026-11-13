@@ -4,7 +4,13 @@ import { productImageSources } from '../../services/productImages.js';
 import { useCartActions } from '../cart/CartContext.js';
 import FavoriteButton from '../favorites/FavoriteButton.jsx';
 
-export default function ProductCard({ product, featured = false, comparison, showAvailability = false, children }) {
+export default function ProductCard({
+  product,
+  featured = false,
+  comparison,
+  showAvailability = false,
+  children,
+}) {
   const { add, notify } = useCartActions();
   const [busy, setBusy] = useState(false);
   const [added, setAdded] = useState(false);
@@ -43,6 +49,9 @@ export default function ProductCard({ product, featured = false, comparison, sho
             />
           </figure>
           <header>
+            {!featured && product.category && (
+              <p className="product-card-category">{product.category}</p>
+            )}
             {featured && <p className="editorial-kicker">{product.category}</p>}
             <h3>{product.name}</h3>
             {featured && product.description && (
@@ -63,7 +72,11 @@ export default function ProductCard({ product, featured = false, comparison, sho
         </a>
         {children}
         <footer>
-          {showAvailability && <p className="favorite-availability">{stock > 0 ? 'Disponible' : 'Agotado'} · No se reserva al guardar</p>}
+          {showAvailability && (
+            <p className="favorite-availability">
+              {stock > 0 ? 'Disponible' : 'Agotado'} · No se reserva al guardar
+            </p>
+          )}
           {comparison && (
             <label>
               <input
