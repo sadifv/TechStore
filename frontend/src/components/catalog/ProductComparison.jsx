@@ -1,8 +1,8 @@
 import { backendAssetUrl } from '../../services/api.js';
 import { placeholder } from '../../config/storeCatalog.js';
+import { money } from '../../utils/formatters.js';
 
 const normalize = (name) => name.trim().normalize('NFKC').toLocaleLowerCase('es');
-const currency = new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' });
 
 export default function ProductComparison({ products, clear }) {
   const specs = products.map(
@@ -53,7 +53,7 @@ export default function ProductComparison({ products, clear }) {
                 <th scope="row">Precio</th>
                 {products.map((product) => (
                   <td className="comparison-price" key={product._id}>
-                    {currency.format(product.price)}
+                    {money(product.price)}
                   </td>
                 ))}
               </tr>

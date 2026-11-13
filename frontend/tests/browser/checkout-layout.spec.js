@@ -71,7 +71,7 @@ for (const { theme, width, role } of checkoutCases) {
     if (role === 'guest') await page.getByRole('button', { name: 'Añadir al carrito', exact: true }).click();
     if (width < 768) await page.getByRole('button', { name: 'Abrir menú', exact: true }).click();
     await page.getByRole('button', { name: 'Ver carrito, 1 productos' }).click();
-    await page.getByRole('button', { name: 'Proceder al Pago', exact: true }).click();
+    await page.getByRole('button', { name: 'Continuar con el pedido', exact: true }).click();
     const dialog = page.locator('#checkout-modal');
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveCSS('overflow-y', 'auto');

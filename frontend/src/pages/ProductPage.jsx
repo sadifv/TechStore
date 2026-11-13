@@ -1,3 +1,4 @@
+import { money } from '../utils/formatters.js';
 import { useEffect, useState } from 'react';
 import { requestJson } from '../services/api.js';
 import ProductGallery from '../components/catalog/ProductGallery.jsx';
@@ -77,10 +78,10 @@ export default function ProductPage({ productId, user }) {
         <section className="product-detail-price-section" aria-label="Precio">
           {onSale && product.originalPrice != null && (
             <p className="product-detail-price-original">
-              <del>${Number(product.originalPrice).toFixed(2)}</del>
+              <del>{money(product.originalPrice)}</del>
             </p>
           )}
-          <p className="product-detail-price">${Number(product.price).toFixed(2)}</p>
+          <p className="product-detail-price">{money(product.price)}</p>
         </section>
         <section className="product-detail-stock" aria-label="Disponibilidad">
           <p

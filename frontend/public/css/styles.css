@@ -1735,6 +1735,7 @@ summary:focus-visible {
 }
 .product-detail-media img {
   width: 100%;
+  height: auto;
   display: block;
   object-fit: contain;
   mix-blend-mode: normal;
@@ -6290,6 +6291,8 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
 }
 .gallery-dialog img {
   display: block;
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 72vh;
   object-fit: contain;

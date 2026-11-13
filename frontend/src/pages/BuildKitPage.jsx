@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../services/api.js';
 import { placeholder } from '../config/storeCatalog.js';
 import { useCartActions } from '../components/cart/CartContext.js';
+import { money as price } from '../utils/formatters.js';
 
 const kits = {
   pc: ['Arma la base de tu PC'],
@@ -40,8 +41,6 @@ const platforms = {
 };
 
 const stock = (product) => product.availableStock ?? product.stock ?? 0;
-const price = (value) =>
-  new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(value);
 
 export default function BuildKitPage() {
   const { add } = useCartActions();

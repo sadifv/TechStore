@@ -193,8 +193,8 @@ test('carrito invitado persiste y checkout conserva la clave al reintentar error
   await page.getByRole('button', { name: 'Añadir al carrito', exact: true }).click();
   await page.reload();
   await page.getByRole('button', { name: 'Ver carrito, 1 productos' }).click();
-  await expect(page.locator('#cart-total')).toHaveText('$329.00');
-  await page.getByRole('button', { name: 'Proceder al Pago', exact: true }).click();
+  await expect(page.locator('#cart-total')).toHaveText('$329,00');
+  await page.getByRole('button', { name: 'Continuar con el pedido', exact: true }).click();
   await page.getByLabel('Nombre Completo', { exact: true }).fill('Persona ficticia');
   await page.getByLabel('Correo electrónico de contacto').fill('comprador@example.invalid');
   const submit = page.getByRole('button', { name: 'Continuar por WhatsApp', exact: true });

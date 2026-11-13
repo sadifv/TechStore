@@ -207,10 +207,10 @@ test('ficha, carrito y checkout comparten superficies legibles sin mutaciones re
       await page.getByRole('button', { name: 'Añadir al carrito', exact: true }).click();
     if (width === 390) await page.getByRole('button', { name: 'Abrir menú' }).click();
     await page.getByRole('button', { name: 'Ver carrito, 1 productos' }).click();
-    await expect(page.locator('#cart-total')).toHaveText('$329.00');
+    await expect(page.locator('#cart-total')).toHaveText('$329,00');
     await checkContrast(page, ['.cart-drawer-header h2', '.cart-item-details h4', '#cart-total']);
     await page.screenshot({ path: testInfo.outputPath(`cart-${width}.png`) });
-    await page.getByRole('button', { name: 'Proceder al Pago', exact: true }).click();
+    await page.getByRole('button', { name: 'Continuar con el pedido', exact: true }).click();
     await expect(page.getByLabel('Nombre Completo', { exact: true })).toBeVisible();
     await checkContrast(page, ['#guest-name', '#guest-email']);
     await page.screenshot({ path: testInfo.outputPath(`checkout-${width}.png`) });

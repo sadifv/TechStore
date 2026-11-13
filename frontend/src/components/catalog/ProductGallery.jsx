@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
-import { backendAssetUrl } from '../../services/api.js';
+import { productImageSources } from '../../services/productImages.js';
 import { placeholder } from '../../config/storeCatalog.js';
 
 export default function ProductGallery({ product, onSale }) {
   const images = [...new Set([product.image || placeholder, ...(product.gallery || [])])];
   const [index, setIndex] = useState(0);
   const dialog = useRef(null);
-  const source = backendAssetUrl(images[index] || images[0]);
+  const source = productImageSources(images[index] || images[0]);
   const changePhoto = (step) =>
     setIndex((current) => (current + step + images.length) % images.length);
   return (
@@ -18,7 +18,7 @@ export default function ProductGallery({ product, onSale }) {
           onClick={() => dialog.current.showModal()}
           aria-label="Ampliar foto"
         >
-          <img src={source} alt={product.name} referrerPolicy="no-referrer" />
+          <img {...source} width={560} height={500} sizes="(min-width: 768px) 50vw, 90vw" alt={product.name} referrerPolicy="no-referrer" />
         </button>
         {onSale && <span className="product-detail-discount">-{product.flashSaleDiscount}%</span>}
       </figure>
@@ -33,7 +33,10 @@ export default function ProductGallery({ product, onSale }) {
                 onClick={() => setIndex(number)}
               >
                 <img
-                  src={backendAssetUrl(image)}
+                  {...productImageSources(image)}
+                  width={64}
+                  height={48}
+                  sizes="64px"
                   alt=""
                   loading="lazy"
                   referrerPolicy="no-referrer"
@@ -63,7 +66,7 @@ export default function ProductGallery({ product, onSale }) {
             </button>
           </form>
         </header>
-        <img src={source} alt={product.name} loading="lazy" referrerPolicy="no-referrer" />
+        <img {...source} width={960} height={640} sizes="90vw" alt={product.name} loading="lazy" referrerPolicy="no-referrer" />
         {images.length > 1 && (
           <nav className="gallery-navigation" aria-label="Recorrer fotos ampliadas">
             <button className="btn btn-outline" type="button" onClick={() => changePhoto(-1)}>

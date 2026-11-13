@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { requestJson } from '../services/api.js';
 import ProductCard from '../components/catalog/ProductCard.jsx';
 import ProductComparison from '../components/catalog/ProductComparison.jsx';
+import useCatalogFilters from '../hooks/useCatalogFilters.js';
 
 import { categories } from '../config/storeCatalog.js';
 
@@ -18,13 +19,7 @@ function getVisiblePages(currentPage, totalPages) {
 }
 
 export default function CatalogPage() {
-  const searchParams = new URLSearchParams(window.location.search);
-  const initialSearch = searchParams.get('search') || '';
-  const [search, setSearch] = useState(initialSearch);
-  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
-  const [category, setCategory] = useState(searchParams.get('category') || 'all');
-  const [sort, setSort] = useState(searchParams.get('sort') || 'recent');
-  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+  const { search, committedSearch, category, sort, page, setSearch, setCategory, setSort, setPage } = useCatalogFilters();
   const [data, setData] = useState({ key: '', products: [], pagination: null });
   const [error, setError] = useState('');
   const [comparison, setComparison] = useState([]);
@@ -41,15 +36,10 @@ export default function CatalogPage() {
   const query = new URLSearchParams({
     page: String(page),
     limit: '8',
-    search: debouncedSearch,
+    search: committedSearch,
     category,
     sort,
   }).toString();
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedSearch(search.trim()), 300);
-    return () => clearTimeout(timeout);
-  }, [search]);
 
   useEffect(() => {
     let active = true;
@@ -101,10 +91,10 @@ export default function CatalogPage() {
             id="search-input"
             name="search"
             value={search}
+            maxLength={100}
             data-filter-active={search.trim() !== ''}
             onChange={(event) => {
               setSearch(event.target.value);
-              setPage(1);
             }}
             placeholder="Buscar productos por nombre o descripción..."
             aria-label="Buscar productos"
@@ -119,7 +109,6 @@ export default function CatalogPage() {
             data-filter-active={category !== 'all'}
             onChange={(event) => {
               setCategory(event.target.value);
-              setPage(1);
             }}
           >
             <option value="all">Todas las categorías</option>
@@ -139,7 +128,6 @@ export default function CatalogPage() {
             data-filter-active={sort !== 'recent'}
             onChange={(event) => {
               setSort(event.target.value);
-              setPage(1);
             }}
           >
             <option value="recent">Más recientes</option>

@@ -1,3 +1,4 @@
+import { money } from '../../utils/formatters.js';
 import { useState } from 'react';
 import { productImageSources } from '../../services/productImages.js';
 import { useCartActions } from '../cart/CartContext.js';
@@ -34,6 +35,8 @@ export default function ProductCard({ product, featured = false, comparison, sho
           <figure className="product-card-media">
             <img
               {...productImageSources(product.image)}
+              width={640}
+              height={480}
               sizes="(min-width: 1001px) 25vw, (min-width: 601px) 45vw, 90vw"
               alt={product.name}
               loading="lazy"
@@ -56,7 +59,7 @@ export default function ProductCard({ product, featured = false, comparison, sho
               </dl>
             )}
           </header>
-          <p className="product-price">${Number(product.price).toFixed(2)}</p>
+          <p className="product-price">{money(product.price)}</p>
         </a>
         <footer>
           {showAvailability && <p className="favorite-availability">{stock > 0 ? 'Disponible' : 'Agotado'} · No se reserva al guardar</p>}

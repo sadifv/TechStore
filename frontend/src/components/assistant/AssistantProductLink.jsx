@@ -1,5 +1,6 @@
 import { backendAssetUrl } from '../../services/api.js';
 import { placeholder } from '../../config/storeCatalog.js';
+import { money } from '../../utils/formatters.js';
 
 export default function AssistantProductLink({ product }) {
   return (
@@ -8,9 +9,7 @@ export default function AssistantProductLink({ product }) {
       <span>
         <strong>{product.name}</strong>
         <span className="product-price">
-          {new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(
-            product.price,
-          )}
+          {money(product.price)}
         </span>
         <span>{product.availableStock > 0 ? 'Disponible' : 'Agotado'}</span>
         <span className="techbot-product-action">Ver producto <span aria-hidden="true">↗</span></span>

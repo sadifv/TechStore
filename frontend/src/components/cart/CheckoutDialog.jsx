@@ -1,3 +1,4 @@
+import { money } from '../../utils/formatters.js';
 import CheckoutAddressSelector from '../account/CheckoutAddressSelector.jsx';
 import BeforeBuying from '../catalog/BeforeBuying.jsx';
 import { restoreCartFocus } from '../dialogs/modalFocus.js';
@@ -76,7 +77,7 @@ export default function CheckoutDialog({
           </fieldset>
         )}
         <fieldset className="form-group">
-          <legend>Método de Pago</legend>
+          <legend>Coordinación del pedido</legend>
           <p>Completarás el pedido por WhatsApp. Te confirmaremos disponibilidad y los detalles.</p>
         </fieldset>
         <CheckoutAddressSelector user={user} open={checkoutOpen} busy={busy} />
@@ -97,7 +98,7 @@ export default function CheckoutDialog({
         <BeforeBuying />
         <section className="checkout-summary-box" aria-label="Resumen del pedido">
           <span>Subtotal antes del cupón:</span>
-          <strong>${subtotal.toFixed(2)}</strong>
+          <strong>{money(subtotal)}</strong>
         </section>
         {status && (
           <output id="checkout-status" className="form-status error" role="status">

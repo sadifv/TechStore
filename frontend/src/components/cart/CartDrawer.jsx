@@ -1,4 +1,5 @@
-import { backendAssetUrl } from '../../services/api.js';
+import { money } from '../../utils/formatters.js';
+import { productImageSources } from '../../services/productImages.js';
 
 export default function CartDrawer({
   cartDrawer,
@@ -56,13 +57,13 @@ export default function CartDrawer({
           ) : (
             items.map((item) => (
               <article className="cart-item" data-id={item.id} key={item.cartItemId || item.id}>
-                <img src={backendAssetUrl(item.image)} alt={item.name} />
+                <img {...productImageSources(item.image)} width={64} height={64} sizes="64px" alt={item.name} />
                 <section className="cart-item-details">
                   <h4>{item.name}</h4>
                   {item.unavailable ? (
                     <span className="cart-item-price">Ya no está disponible</span>
                   ) : (
-                    <span className="cart-item-price">${item.price.toFixed(2)}</span>
+                    <span className="cart-item-price">{money(item.price)}</span>
                   )}
                   <fieldset className="cart-item-controls">
                     <legend className="sr-only">{`Cantidad de ${item.name}`}</legend>
@@ -102,7 +103,7 @@ export default function CartDrawer({
         <footer className="cart-drawer-footer">
           <p className="cart-summary-row">
             <span>Subtotal:</span>
-            <strong id="cart-total">${subtotal.toFixed(2)}</strong>
+            <strong id="cart-total">{money(subtotal)}</strong>
           </p>
           <button
             id="cart-checkout-btn"
@@ -114,7 +115,7 @@ export default function CartDrawer({
             }}
           >
             <i className="ri-secure-payment-line" aria-hidden="true" />
-            Proceder al Pago
+            Continuar con el pedido
           </button>
         </footer>
       </section>

@@ -1,3 +1,4 @@
+import { money } from '../../utils/formatters.js';
 import { useEffect, useState } from 'react';
 import { backendAssetUrl } from '../../services/api.js';
 
@@ -43,9 +44,9 @@ export default function FlashSaleSection({ product }) {
           </p>
           <p className="flash-sale-prices">
             {product.originalPrice != null && (
-              <del>${Number(product.originalPrice).toFixed(2)}</del>
+              <del>{money(product.originalPrice)}</del>
             )}
-            <strong>${Number(product.price).toFixed(2)}</strong>
+            <strong>{money(product.price)}</strong>
           </p>
           <section
             className={`flash-sale-timer${expired ? ' is-expired' : ''}`}
