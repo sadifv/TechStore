@@ -30,6 +30,10 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+La mascota TechBot conserva una sola instancia: aparece en la portada y, al terminar esa sección, se acopla bajo el borde derecho de la navegación fija. Regresa al subir; conserva el foco al cambiar de ubicación, admite teclado y toque y se oculta mientras hay diálogos o carrito abiertos. El movimiento de entrada respeta la preferencia de movimiento reducido y usa los tokens de cada tema.
+
+«Crea tu selección» es el acceso al configurador desde el catálogo. No figura en el menú principal ni enlaza directamente desde la portada; la escena de componentes lleva a esa categoría del catálogo. Se conserva `/arma-tu-equipo` para los enlaces existentes.
+
 El configurador presenta pasos navegables con estados de selección y una vista de las piezas; no certifica compatibilidad. El comparador conserva tabla semántica y añade filtro de diferencias y destacado manual de columna, sin declarar una opción ganadora. Tarjetas y TechBot usan brillos de foco, barrido de luz y entradas breves de selección con los tokens del tema; los nuevos movimientos se aplican solo sin preferencia de movimiento reducido. Referencias y límites en `docs/frontend/interactive-shopping.md`.
 
 El TechBot autenticado usa un único contenedor `.ai-console` de hasta 960 px: encabezado, selector de modos y contenido comparten bordes y ancho. El selector ocupa dos columnas adaptables, con estado activo visible. La compra guiada integra las razones dentro de cada tarjeta; los resultados no provocan saltos automáticos al recibir foco. Mantener esta composición en los tres temas y comprobar anchos de 320 a 1440 px.
@@ -53,7 +57,7 @@ El catálogo ofrece reintento tras un error conservando los filtros y una acció
 
 - **Contacto:** WhatsApp es el canal principal, seguido por correo, ubicación y horario. El formulario identifica su finalidad y el correo como canal de respuesta. Una línea con el acento del tema entra al desplazarse en navegadores compatibles; con movimiento reducido permanece estática.
 
-- **Escena del configurador:** `BuildExperience.jsx` usa una ilustración SVG de placa, procesador y RAM. El desplazamiento ensambla las piezas en escritorio mediante una línea de tiempo CSS. Móvil, movimiento reducido y navegadores sin soporte muestran la composición ensamblada. Su enlace abre `/arma-tu-equipo`; la escena no determina compatibilidad ni disponibilidad.
+- **Escena de componentes:** `BuildExperience.jsx` usa una ilustración SVG de placa, procesador y RAM. El desplazamiento ensambla las piezas en escritorio mediante una línea de tiempo CSS. Móvil, movimiento reducido y navegadores sin soporte muestran la composición ensamblada. Su enlace abre `/catalogo?category=Componentes`; la escena no determina compatibilidad ni disponibilidad.
 
 - **Marca:** `LogoMark.jsx` comparte la T con nodo entre cabecera, entrada y pie. El trazo toma el color primario y el nodo el acento del tema. `frontend/public/favicon.svg` conserva esa geometría en azul y coral. El avatar exportado para redes está en `docs/brand/techstore-avatar.png`, con símbolo blanco y nodo coral sobre fondo oscuro. Al cambiar la geometría, revisar las tres representaciones.
 

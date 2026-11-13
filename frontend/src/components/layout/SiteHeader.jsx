@@ -27,6 +27,7 @@ export default function SiteHeader({ user }) {
         </span>
       </span>
       <nav className="navbar" aria-label="Navegación principal">
+        <div id="navbar-assistant" className="navbar-assistant" />
         <a href="/#inicio" className="navbar-logo" aria-label="TechStore - Inicio">
           <LogoMark />
           <span>TechStore</span>
@@ -50,11 +51,6 @@ export default function SiteHeader({ user }) {
           <li>
             <a href="/catalogo" onClick={() => setOpen(false)}>
               <i className="ri-shopping-bag-line" aria-hidden="true" /> Catálogo
-            </a>
-          </li>
-          <li>
-            <a href="/arma-tu-equipo" onClick={() => setOpen(false)}>
-              Arma tu equipo
             </a>
           </li>
           <li>

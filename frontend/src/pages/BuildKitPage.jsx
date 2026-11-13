@@ -118,12 +118,10 @@ export default function BuildKitPage() {
   const previewSlots =
     kit === 'pc'
       ? pcLabels.map((label, index) => ({ label, product: products?.get(selected[index]) }))
-      : kits[kit]
-          .slice(1)
-          .map((label) => ({
-            label,
-            product: selected.includes(label) ? products?.get(label) : null,
-          }));
+      : kits[kit].slice(1).map((label) => ({
+          label,
+          product: selected.includes(label) ? products?.get(label) : null,
+        }));
   const blockedReason = hasSoldOut
     ? 'Tu selección incluye productos agotados.'
     : kit === 'pc'
@@ -153,7 +151,7 @@ export default function BuildKitPage() {
     <section className="products-section build-kit" aria-labelledby="build-kit-heading">
       <header className="build-kit-intro">
         <p className="editorial-kicker">Selección TechStore</p>
-        <h1 id="build-kit-heading">Arma tu equipo</h1>
+        <h1 id="build-kit-heading">Crea tu selección</h1>
         <p>Combina productos del catálogo para tu PC, escritorio o cocina.</p>
       </header>
       <BuildKitProgress steps={steps} busy={busy} />
@@ -217,9 +215,11 @@ export default function BuildKitPage() {
                         aria-label={['Procesador', 'Placa madre', 'Memoria RAM'][step]}
                         value={selected[step] || ''}
                         onChange={(event) =>
-                          setSelected(event.target.value
-                            ? [...selected.slice(0, step), event.target.value]
-                            : selected.slice(0, step))
+                          setSelected(
+                            event.target.value
+                              ? [...selected.slice(0, step), event.target.value]
+                              : selected.slice(0, step),
+                          )
                         }
                       >
                         <option value="">Elige una opción</option>

@@ -1,11 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function HeroMascot({ signedIn = false }) {
   const [open, setOpen] = useState(false);
+  const anchor = useRef(null);
+  const [dock, setDock] = useState(null);
+  const mascotRef = useRef(null);
+  const restoreFocus = useRef(null);
 
-  return (
+  useLayoutEffect(() => {
+    if (restoreFocus.current) {
+      mascotRef.current?.querySelector(restoreFocus.current)?.focus({ preventScroll: true });
+      restoreFocus.current = null;
+    }
+  }, [dock]);
+
+  useEffect(() => {
+    const hero = anchor.current?.closest('.hero-cinema');
+    const slot = document.getElementById('navbar-assistant');
+    if (!hero || !slot) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      // Ignore a hero below the viewport; dock only after passing the whole scene.
+      const active = document.activeElement;
+      restoreFocus.current = mascotRef.current?.contains(active)
+        ? active.tagName === 'A' ? 'a' : 'button'
+        : null;
+      setDock(!entry.isIntersecting && entry.boundingClientRect.bottom <= 0 ? slot : null);
+    });
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
+  const mascot = (
     <aside
-      className="hero-mascot"
+      ref={mascotRef}
+      className={`hero-mascot${dock ? ' hero-mascot--docked' : ''}`}
       aria-label="TechBot"
       onKeyDown={(event) => {
         if (event.key === 'Escape') setOpen(false);
@@ -57,10 +86,15 @@ export default function HeroMascot({ signedIn = false }) {
         {signedIn
           ? '¡Hola! Cuéntame qué estás buscando.'
           : '¡Hola! Inicia sesión para conversar conmigo.'}{' '}
-        <a href="#ai-assistant" onClick={() => setOpen(false)}>
+        <a href="/#ai-assistant" onClick={() => setOpen(false)}>
           {signedIn ? 'Abrir TechBot' : 'Conocer TechBot'}
         </a>
       </p>
     </aside>
+  );
+  return (
+    <div ref={anchor} className="hero-mascot-anchor">
+      {dock ? createPortal(mascot, dock) : mascot}
+    </div>
   );
 }

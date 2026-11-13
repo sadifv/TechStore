@@ -6295,6 +6295,34 @@ Mantener todas las consultas por ancho aquí y ordenadas de menor a mayor. */
   inset: 0.4rem 0.75rem auto auto;
   z-index: 3;
 }
+.navbar-assistant {
+  position: absolute;
+  inset: calc(100% + 0.5rem) 1rem auto auto;
+}
+.navbar-assistant .hero-mascot--docked {
+  position: relative;
+  inset: auto;
+}
+.hero-mascot--docked .hero-mascot-button {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+body:has(.cart-drawer.open, dialog[open]) .navbar-assistant {
+  visibility: hidden;
+}
+.hero-mascot-button:focus-visible .hero-mascot-preview {
+  visibility: visible;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-mascot--docked { animation: mascot-dock-in 180ms ease-out; }
+  @keyframes mascot-dock-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
 @media (max-width: 767px) {
   .editorial-hero .hero-mascot {
     position: relative;

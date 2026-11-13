@@ -3,15 +3,15 @@ export default function BuildExperience() {
     <section className="build-experience" aria-labelledby="build-experience-title">
       <figure className="build-experience-stage">
         <figcaption className="build-experience-copy">
-          <p className="editorial-kicker">Arma tu equipo</p>
+          <p className="editorial-kicker">Componentes para tu PC</p>
           <h2 id="build-experience-title">
             Cada pieza cuenta.
             <br />
             Empieza por la base.
           </h2>
           <p>Explora procesadores, placas y memoria para elegir la base de tu PC.</p>
-          <a className="btn btn-primary" href="/arma-tu-equipo">
-            Explorar el configurador <span aria-hidden="true">↗</span>
+          <a className="btn btn-primary" href="/catalogo?category=Componentes">
+            Explorar componentes <span aria-hidden="true">↗</span>
           </a>
         </figcaption>
         <figure

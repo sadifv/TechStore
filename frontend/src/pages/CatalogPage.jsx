@@ -19,7 +19,18 @@ function getVisiblePages(currentPage, totalPages) {
 }
 
 export default function CatalogPage() {
-  const { search, committedSearch, category, sort, page, setSearch, setCategory, setSort, setPage, clearFilters } = useCatalogFilters();
+  const {
+    search,
+    committedSearch,
+    category,
+    sort,
+    page,
+    setSearch,
+    setCategory,
+    setSort,
+    setPage,
+    clearFilters,
+  } = useCatalogFilters();
   const [retry, setRetry] = useState(0);
   const [data, setData] = useState({ key: '', products: [], pagination: null });
   const [error, setError] = useState('');
@@ -72,7 +83,7 @@ export default function CatalogPage() {
       <header className="section-header">
         <h1 id="catalog-heading">Nuestro Catálogo</h1>
         <a className="btn btn-outline" href="/arma-tu-equipo">
-          Arma tu equipo
+          Crea tu selección
         </a>
       </header>
       {comparison.length > 0 && (
@@ -152,7 +163,11 @@ export default function CatalogPage() {
         ) : error ? (
           <li className="empty-state-item">
             <p className="empty-msg">{error}</p>
-            <button className="btn btn-outline" type="button" onClick={() => setRetry((value) => value + 1)}>
+            <button
+              className="btn btn-outline"
+              type="button"
+              onClick={() => setRetry((value) => value + 1)}
+            >
               Reintentar
             </button>
           </li>
