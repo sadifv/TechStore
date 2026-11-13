@@ -121,25 +121,62 @@ test(
       call('confirmEmailChange', confirmation),
       call('confirmEmailChange', confirmation),
     ]);
-    assert.deepEqual(results.map((res) => res.statusCode).sort(), [200, 409]);
+    // Si la segunda lectura ocurre tras consumir el token, falla en validación
+    // (400); si ambas lo leen antes, pierde la actualización atómica (409).
+    // En ambos casos debe existir exactamente una confirmación exitosa.
+    const statuses = results.map((res) => res.statusCode).sort();
+    assert.equal(statuses[0], 200);
+    assert.ok([400, 409].includes(statuses[1]));
     current = await User.findById(user._id).select('+authVersion +emailChangeHash');
     assert.equal(current.email, 'next@example.invalid');
     assert.equal(current.authVersion, 2);
     assert.equal(current.emailChangeHash, undefined);
     assert.equal((await call('confirmEmailChange', confirmation)).statusCode, 400);
-    assert.equal((await call('requestEmailChange', { ...credentials, email: 'expired@example.invalid' })).statusCode, 200);
+    assert.equal(
+      (await call('requestEmailChange', { ...credentials, email: 'expired@example.invalid' }))
+        .statusCode,
+      200,
+    );
     const expiredToken = delivered.token;
-    assert.equal((await call('requestEmailChange', { ...credentials, email: 'too-soon@example.invalid' })).statusCode, 429);
-    await User.updateOne({ _id: user._id }, { $set: { emailChangeExpires: new Date(Date.now() - 1000) } });
-    assert.equal((await call('confirmEmailChange', { ...credentials, token: expiredToken })).statusCode, 400);
-    await User.create({ name: 'Other Account', email: 'taken@example.invalid', password: 'other-fixture-password' });
-    assert.equal((await call('requestEmailChange', { ...credentials, email: 'taken@example.invalid' })).statusCode, 200);
-    assert.equal((await call('confirmEmailChange', { ...credentials, token: delivered.token })).statusCode, 409);
+    assert.equal(
+      (await call('requestEmailChange', { ...credentials, email: 'too-soon@example.invalid' }))
+        .statusCode,
+      429,
+    );
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { emailChangeExpires: new Date(Date.now() - 1000) } },
+    );
+    assert.equal(
+      (await call('confirmEmailChange', { ...credentials, token: expiredToken })).statusCode,
+      400,
+    );
+    await User.create({
+      name: 'Other Account',
+      email: 'taken@example.invalid',
+      password: 'other-fixture-password',
+    });
+    assert.equal(
+      (await call('requestEmailChange', { ...credentials, email: 'taken@example.invalid' }))
+        .statusCode,
+      200,
+    );
+    assert.equal(
+      (await call('confirmEmailChange', { ...credentials, token: delivered.token })).statusCode,
+      409,
+    );
     assert.equal((await User.findById(user._id)).email, 'next@example.invalid');
     await User.updateOne({ _id: user._id }, { $unset: { emailChangeExpires: '' } });
-    assert.equal((await call('requestEmailChange', { ...credentials, email: 'revoked@example.invalid' })).statusCode, 200);
+    assert.equal(
+      (await call('requestEmailChange', { ...credentials, email: 'revoked@example.invalid' }))
+        .statusCode,
+      200,
+    );
     await User.updateOne({ _id: user._id }, { $inc: { authVersion: 1 } });
-    assert.equal((await call('confirmEmailChange', { ...credentials, token: delivered.token })).statusCode, 400);
+    assert.equal(
+      (await call('confirmEmailChange', { ...credentials, token: delivered.token })).statusCode,
+      400,
+    );
     await User.updateOne({ _id: user._id }, { $unset: { emailChangeExpires: '' } });
     deliveryFails = true;
     assert.equal(
@@ -162,11 +199,22 @@ test(
     const mfa = require('../services/adminMfa');
     const secret = mfa.generateSecret();
     const step = Math.floor(Date.now() / 30000);
-    await User.updateOne({ _id: user._id }, { $set: {
-      adminMfaSecret: mfa.encryptSecret(secret), adminMfaEnabledAt: new Date(), adminMfaLastTotpStep: step - 1,
-    } });
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          adminMfaSecret: mfa.encryptSecret(secret),
+          adminMfaEnabledAt: new Date(),
+          adminMfaLastTotpStep: step - 1,
+        },
+      },
+    );
     const session = () => ({ user: {}, authLevel: 'mfa', destroy: (done) => done() });
-    const staffBody = { ...credentials, password: 'staff-replacement-test-password', code: mfa.generateTotp(secret, step) };
+    const staffBody = {
+      ...credentials,
+      password: 'staff-replacement-test-password',
+      code: mfa.generateTotp(secret, step),
+    };
     const staffResults = await Promise.all([
       call('changePassword', staffBody, { session: session() }),
       call('changePassword', staffBody, { session: session() }),
@@ -174,8 +222,19 @@ test(
     assert.equal(staffResults.filter((result) => result.statusCode === 200).length, 1);
     assert.ok(staffResults.some((result) => [403, 409].includes(result.statusCode)));
     assert.equal((await User.findById(user._id)).role, 'admin');
-    assert.equal((await call('changePassword', {
-      currentPassword: 'staff-replacement-test-password', password: 'replay-fixture-password', code: staffBody.code,
-    }, { session: session() })).statusCode, 409);
+    assert.equal(
+      (
+        await call(
+          'changePassword',
+          {
+            currentPassword: 'staff-replacement-test-password',
+            password: 'replay-fixture-password',
+            code: staffBody.code,
+          },
+          { session: session() },
+        )
+      ).statusCode,
+      409,
+    );
   },
 );

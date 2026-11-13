@@ -10,6 +10,8 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+La compra guiada de TechBot requiere autenticación y limita solicitudes con los mismos controles del chat. Acepta categorías/usos de listas cerradas y presupuesto numérico positivo hasta 100.000 USD o `null`. Precios efectivos y disponibilidad descontando reservas se calculan en servidor; la respuesta solo contiene campos públicos y no se cachea. Consultar no escribe pedidos ni reservas, y no certifica compatibilidad o rendimiento.
+
 - **Boletín público:** las solicitudes válidas nuevas, repetidas y reactivadas devuelven el mismo estado y mensaje, también ante inserciones concurrentes del mismo correo. Los errores de almacenamiento siguen siendo errores; no se garantiza igualdad de tiempos de respuesta.
 - **Identidad de invitados:** controlador y servicio de checkout validan el nombre (máximo 120 caracteres, sin controles ni caracteres de formato) antes de reservar inventario. La salida a WhatsApp limita y limpia nombres antiguos sin modificar pedidos históricos.
 

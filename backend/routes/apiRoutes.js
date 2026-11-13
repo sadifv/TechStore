@@ -120,6 +120,13 @@ router.use(
 // ==========================================
 
 router.post('/ai/chat', requireAuth, aiSlowDown, aiLimiter, processAiChat);
+router.post(
+  '/ai/recommendations',
+  requireAuth,
+  aiSlowDown,
+  aiLimiter,
+  require('../controllers/guidedShoppingController').getGuidedRecommendations,
+);
 router.get('/ai/history', requireAuth, getChatHistory);
 router.delete('/ai/history', requireAuth, clearChatHistory);
 

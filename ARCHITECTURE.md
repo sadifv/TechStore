@@ -2,6 +2,8 @@
 
 ## Estructura
 
+TechBot conserva el chat libre y ofrece compra guiada con `GuidedShopping`. `POST /api/ai/recommendations` exige sesión vigente y comparte los límites de IA; el controlador consulta productos activos y reservas, y `services/guidedShopping.js` valida preferencias y selecciona hasta tres opciones por precio efectivo, disponibilidad y evidencia técnica. No llama a Gemini, modifica pedidos ni reserva inventario. Usa las tarjetas, el comparador y el carrito existentes. Las explicaciones son orientativas y reconocen especificaciones faltantes. Detalles en `docs/features/techbot-guided-shopping.md`.
+
 «Mi cuenta» compone `ProfileOrders` (grupos activos/anteriores), `ProfileOrderCard` (resumen y seguimiento reutilizado), favoritos, direcciones y `AccountSecuritySection`. Los cambios de cuenta usan `/api/auth/account/{name,password,email,email/confirm}` y `accountSecurityController`; correo y contraseña se confirman en el servidor, revocan sesiones y conservan MFA. La verificación del correo usa un código copiado desde el mensaje, sin token en URLs ni mutaciones mediante GET. El cambio de nombre vuelve a consultar la sesión para actualizar la cabecera. No requiere nuevas variables de entorno ni índices.
 
 TechStore tiene dos aplicaciones JavaScript desplegadas por separado y una base MongoDB. El frontend React se compila con Vite y se publica en Netlify. El backend Express se ejecuta en Node.js en Render. Mongoose modela los datos de MongoDB Atlas. Las plantillas EJS del backend generan correos; la interfaz de la tienda se renderiza con React.

@@ -30,6 +30,8 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+TechBot ofrece «Chat libre» y «Compra guiada» a usuarios con sesión. El segundo modo carga bajo demanda; sus campos permanecen editables y descartan consultas anteriores al cambiar respuestas. Categoría, uso y presupuesto opcional generan hasta tres opciones con datos del catálogo, limitaciones explícitas, comparación por categoría y carrito reutilizados. Los controles usan tokens del tema, etiquetas y alturas de 48 px; el formulario pasa a columnas según el espacio disponible, sin animaciones nuevas.
+
 La búsqueda reemplaza la entrada actual del historial (`replaceState`); categoría, orden y página añaden una entrada (`pushState`). Así, volver atrás recupera cambios explícitos sin recorrer búsquedas parciales.
 
 El catálogo ofrece reintento tras un error conservando los filtros y una acción para limpiarlos cuando están activos, sin eliminar parámetros ajenos de la URL. El checkout y su confirmación aclaran que el costo de entrega no está incluido y se coordina por WhatsApp; no calculan una tarifa de transporte.

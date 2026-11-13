@@ -22,6 +22,7 @@ estado de Atlas, el correo, los respaldos o los despliegues de producción.
 
 ## Funcionalidades
 
+- [Compra guiada de TechBot](features/techbot-guided-shopping.md): preferencias, recomendaciones orientativas, disponibilidad y pruebas.
 - [Historial administrativo y especificaciones](features/admin-history-and-specifications.md): permisos, datos registrados, validación e índices.
 
 ## Frontend
@@ -39,4 +40,4 @@ estado de Atlas, el correo, los respaldos o los despliegues de producción.
 Actualizar la guía correspondiente cuando cambie su comportamiento y comprobar sus enlaces.
 Los planes y especificaciones históricos de implementación se retiraron de esta carpeta;
 permanecen disponibles en Git. Los componentes y pruebas documentan el comportamiento
-actual. No guardar aquí secretos, registros privados, copias de bases ni datos de clientes.
+actual.
