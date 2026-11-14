@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import AppearanceSettings from './AppearanceSettings.jsx';
 import CollectionSettings from './CollectionSettings.jsx';
+import CategorySettings from './CategorySettings.jsx';
+import StoreContentSettings from './StoreContentSettings.jsx';
 import { AdminNotice } from './AdminNotice.jsx';
 import { useAdminData } from '../../hooks/useAdminData.js';
 import DashboardCatalog from './DashboardCatalog.jsx';
@@ -19,17 +21,16 @@ export function AdminDashboardPage({ user }) {
         <p role="status">Cargando panel…</p>
       </section>
     );
-  const {
-    orders = [],
-    products = [],
-    topProducts = [],
-    messages = [],
-    subscribers = [],
-    subscriberPagination,
-  } = data;
+  const { orders = [], topProducts = [], subscribers = [], subscriberPagination } = data;
   return (
     <section className="admin-container container" aria-labelledby="admin-dashboard-heading">
       {user?.role === 'owner' && <AppearanceSettings />}
+      {['owner', 'admin'].includes(user?.role) && (
+        <>
+          <StoreContentSettings />
+          <CategorySettings />
+        </>
+      )}
       <header className="admin-header dashboard-header">
         <h1 id="admin-dashboard-heading">
           <i aria-hidden="true" className="ri-dashboard-line" /> Panel de Administración
@@ -52,10 +53,9 @@ export function AdminDashboardPage({ user }) {
         </nav>
       </header>
       <DashboardSalesOverview data={data} orders={orders} />
-      <DashboardCatalog products={products} refresh={refresh} />
-      {['owner', 'admin'].includes(user?.role) && <CollectionSettings products={products} />}
+      <DashboardCatalog refresh={refresh} />
+      {['owner', 'admin'].includes(user?.role) && <CollectionSettings />}
       <DashboardContacts
-        messages={messages}
         subscribers={subscribers}
         subscriberPagination={subscriberPagination}
         setSubscriberPage={setSubscriberPage}

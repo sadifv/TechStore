@@ -48,6 +48,8 @@ Estos controles describen el código; no equivalen a una certificación de segur
 
 ## Credenciales y operación
 
+El editor de tienda exige administración con MFA y auditoría transaccional para contenido, categorías, colecciones y restauración de productos. Los cuerpos tienen esquemas cerrados y límites; no se admiten HTML, CSS, scripts ni URLs ejecutables. Contenido y categorías usan revisión optimista para rechazar sobrescrituras desactualizadas. Las imágenes se muestran desde referencias seguras, sin descargas del servidor. Editar datos públicos de contacto no modifica credenciales Gmail ni el destinatario de WhatsApp del checkout. El historial omite los textos de contacto.
+
 Las reseñas requieren una compra propia pagada y entregada/completada, verificada en el servidor. No se acepta autor, estado aprobado ni prueba de compra enviados por el navegador. Solo reseñas aprobadas aparecen públicamente; sus ediciones vuelven a pendiente y las decisiones se condicionan a versión. Owner y admin requieren MFA y no pueden aprobar su propia reseña. La auditoría interna no se devuelve en el listado público.
 
 Las direcciones pertenecen exclusivamente al usuario de la sesión, incluso si quien consulta es personal administrativo. El límite de cinco y la predeterminada se mantienen mediante actualizaciones atómicas/CAS. Se recopilan destinatario, calle, ciudad, país y referencia opcional; no se añade documento, teléfono ni geolocalización. La dirección puntual de un invitado no crea libreta. Cambiar/borrar una dirección no modifica datos históricos de pedidos.

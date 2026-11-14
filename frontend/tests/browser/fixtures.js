@@ -1,4 +1,6 @@
 import { test as base, expect } from '@playwright/test';
+import contentDefaults from '../../src/config/storeContentDefaults.json' with { type: 'json' };
+import { categories } from '../../src/config/storeCatalog.js';
 
 export const product = {
   _id: 'aaaaaaaaaaaaaaaaaaaaaaaa',
@@ -44,6 +46,35 @@ export const test = base.extend({
       let json = { success: true };
       let status = 200;
       switch (key) {
+        case 'GET /api/store/content':
+        case 'GET /api/admin/content':
+          Object.assign(json, { content: contentDefaults, revision: 0 });
+          break;
+        case 'GET /api/store/categories':
+        case 'GET /api/admin/categories':
+          Object.assign(json, {
+            revision: 0,
+            categories: categories.map((name, order) => ({
+              id: `category-${order + 1}`,
+              name,
+              order,
+              image: '',
+              aliases: [],
+            })),
+          });
+          break;
+        case 'GET /api/admin/products':
+          json.data = {
+            products: [state.product],
+            pagination: { currentPage: 1, totalPages: 1, totalCount: 1 },
+          };
+          break;
+        case 'GET /api/admin/messages':
+          json.data = {
+            messages: [],
+            pagination: { currentPage: 1, totalPages: 1, totalCount: 0 },
+          };
+          break;
         case 'GET /api/auth/me':
           status = state.sessionStatus || (state.role === 'guest' ? 401 : 200);
           json =

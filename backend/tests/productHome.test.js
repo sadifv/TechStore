@@ -41,7 +41,10 @@ const Product = {
   },
 };
 const Reservation = { getReservedStockByProducts: async () => new Map([['1', 5]]) };
+let categorySettings = { categories: ['Laptops', 'Audio', 'Periféricos'].map((name, i) => ({ id: `category-${i * 2 + 1}`, name })) };
 Module._load = function (request, parent, isMain) {
+  if (parent?.filename === controllerPath && request === '../services/storeCategories')
+    return { getCategorySettings: async () => categorySettings };
   if (parent?.filename === controllerPath && request === '../models/Product') return Product;
   if (parent?.filename === controllerPath && request === '../models/Reservation')
     return Reservation;
@@ -90,4 +93,11 @@ test('home API excludes fully reserved stock, diversifies featured products and 
   assert.ok(calls[1].fields.includes('description'));
   assert.equal(calls[0].query.archivedAt, null);
   assert.deepEqual(response.flashSale, saleProduct);
+});
+
+test('home selection follows renamed categories by stable identity', async () => {
+  categorySettings = { categories: [{ id: 'category-1', name: 'Portátiles' }] };
+  calls.length = 0;
+  await getHomeProducts({ query: {} }, { status() { return this; }, json() {} }, error => { throw error; });
+  assert.deepEqual(calls[0].query.category.$in, ['Portátiles']);
 });

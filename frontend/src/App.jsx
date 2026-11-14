@@ -10,8 +10,20 @@ import useStoreTheme from './hooks/useStoreTheme.js';
 import usePresenceHeartbeat from './hooks/usePresenceHeartbeat.js';
 import { matchRoute } from './app/routeDefinitions.js';
 import { RoutedPage, PageLoading } from './app/routes.jsx';
+import StoreContentProvider from './components/content/StoreContentProvider.jsx';
+import StoreCategoriesProvider from './components/catalog/StoreCategoriesProvider.jsx';
 
 export default function App() {
+  return (
+    <StoreContentProvider>
+      <StoreCategoriesProvider>
+        <StoreApp />
+      </StoreCategoriesProvider>
+    </StoreContentProvider>
+  );
+}
+
+function StoreApp() {
   const { user, ready: authReady, error } = useSession();
   useStoreTheme();
   usePresenceHeartbeat(authReady ? user : null);

@@ -1,7 +1,9 @@
 import WhatsappLink from '../contact/WhatsappLink.jsx';
 import LogoMark from './LogoMark.jsx';
+import useStoreContent from '../../hooks/useStoreContent.js';
 
 export default function SiteFooter() {
+  const { content } = useStoreContent();
   return (
     <>
       <footer className="footer">
@@ -9,16 +11,13 @@ export default function SiteFooter() {
           <h2>
             <LogoMark /> TechStore
           </h2>
-          <p>Laptops, audio y periféricos en Ecuador. Coordina tu pedido por WhatsApp.</p>
+          <p>{content.footerText}</p>
           <nav className="footer-socials" aria-label="Redes sociales">
-            <a
-              href="https://www.instagram.com/whois.sadi.lm/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Instagram"
-            >
-              <i className="ri-instagram-line" aria-hidden="true" />
-            </a>
+            {content.instagram && (
+              <a href={content.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
+                <i className="ri-instagram-line" aria-hidden="true" />
+              </a>
+            )}
             <WhatsappLink />
           </nav>
         </section>
@@ -64,7 +63,7 @@ export default function SiteFooter() {
           <address>
             <p>
               <i className="ri-map-pin-line" aria-hidden="true" />
-              Villa España, Guayaquil, Ecuador
+              {content.location}
             </p>
             <p>
               <i className="ri-phone-line" aria-hidden="true" />
@@ -72,11 +71,11 @@ export default function SiteFooter() {
             </p>
             <p>
               <i className="ri-mail-line" aria-hidden="true" />
-              <a href="mailto:sadiflores20201@gmail.com">sadiflores20201@gmail.com</a>
+              <a href={`mailto:${content.email}`}>{content.email}</a>
             </p>
             <p>
               <i className="ri-time-line" aria-hidden="true" />
-              Lun–Vie, 9:00–16:00
+              {content.hours}
             </p>
           </address>
         </section>

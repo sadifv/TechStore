@@ -2,6 +2,7 @@ const definitions = Object.freeze({
   'product.created': 'product',
   'product.updated': 'product',
   'product.archived': 'product',
+  'product.restored': 'product',
   'product.flash_sale_activated': 'product',
   'product.flash_sale_deactivated': 'product',
   'order.payment_confirmed': 'order',
@@ -11,6 +12,8 @@ const definitions = Object.freeze({
   'user.role_changed': 'user',
   'user.deleted': 'user',
   'appearance.updated': 'appearance',
+  'content.updated': 'content',
+  'category.updated': 'category',
   'collection.updated': 'collection',
   'coupon.created': 'coupon',
   'coupon.status_updated': 'coupon',
@@ -25,7 +28,7 @@ const validators = {
   flashSale: (v) => typeof v === 'boolean',
   flashSaleDiscount: (v) => typeof v === 'number' && v >= 0 && v <= 100,
   flashSaleEndsAt: (v) => v === null || v instanceof Date,
-  archivedAt: (v) => v instanceof Date,
+  archivedAt: (v) => v === null || v instanceof Date,
   status: (v) =>
     [
       'pending',
@@ -41,7 +44,20 @@ const validators = {
   paymentStatus: (v) => ['pending', 'paid', 'failed'].includes(v),
   role: (v) => ['user', 'admin'].includes(v),
   theme: (v) => ['normal', 'halloween', 'christmas'].includes(v),
-  collectionKey: (v) => ['setup', 'study', 'gaming', 'halloween', 'christmas'].includes(v),
+  collectionKey: (v) =>
+    typeof v === 'string' &&
+    /^[a-z][a-z0-9-]{1,39}$/.test(v) &&
+    !['constructor', 'prototype'].includes(v),
+  categoryCount: (v) => Number.isInteger(v) && v >= 1 && v <= 40,
+  updatedFields: (v) =>
+    Array.isArray(v) &&
+    v.length <= 30 &&
+    v.every(
+      (key) => typeof key === 'string' && Object.hasOwn(require('./storeContent').defaults, key),
+    ),
+  title: (v) => typeof v === 'string' && v.length <= 80 && !/[<>\u0000-\u001f]/.test(v),
+  enabled: (v) => typeof v === 'boolean',
+  order: (v) => Number.isInteger(v) && v >= 0 && v <= 100,
   productCount: (v) => Number.isInteger(v) && v >= 0 && v <= 8,
   active: (v) => typeof v === 'boolean',
   discountPercent: (v) => typeof v === 'number' && v >= 1 && v <= 100,
@@ -63,7 +79,9 @@ const fields = {
   order: ['status', 'paymentStatus'],
   user: ['role'],
   appearance: ['theme'],
-  collection: ['collectionKey', 'productCount'],
+  content: ['updatedFields'],
+  category: ['categoryCount'],
+  collection: ['collectionKey', 'productCount', 'title', 'enabled', 'order'],
   coupon: [
     'active',
     'discountPercent',

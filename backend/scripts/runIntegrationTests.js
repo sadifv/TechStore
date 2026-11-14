@@ -17,6 +17,10 @@ const child = spawn(
     'tests/guidedShopping.integration.test.js',
     'tests/campaignConsent.integration.test.js',
     'tests/publicInputs.integration.test.js',
+    'tests/adminCatalog.integration.test.js',
+    'tests/storeCategories.integration.test.js',
+    'tests/storeContent.integration.test.js',
+    'tests/storeCollections.integration.test.js',
   ],
   {
     cwd: path.join(__dirname, '..'),

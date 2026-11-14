@@ -3,6 +3,10 @@ const express = require('express');
 const router = express.Router();
 
 const { requireAdmin } = require('../middleware/authMiddleware');
+const adminCatalog = require('../controllers/adminCatalogController');
+router.get('/products', requireAdmin, adminCatalog.getProducts);
+router.get('/messages', requireAdmin, adminCatalog.getMessages);
+router.patch('/products/:id/restore', requireAdmin, adminCatalog.restoreProduct);
 const {
   createProduct,
   updateProduct,
@@ -42,7 +46,6 @@ router.put('/orders/:id/status', requireAdmin, updateOrderStatus);
 
 // ==========================================
 // PRODUCTOS Y OFERTAS FLASH
-// ✅ FIX: `validate` SIN paréntesis
 // ==========================================
 router.post('/products', requireAdmin, uploadSingleProductImage, validate, createProduct);
 router.put('/products/:id', requireAdmin, uploadSingleProductImage, validate, updateProduct);

@@ -9,6 +9,9 @@ export default function HomeCollections() {
     () => typeof window === 'undefined' || !('IntersectionObserver' in window),
   );
   const [groups, setGroups] = useState({});
+  const [definitions, setDefinitions] = useState(
+    storeCollections.map(([key, title]) => ({ key, title })),
+  );
   const [selected, setSelected] = useState('');
   useEffect(() => {
     if (nearby || !sectionRef.current) return undefined;
@@ -28,14 +31,19 @@ export default function HomeCollections() {
     const controller = new AbortController();
     requestJson('/api/store/collections', { signal: controller.signal })
       .then((result) => {
-        if (!controller.signal.aborted) setGroups(result.collections || {});
+        if (!controller.signal.aborted) {
+          setGroups(result.collections || {});
+          setDefinitions(
+            result.definitions || storeCollections.map(([key, title]) => ({ key, title })),
+          );
+        }
       })
       .catch(() => {});
     return () => controller.abort();
   }, [nearby]);
-  const visible = storeCollections.filter(([key]) => groups[key]?.length);
+  const visible = definitions.filter(({ key }) => groups[key]?.length);
   if (!visible.length) return <div ref={sectionRef} className="home-collections-slot" />;
-  const active = visible.find(([key]) => key === selected) || visible[0];
+  const active = visible.find(({ key }) => key === selected) || visible[0];
   return (
     <section
       className="products-section editorial-section home-collections"
@@ -43,20 +51,20 @@ export default function HomeCollections() {
     >
       <h2 id="collection-heading">Colecciones TechStore</h2>
       <nav className="editorial-controls collection-controls" aria-label="Elegir colección">
-        {visible.map(([key, title]) => (
+        {visible.map(({ key, title }) => (
           <button
             key={key}
             type="button"
-            aria-pressed={active[0] === key}
+            aria-pressed={active.key === key}
             onClick={() => setSelected(key)}
           >
             {title}
           </button>
         ))}
       </nav>
-      <h3>{active[1]}</h3>
+      <h3>{active.title}</h3>
       <ul className="products-grid">
-        {groups[active[0]].map((product) => (
+        {groups[active.key].map((product) => (
           <ProductCard key={product._id} product={product} />
         ))}
       </ul>

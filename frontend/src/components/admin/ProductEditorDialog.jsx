@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { backendAssetUrl } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
-import { categories, placeholder } from '../../config/storeCatalog.js';
+import { placeholder } from '../../config/storeCatalog.js';
+import useStoreCategories from '../../hooks/useStoreCategories.js';
 import SpecificationFields from './SpecificationFields.jsx';
 
 export default function ProductEditorDialog({ product, setProduct, refresh, busy, setBusy }) {
+  const { categories } = useStoreCategories();
+  const categoryNames = categories.map((entry) => entry.name);
+  if (product?.category && !categoryNames.includes(product.category))
+    categoryNames.push(product.category);
   const productDialog = useRef(null);
   const imageFile = useRef(null);
   const [imagePreview, setImagePreview] = useState(placeholder);
@@ -134,7 +139,7 @@ export default function ProductEditorDialog({ product, setProduct, refresh, busy
               required
             >
               <option value="">Selecciona una categoría</option>
-              {categories.map((category) => (
+              {categoryNames.map((category) => (
                 <option key={category}>{category}</option>
               ))}
             </select>

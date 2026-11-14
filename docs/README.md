@@ -22,6 +22,8 @@ estado de Atlas, el correo, los respaldos o los despliegues de producción.
 
 ## Funcionalidades
 
+- [Editor de tienda](features/store-editor.md): catálogo paginado, restauración, categorías, colecciones y contenido con vista previa.
+
 - [Compra guiada de TechBot](features/techbot-guided-shopping.md): preferencias, recomendaciones orientativas, disponibilidad y pruebas.
 - [Historial administrativo y especificaciones](features/admin-history-and-specifications.md): permisos, datos registrados, validación e índices.
 

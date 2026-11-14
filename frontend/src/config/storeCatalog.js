@@ -18,5 +18,6 @@ export const categories = [
   'Gaming',
   'Redes',
   'Cocina y hogar',
+  'Muebles',
 ];
 export const placeholder = '/images/products/catalog-fallback.jpg';

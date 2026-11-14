@@ -33,10 +33,8 @@ const getAdminDashboard = async (req, res, next) => {
       activeCartCount,
       paidOrderStats,
       topProducts,
-      products,
       orders,
       users,
-      messages,
     ] = await Promise.all([
       Product.countDocuments(activeProductFilter()),
       Order.countDocuments(),
@@ -92,10 +90,8 @@ const getAdminDashboard = async (req, res, next) => {
           },
         },
       ]),
-      Product.find(activeProductFilter()).sort({ createdAt: -1 }).limit(100).lean(),
       Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(10).lean(),
       User.find().select('name email role createdAt').sort({ createdAt: -1 }).limit(10).lean(),
-      Contact.find().sort({ createdAt: -1 }).limit(5).lean(),
     ]);
 
     const subscriberTotalPages = Math.max(1, Math.ceil(subscribersCount / subscriberLimit));
@@ -115,11 +111,9 @@ const getAdminDashboard = async (req, res, next) => {
       totalRevenue,
       totalProductsSold,
       activeCartCount,
-      products,
       topProducts,
       orders,
       users,
-      messages,
       subscribers: currentSubscribers,
       subscriberPagination: {
         currentPage: subscriberPage,

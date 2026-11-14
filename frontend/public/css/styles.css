@@ -6483,6 +6483,56 @@ body:has(.cart-drawer.open, dialog[open]) .navbar-assistant {
   border-radius: 1rem;
   background: var(--color-surface);
 }
+.admin-filters,
+.store-content-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  align-items: end;
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.admin-filters .form-field { margin: 0; }
+.store-content-editor,
+.collection-settings-content {
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+.store-content-editor > p { margin-block: 0 1rem; color: var(--color-text-light); }
+.collection-settings .store-content-editor form { padding: 0; }
+.collection-settings .store-content-fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  align-items: start;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-block: 1.5rem;
+}
+.store-content-fields legend { padding-inline: 0.5rem; }
+.store-content-fields input,
+.store-content-fields textarea,
+.collection-definition-form input,
+.category-settings input {
+  min-width: 0;
+  width: 100%;
+}
+.collection-definition-form input[type='checkbox'] { width: auto; }
+.store-content-preview {
+  margin-block-start: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  overflow-wrap: anywhere;
+}
+.store-content-preview article { padding-block: 1rem; }
+.store-content-preview article + article { border-top: 1px solid var(--color-border); }
+.store-content-preview img,
+.build-experience-art > img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.store-content-preview ol { padding-inline-start: 1.5rem; }
 .collection-settings summary {
   padding: 1rem 1.25rem;
   color: var(--color-text);

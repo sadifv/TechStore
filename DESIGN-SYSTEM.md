@@ -30,6 +30,8 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+El dashboard agrupa contenido y categorías en desplegables y mantiene campos, mensajes, foco y acciones con los tokens de los tres temas. «Contenido de la tienda» muestra una vista previa local antes de guardar; contacto y pie usan la misma fuente. El catálogo administrativo incorpora filtros, paginación y archivados/restauración; las colecciones conservan selecciones fuera de la página de búsqueda. No se ofrece edición de HTML/CSS ni se altera la estructura de la portada desde el panel.
+
 La mascota TechBot conserva una sola instancia: aparece en la portada y, al terminar esa sección, se acopla bajo el borde derecho de la navegación fija. Regresa al subir; conserva el foco al cambiar de ubicación, admite teclado y toque y se oculta mientras hay diálogos o carrito abiertos. El movimiento de entrada respeta la preferencia de movimiento reducido y usa los tokens de cada tema.
 
 «Crea tu selección» es el acceso al configurador desde el catálogo. No figura en el menú principal ni enlaza directamente desde la portada; la escena de componentes lleva a esa categoría del catálogo. Se conserva `/arma-tu-equipo` para los enlaces existentes.

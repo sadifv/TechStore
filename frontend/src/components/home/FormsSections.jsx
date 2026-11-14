@@ -1,6 +1,7 @@
 import WhatsappLink from '../contact/WhatsappLink.jsx';
 import { useState } from 'react';
 import { requestJson } from '../../services/api.js';
+import useStoreContent from '../../hooks/useStoreContent.js';
 
 export function NewsletterSection() {
   const [status, setStatus] = useState('');
@@ -79,6 +80,7 @@ export function NewsletterSection() {
 }
 
 export function ContactSection() {
+  const { content } = useStoreContent();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   async function sendContact(event) {
@@ -108,8 +110,8 @@ export function ContactSection() {
     <section id="contacto" className="contact-section" aria-labelledby="contact-title">
       <header className="contact-header">
         <p className="editorial-kicker">Hablemos de tu próximo equipo</p>
-        <h2 id="contact-title">¿Encontraste lo que buscabas? Hablemos.</h2>
-        <p>Consulta sobre un producto o coordina tu pedido con TechStore.</p>
+        <h2 id="contact-title">{content.contactTitle}</h2>
+        <p>{content.contactText}</p>
       </header>
       <div className="contact-grid">
         <aside className="contact-info" aria-label="Información de contacto">
@@ -123,7 +125,7 @@ export function ContactSection() {
               <i className="ri-mail-line" aria-hidden="true" />
               <div>
                 <h3>Correo electrónico</h3>
-                <a href="mailto:sadiflores20201@gmail.com">sadiflores20201@gmail.com</a>
+                <a href={`mailto:${content.email}`}>{content.email}</a>
               </div>
             </li>
             <li className="contact-info-item">
@@ -137,34 +139,23 @@ export function ContactSection() {
               <i className="ri-map-pin-line" aria-hidden="true" />
               <div>
                 <h3>Dirección</h3>
-                <address>
-                  Villa España
-                  <br />
-                  Guayaquil, Ecuador
-                </address>
+                <address>{content.location}</address>
               </div>
             </li>
             <li className="contact-info-item">
               <i className="ri-time-line" aria-hidden="true" />
               <div>
                 <h3>Horario</h3>
-                <p>
-                  Lunes a Viernes
-                  <br />
-                  9:00 - 16:00
-                </p>
+                <p>{content.hours}</p>
               </div>
             </li>
           </ul>
           <nav className="contact-socials" aria-label="Redes sociales">
-            <a
-              href="https://www.instagram.com/whois.sadi.lm/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Instagram"
-            >
-              <i className="ri-instagram-line" aria-hidden="true" />
-            </a>
+            {content.instagram && (
+              <a href={content.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
+                <i className="ri-instagram-line" aria-hidden="true" />
+              </a>
+            )}
           </nav>
         </aside>
         <form

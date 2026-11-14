@@ -4,14 +4,22 @@ import { readCatalogFilters, catalogFilterUrl } from '../../src/features/catalog
 import { money } from '../../src/utils/formatters.js';
 
 test('normaliza filtros inválidos y limita la búsqueda sin convertirlos en URLs externas', () => {
-  assert.deepEqual(readCatalogFilters('?category=unknown&sort=invalid&page=Infinity'), {
-    search: '', category: 'all', sort: 'recent', page: 1,
+  assert.deepEqual(readCatalogFilters('?category=%3Cscript%3E&sort=invalid&page=Infinity'), {
+    search: '',
+    category: 'all',
+    sort: 'recent',
+    page: 1,
   });
+  assert.equal(readCatalogFilters('?category=Categor%C3%ADa+nueva').category, 'Categoría nueva');
+  assert.equal(readCatalogFilters(`?category=${'x'.repeat(81)}`).category, 'all');
   for (const page of ['-1', '1.5', '9007199254740992', 'invalid'])
     assert.equal(readCatalogFilters(`?page=${page}`).page, 1);
   assert.equal(readCatalogFilters(`?search=${'x'.repeat(200)}`).search.length, 100);
   const url = catalogFilterUrl('https://shop.example.invalid/catalogo?campaign=demo#catalogo', {
-    search: 'audio & <script>', category: 'Monitores', sort: 'price_asc', page: 2,
+    search: 'audio & <script>',
+    category: 'Monitores',
+    sort: 'price_asc',
+    page: 2,
   });
   assert.ok(url.startsWith('/catalogo?'));
   const result = new URL(url, 'https://shop.example.invalid');

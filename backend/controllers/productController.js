@@ -6,6 +6,7 @@ const Reservation = require('../models/Reservation');
 const logger = require('../config/logger');
 const { activeProductFilter, isProductArchived } = require('../services/productAvailability');
 const { toPublicProduct } = require('../services/productPricing');
+const { getCategorySettings } = require('../services/storeCategories');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -105,10 +106,12 @@ const getProducts = async (req, res, next) => {
   }
 };
 
-const homeCategories = ['Laptops', 'Audio', 'Periféricos'];
-
 const getHomeProducts = async (req, res, next) => {
   try {
+    const settings = await getCategorySettings();
+    const homeCategories = ['category-1', 'category-3', 'category-5']
+      .map(id => settings.categories.find(category => category.id === id)?.name)
+      .filter(Boolean);
     const now = new Date();
     const productFields =
       '_id name category price image stock flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';

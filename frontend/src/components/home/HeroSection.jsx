@@ -2,15 +2,14 @@ import HeroBackground from './HeroBackground.jsx';
 import HeroMascot from './HeroMascot.jsx';
 import PurchaseGuide from './PurchaseGuide.jsx';
 import useCinematicHero from './useCinematicHero.js';
-
-const chapters = [
-  ['El primer contacto.', 'Explora laptops, audio y periféricos en Ecuador.'],
-  ['Mira lo que hay dentro.', 'Una mirada distinta a la tecnología que eliges.'],
-  ['Encuentra lo que va contigo.', 'Explora el catálogo y coordina tu pedido por WhatsApp.'],
-];
+import useStoreContent from '../../hooks/useStoreContent.js';
 
 export default function HeroSection({ signedIn }) {
   const { ref, chapter, animated, choose } = useCinematicHero();
+  const { content } = useStoreContent();
+  const chapters = [1, 2, 3].map((n) => [content[`chapter${n}Title`], content[`chapter${n}Text`]]);
+  const defaultImage = content.heroImage === '/images/experience/audio-assembled-1280.webp';
+  const defaultDetail = content.heroDetailImage === '/images/experience/audio-exploded-1280.webp';
   return (
     <section
       ref={ref}
@@ -25,9 +24,9 @@ export default function HeroSection({ signedIn }) {
         <header className="cinema-copy">
           <p className="cinema-eyebrow">TECHSTORE / ECUADOR</p>
           <h1 id="cinema-title">
-            Escucha cada <em>detalle.</em>
+            {content.heroLead} <em>{content.heroAccent}</em>
           </h1>
-          <p>Laptops, audio y periféricos. Tu próximo equipo empieza aquí.</p>
+          <p>{content.heroSubtitle}</p>
           <nav className="cinema-actions" aria-label="Explorar productos">
             <a href="/catalogo" className="btn btn-primary">
               Ver catálogo <span aria-hidden="true">↗</span>
@@ -35,24 +34,29 @@ export default function HeroSection({ signedIn }) {
             <PurchaseGuide />
           </nav>
         </header>
-        <figure
-          className="cinema-art"
-          aria-label="Visualización ilustrativa de auriculares completos y sus componentes separados"
-        >
+        <figure className="cinema-art" aria-label={content.heroImageAlt}>
           <img
             className="cinema-assembled"
-            src="/images/experience/audio-assembled-1280.webp"
-            srcSet="/images/experience/audio-assembled-640.webp 640w, /images/experience/audio-assembled-1280.webp 1280w"
+            src={content.heroImage}
+            srcSet={
+              defaultImage
+                ? '/images/experience/audio-assembled-640.webp 640w, /images/experience/audio-assembled-1280.webp 1280w'
+                : undefined
+            }
             sizes="(min-width: 900px) 85vw, 100vw"
-            alt="Auriculares de referencia en grafito, con detalles azules"
+            alt={content.heroImageAlt}
             fetchPriority="high"
             width="1774"
             height="887"
           />
           <img
             className="cinema-exploded"
-            src="/images/experience/audio-exploded-1280.webp"
-            srcSet="/images/experience/audio-exploded-640.webp 640w, /images/experience/audio-exploded-1280.webp 1280w"
+            src={content.heroDetailImage}
+            srcSet={
+              defaultDetail
+                ? '/images/experience/audio-exploded-640.webp 640w, /images/experience/audio-exploded-1280.webp 1280w'
+                : undefined
+            }
             sizes="(min-width: 900px) 85vw, 100vw"
             alt=""
             aria-hidden="true"
@@ -60,13 +64,25 @@ export default function HeroSection({ signedIn }) {
             width="1774"
             height="887"
           />
-          <span className="cinema-part cinema-part--band" aria-hidden="true">
+          <span
+            className="cinema-part cinema-part--band"
+            aria-hidden="true"
+            hidden={!defaultImage || !defaultDetail}
+          >
             Diadema
           </span>
-          <span className="cinema-part cinema-part--driver" aria-hidden="true">
+          <span
+            className="cinema-part cinema-part--driver"
+            aria-hidden="true"
+            hidden={!defaultImage || !defaultDetail}
+          >
             Altavoz
           </span>
-          <span className="cinema-part cinema-part--pad" aria-hidden="true">
+          <span
+            className="cinema-part cinema-part--pad"
+            aria-hidden="true"
+            hidden={!defaultImage || !defaultDetail}
+          >
             Almohadilla
           </span>
         </figure>

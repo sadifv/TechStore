@@ -3,15 +3,42 @@ import { backendAssetUrl } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
 import { money } from '../../utils/formatters.js';
 import { placeholder } from '../../config/storeCatalog.js';
+import useStoreCategories from '../../hooks/useStoreCategories.js';
+import { useAdminListing } from '../../hooks/useAdminListing.js';
+import { AdminPagination } from './AdminPagination.jsx';
 import ProductEditorDialog from './ProductEditorDialog.jsx';
 import FlashSaleDialog from './FlashSaleDialog.jsx';
 
-export default function DashboardCatalog({ products, refresh }) {
+export default function DashboardCatalog({ refresh: refreshDashboard }) {
+  const { categories } = useStoreCategories();
+  const [filters, setFilters] = useState({ q: '', category: '', status: 'active', page: 1 });
+  const [search, setSearch] = useState('');
+  const { result, error, loading, reload } = useAdminListing(
+    `/api/admin/products?${new URLSearchParams(filters)}`,
+  );
+  const products = result?.products || [];
+  function refresh() {
+    reload();
+    refreshDashboard();
+  }
   const [product, setProduct] = useState(null);
   const [flashProduct, setFlashProduct] = useState(null);
   const [busy, setBusy] = useState(false);
   const [flashDiscount, setFlashDiscount] = useState(20);
   const [flashDuration, setFlashDuration] = useState(24);
+  async function restoreProduct(item) {
+    if (!window.confirm(`¿Restaurar “${item.name}” al catálogo? Se conservarán su stock y precio.`))
+      return;
+    setBusy(true);
+    try {
+      await adminMutation(`/api/admin/products/${item._id}/restore`, { method: 'PATCH' });
+      refresh();
+    } catch (cause) {
+      window.alert(cause.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function deleteProduct(item) {
     if (!window.confirm(`¿Archivar el producto “${item.name}”?`)) return;
     try {
@@ -45,67 +72,157 @@ export default function DashboardCatalog({ products, refresh }) {
             Nuevo producto
           </button>
         </header>
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Imagen</th>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Oferta</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((item) => (
-                <tr key={item._id}>
-                  <td>
-                    <img
-                      className="admin-product-thumbnail"
-                      src={backendAssetUrl(item.image || placeholder)}
-                      alt={item.name}
-                    />
-                  </td>
-                  <td>{item.name}</td>
-                  <td>{item.category}</td>
-                  <td>{money(item.price)}</td>
-                  <td>{item.stock}</td>
-                  <td>{item.flashSale ? `${item.flashSaleDiscount}%` : '—'}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-outline"
-                      type="button"
-                      onClick={() => setProduct(item)}
-                    >
-                      Editar
-                    </button>{' '}
-                    <button
-                      className="btn btn-sm btn-outline"
-                      type="button"
-                      onClick={() => toggleFlash(item)}
-                    >
-                      {item.flashSale ? 'Detener oferta' : 'Oferta'}
-                    </button>{' '}
-                    <button
-                      className="btn btn-sm btn-delete"
-                      type="button"
-                      onClick={() => deleteProduct(item)}
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
+        <form
+          className="admin-filters"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setFilters({ ...filters, q: search.trim(), page: 1 });
+          }}
+        >
+          <label className="form-field">
+            Buscar producto
+            <input
+              type="search"
+              value={search}
+              maxLength={100}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          <label className="form-field">
+            Categoría del catálogo
+            <input
+              list="admin-product-categories"
+              value={filters.category}
+              maxLength={100}
+              onChange={(event) =>
+                setFilters({ ...filters, category: event.target.value, page: 1 })
+              }
+            />
+            <datalist id="admin-product-categories">
+              {categories.map((category) => (
+                <option key={category.id} value={category.name} />
               ))}
-              {!products.length && (
-                <tr>
-                  <td colSpan="7">No hay productos registrados.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            </datalist>
+          </label>
+          <label className="form-field" htmlFor="admin-catalog-status">
+            Estado del catálogo
+            <select
+              id="admin-catalog-status"
+              value={filters.status}
+              onChange={(event) => setFilters({ ...filters, status: event.target.value, page: 1 })}
+            >
+              <option value="active">Activos</option>
+              <option value="archived">Archivados</option>
+            </select>
+          </label>
+          <button type="submit" className="btn btn-outline">
+            Buscar
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => {
+              setSearch('');
+              setFilters({ q: '', category: '', status: 'active', page: 1 });
+            }}
+          >
+            Limpiar filtros
+          </button>
+        </form>
+        {loading && <p role="status">Cargando productos…</p>}
+        {error && (
+          <p role="alert">
+            {error}{' '}
+            <button type="button" className="btn btn-outline" onClick={reload}>
+              Reintentar
+            </button>
+          </p>
+        )}
+        {!loading && !error && (
+          <p role="status">{result?.pagination?.totalCount || 0} productos encontrados.</p>
+        )}
+        {!loading && !error && (
+          <>
+            <div className="admin-table-wrapper">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Imagen</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Oferta</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((item) => (
+                    <tr key={item._id}>
+                      <td>
+                        <img
+                          className="admin-product-thumbnail"
+                          src={backendAssetUrl(item.image || placeholder)}
+                          alt={item.name}
+                        />
+                      </td>
+                      <td>{item.name}</td>
+                      <td>{item.category}</td>
+                      <td>{money(item.price)}</td>
+                      <td>{item.stock}</td>
+                      <td>{item.flashSale ? `${item.flashSaleDiscount}%` : '—'}</td>
+                      <td>
+                        {filters.status === 'archived' ? (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => restoreProduct(item)}
+                          >
+                            Restaurar
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline"
+                              type="button"
+                              onClick={() => setProduct(item)}
+                            >
+                              Editar
+                            </button>{' '}
+                            <button
+                              className="btn btn-sm btn-outline"
+                              type="button"
+                              onClick={() => toggleFlash(item)}
+                            >
+                              {item.flashSale ? 'Detener oferta' : 'Oferta'}
+                            </button>{' '}
+                            <button
+                              className="btn btn-sm btn-delete"
+                              type="button"
+                              onClick={() => deleteProduct(item)}
+                            >
+                              Archivar
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!products.length && (
+                    <tr>
+                      <td colSpan="7">No hay productos registrados.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <AdminPagination
+              pagination={result?.pagination}
+              onPage={(page) => setFilters({ ...filters, page })}
+            />
+          </>
+        )}
       </section>
       <ProductEditorDialog
         product={product}

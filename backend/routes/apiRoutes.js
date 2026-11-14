@@ -52,6 +52,30 @@ const {
 const { getWhatsappPhone } = require('../config/whatsapp');
 const appearance = require('../controllers/appearanceController');
 const collections = require('../controllers/storeCollectionsController');
+const content = require('../controllers/storeContentController');
+router.get('/store/content', content.getContent);
+const categories = require('../controllers/storeCategoriesController');
+router.get('/store/categories', categories.getCategories);
+router.get('/admin/categories', requireAdmin, categories.getCategories);
+router.patch(
+  '/admin/categories',
+  requireAdmin,
+  require('../middleware/rateLimiter').adminLimiter,
+  categories.updateCategories,
+);
+router.patch(
+  '/admin/collections/definition',
+  requireAdmin,
+  require('../middleware/rateLimiter').adminLimiter,
+  collections.updateDefinition,
+);
+router.get('/admin/content', requireAdmin, content.getContent);
+router.patch(
+  '/admin/content',
+  requireAdmin,
+  require('../middleware/rateLimiter').adminLimiter,
+  content.updateContent,
+);
 router.get('/store/collections', collections.getCollections);
 router.get('/admin/collections', requireAdmin, collections.getSelection);
 router.patch(

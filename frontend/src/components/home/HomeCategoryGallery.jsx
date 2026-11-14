@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { categories } from '../../config/storeCatalog.js';
+import useStoreCategories from '../../hooks/useStoreCategories.js';
+import { placeholder } from '../../config/storeCatalog.js';
 import { productImageSources } from '../../services/productImages.js';
 
 const categoryReferences = {
@@ -10,7 +11,8 @@ const categoryReferences = {
   'Cocina y hogar': '/images/products/cafetera-filtro-ref.jpg',
 };
 
-export default function HomeCategoryGallery({ categoryImages }) {
+export default function HomeCategoryGallery({ categoryImages = [] }) {
+  const { categories } = useStoreCategories();
   const gallery = useRef(null);
 
   function scroll(direction) {
@@ -42,12 +44,14 @@ export default function HomeCategoryGallery({ categoryImages }) {
         </nav>
       </header>
       <ul id="home-categories" className="editorial-category-list" ref={gallery}>
-        {categories.map((category) => {
+        {categories.map(({ id, name: category, image: categoryImage }) => {
           const image =
+            categoryImage ||
             categoryImages.find((item) => item._id === category)?.image ||
-            categoryReferences[category];
+            categoryReferences[category] ||
+            placeholder;
           return (
-            <li key={category}>
+            <li key={id}>
               <a href={`/catalogo?category=${encodeURIComponent(category)}`}>
                 {image && (
                   <img

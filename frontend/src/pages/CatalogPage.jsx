@@ -4,7 +4,7 @@ import ProductCard from '../components/catalog/ProductCard.jsx';
 import ProductComparison from '../components/catalog/ProductComparison.jsx';
 import useCatalogFilters from '../hooks/useCatalogFilters.js';
 
-import { categories } from '../config/storeCatalog.js';
+import useStoreCategories from '../hooks/useStoreCategories.js';
 
 function getVisiblePages(currentPage, totalPages) {
   currentPage = Math.max(1, Math.min(totalPages, currentPage));
@@ -19,6 +19,7 @@ function getVisiblePages(currentPage, totalPages) {
 }
 
 export default function CatalogPage() {
+  const { categories } = useStoreCategories();
   const {
     search,
     committedSearch,
@@ -31,6 +32,8 @@ export default function CatalogPage() {
     setPage,
     clearFilters,
   } = useCatalogFilters();
+  const canonicalCategory =
+    categories.find((entry) => entry.aliases?.includes(category))?.name || category;
   const [retry, setRetry] = useState(0);
   const [data, setData] = useState({ key: '', products: [], pagination: null });
   const [error, setError] = useState('');
@@ -49,7 +52,7 @@ export default function CatalogPage() {
     page: String(page),
     limit: '8',
     search: committedSearch,
-    category,
+    category: canonicalCategory,
     sort,
   }).toString();
   const requestKey = `${query}:${retry}`;
@@ -118,16 +121,20 @@ export default function CatalogPage() {
           <select
             id="category-select"
             name="category"
-            value={category}
+            value={canonicalCategory}
             data-filter-active={category !== 'all'}
             onChange={(event) => {
               setCategory(event.target.value);
             }}
           >
             <option value="all">Todas las categorías</option>
+            {canonicalCategory !== 'all' &&
+              !categories.some((item) => item.name === canonicalCategory) && (
+                <option value={canonicalCategory}>{canonicalCategory}</option>
+              )}
             {categories.map((item) => (
-              <option value={item} key={item}>
-                {item}
+              <option value={item.name} key={item.id}>
+                {item.name}
               </option>
             ))}
           </select>
