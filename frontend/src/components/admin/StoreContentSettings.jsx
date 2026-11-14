@@ -237,8 +237,17 @@ function ContentForm() {
   );
 }
 
-export default function StoreContentSettings() {
+export default function StoreContentSettings({ standalone = false }) {
   const [visited, setVisited] = useState(false);
+  if (standalone)
+    return (
+      <section
+        className="collection-settings admin-settings-panel"
+        aria-label="Editor de contenido"
+      >
+        <ContentForm />
+      </section>
+    );
   return (
     <details
       className="collection-settings"

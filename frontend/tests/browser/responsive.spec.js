@@ -39,6 +39,7 @@ for (const width of [320, 390]) {
       page.getByRole('button', { name: 'Añadir característica', exact: true }),
     ).toBeFocused();
     await page.getByRole('dialog').getByRole('button', { name: 'Cancelar', exact: true }).click();
+    await page.locator('.admin-navigation > summary').click();
     await page.getByRole('link', { name: 'Historial administrativo', exact: true }).click();
     await expect(page.getByText('No hay acciones para los filtros seleccionados.')).toBeVisible();
     await page.getByLabel('Acción', { exact: true }).selectOption('product.updated');

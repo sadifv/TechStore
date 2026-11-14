@@ -2,6 +2,14 @@
 
 ## Acceso
 
+El dashboard enlaza a `/admin/contenido`, `/admin/categorias` y `/admin/colecciones`.
+Los editores ya no son desplegables dentro del panel general: cada ruta tiene título,
+formulario visible y retorno al panel. La navegación administrativa es común también
+a usuarios, pedidos, marketing, moderación e historial. En escritorio ocupa la columna
+derecha y permanece visible al desplazarse; en móvil/tablet es un desplegable en el
+flujo normal, sin cubrir el contenido. La sección activa usa `aria-current="page"`.
+El albarán conserva su vista de impresión sin menú lateral.
+
 Owner y admin con sesión vigente y MFA pueden administrar productos, categorías,
 colecciones y contenido. El tema global y la gestión de roles mantienen los permisos
 anteriores: cambiar contenido no concede acceso a roles ni credenciales.

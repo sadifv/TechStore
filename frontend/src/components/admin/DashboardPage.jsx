@@ -1,8 +1,5 @@
 import { useState } from 'react';
 import AppearanceSettings from './AppearanceSettings.jsx';
-import CollectionSettings from './CollectionSettings.jsx';
-import CategorySettings from './CategorySettings.jsx';
-import StoreContentSettings from './StoreContentSettings.jsx';
 import { AdminNotice } from './AdminNotice.jsx';
 import { useAdminData } from '../../hooks/useAdminData.js';
 import DashboardCatalog from './DashboardCatalog.jsx';
@@ -25,36 +22,13 @@ export function AdminDashboardPage({ user }) {
   return (
     <section className="admin-container container" aria-labelledby="admin-dashboard-heading">
       {user?.role === 'owner' && <AppearanceSettings />}
-      {['owner', 'admin'].includes(user?.role) && (
-        <>
-          <StoreContentSettings />
-          <CategorySettings />
-        </>
-      )}
       <header className="admin-header dashboard-header">
         <h1 id="admin-dashboard-heading">
           <i aria-hidden="true" className="ri-dashboard-line" /> Panel de Administración
         </h1>
-        <nav className="admin-header-actions" aria-label="Gestión de administración">
-          {user?.role === 'owner' && (
-            <a href="/admin/audit" className="btn btn-outline">
-              Historial administrativo
-            </a>
-          )}
-          <a href="/admin/users" className="btn btn-outline">
-            Usuarios
-          </a>
-          <a href="/admin/reviews" className="btn btn-outline">
-            Moderar reseñas
-          </a>
-          <a href="/admin/marketing" className="btn btn-primary">
-            Marketing y cupones
-          </a>
-        </nav>
       </header>
       <DashboardSalesOverview data={data} orders={orders} />
       <DashboardCatalog refresh={refresh} />
-      {['owner', 'admin'].includes(user?.role) && <CollectionSettings />}
       <DashboardContacts
         subscribers={subscribers}
         subscriberPagination={subscriberPagination}

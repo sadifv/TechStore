@@ -3,7 +3,7 @@ import { backendAssetUrl, requestJson } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
 import useStoreCategories from '../../hooks/useStoreCategories.js';
 
-export default function CategorySettings() {
+export default function CategorySettings({ standalone = false }) {
   const { refresh } = useStoreCategories();
   const [settings, setSettings] = useState(null);
   const [selected, setSelected] = useState('');
@@ -72,9 +72,13 @@ export default function CategorySettings() {
       setBusy(false);
     }
   }
+  const Container = standalone ? 'section' : 'details';
   return (
-    <details className="collection-settings category-settings">
-      <summary>Administrar categorías</summary>
+    <Container
+      className="collection-settings category-settings"
+      aria-label={standalone ? 'Editor de categorías' : undefined}
+    >
+      {!standalone && <summary>Administrar categorías</summary>}
       <form onSubmit={save}>
         <p>
           Crea categorías, cambia sus imágenes y ordena su aparición en la tienda. Al renombrar una
@@ -206,6 +210,6 @@ export default function CategorySettings() {
         </button>
         <p role="status">{status}</p>
       </form>
-    </details>
+    </Container>
   );
 }

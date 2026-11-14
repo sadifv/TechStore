@@ -5,6 +5,9 @@ const { redirectToFrontend } = require('../config/frontendUrl');
 for (const route of [
   '/',
   '/dashboard',
+  '/contenido',
+  '/categorias',
+  '/colecciones',
   '/marketing',
   '/orders',
   '/orders/:id/packing-slip',

@@ -2,6 +2,8 @@
 
 ## Estructura
 
+`AdminLayout` comparte navegación y acceso de interfaz entre las rutas administrativas; el backend conserva la autoridad de sesión/rol/MFA. `StoreEditorPage` carga bajo demanda el editor de contenido, categorías o colecciones desde sus rutas propias. El dashboard ya no importa esos editores. El layout no se aplica al albarán independiente.
+
 El panel consulta productos y mensajes mediante listados paginados independientes del resumen de dashboard. `adminCatalogController` valida filtros y restaura archivados sin modificar inventario. `StoreCategories` guarda categorías versionadas y alias; su renombre actualiza la categoría del producto con auditoría transaccional. `StoreCollection` añade definiciones editables a las selecciones compatibles de `StoreAppearance`. `StoreContent` conserva un esquema cerrado de textos e imágenes y control de revisión; sus providers comparten una consulta pública por carga. Véase [editor de tienda](docs/features/store-editor.md).
 
 TechBot conserva el chat libre y ofrece compra guiada con `GuidedShopping`. `POST /api/ai/recommendations` exige sesión vigente y comparte los límites de IA; el controlador consulta productos activos y reservas, y `services/guidedShopping.js` valida preferencias y selecciona hasta tres opciones por precio efectivo, disponibilidad y evidencia técnica. No llama a Gemini, modifica pedidos ni reserva inventario. Usa las tarjetas, el comparador y el carrito existentes. Las explicaciones son orientativas y reconocen especificaciones faltantes. Detalles en `docs/features/techbot-guided-shopping.md`.

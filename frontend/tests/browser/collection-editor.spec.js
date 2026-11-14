@@ -35,8 +35,8 @@ test('el administrador crea, renombra y elimina una colección sin eliminar prod
       },
     }),
   );
-  await page.goto('/admin/dashboard');
-  await page.getByText('Editar colecciones de la portada', { exact: true }).click();
+  await page.goto('/admin/colecciones');
+
   const editor = page.locator('.collections-editor');
   await editor.locator('.collection-select select').selectOption('');
   await editor.getByLabel('Identificador', { exact: true }).fill('audio-regalos');

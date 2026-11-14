@@ -18,8 +18,8 @@ test('content preview is local until saving and shares contact data with the foo
     revision++;
     return route.fulfill({ json: { success: true, revision } });
   });
-  await page.goto('/admin/dashboard');
-  await page.getByText('Contenido de la tienda', { exact: true }).click();
+  await page.goto('/admin/contenido');
+
   await page.getByLabel('Horario', { exact: true }).fill('Lunes a viernes, 10:00–15:00');
   await page.getByLabel('Titular', { exact: true }).fill('Elige tu próximo');
   await expect(page.locator('.footer-contact')).not.toContainText('10:00–15:00');
@@ -44,8 +44,8 @@ test('content conflicts preserve the local draft and load failure cannot save de
       json: { success: false, error: 'El contenido cambió. Recarga antes de guardar.' },
     }),
   );
-  await page.goto('/admin/dashboard');
-  await page.getByText('Contenido de la tienda', { exact: true }).click();
+  await page.goto('/admin/contenido');
+
   await page.getByLabel('Titular', { exact: true }).fill('Mi borrador');
   await page.getByRole('button', { name: 'Guardar contenido de la tienda', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Recarga');
@@ -54,7 +54,7 @@ test('content conflicts preserve the local draft and load failure cannot save de
     route.fulfill({ status: 503, json: { success: false, error: 'No disponible' } }),
   );
   await page.reload();
-  await page.getByText('Contenido de la tienda', { exact: true }).click();
+
   await expect(page.getByRole('alert')).toContainText('No disponible');
   await expect(
     page.getByRole('button', { name: 'Guardar contenido de la tienda', exact: true }),
@@ -80,8 +80,8 @@ test('a late public content response cannot replace content just saved by staff'
   mock.handlers.set('PATCH /api/admin/content', (route) =>
     route.fulfill({ json: { success: true, revision: 1 } }),
   );
-  await page.goto('/admin/dashboard');
-  await page.getByText('Contenido de la tienda', { exact: true }).click();
+  await page.goto('/admin/contenido');
+
   await page.getByLabel('Horario', { exact: true }).fill('Horario recién guardado');
   await page.getByRole('button', { name: 'Guardar contenido de la tienda', exact: true }).click();
   await expect(page.locator('.footer-contact')).toContainText('Horario recién guardado');
@@ -98,9 +98,9 @@ for (const theme of ['normal', 'halloween', 'christmas']) {
       mock.role = 'owner';
       mock.theme = theme;
       await page.setViewportSize({ width, height: 844 });
-      await page.goto('/admin/dashboard');
+      await page.goto('/admin/contenido');
       await expect(page.locator('.logo-intro')).toBeHidden();
-      await page.getByText('Contenido de la tienda', { exact: true }).click();
+
       await expect(page.getByLabel('Titular', { exact: true })).toBeVisible();
       await expect(page.locator('body')).toHaveJSProperty('scrollWidth', width);
       await page.getByLabel('Titular', { exact: true }).scrollIntoViewIfNeeded();

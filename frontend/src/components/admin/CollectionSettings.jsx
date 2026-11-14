@@ -82,14 +82,14 @@ function DefinitionEditor({ definition, busy, onSave, onRemove }) {
   );
 }
 
-export default function CollectionSettings() {
+export default function CollectionSettings({ standalone = false }) {
   const [key, setKey] = useState('setup');
   const [groups, setGroups] = useState(null);
   const [definitions, setDefinitions] = useState(defaultDefinitions);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [reload, setReload] = useState(0);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(standalone);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [catalogRetry, setCatalogRetry] = useState(0);
@@ -213,12 +213,14 @@ export default function CollectionSettings() {
       [key]: ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     }));
   }
+  const Container = standalone ? 'section' : 'details';
   return (
-    <details
+    <Container
       className="collection-settings collections-editor"
-      onToggle={(event) => setExpanded(event.currentTarget.open)}
+      aria-label={standalone ? 'Editor de colecciones' : undefined}
+      onToggle={standalone ? undefined : (event) => setExpanded(event.currentTarget.open)}
     >
-      <summary>Editar colecciones de la portada</summary>
+      {!standalone && <summary>Editar colecciones de la portada</summary>}
       <div className="collection-settings-content">
         <label className="collection-select">
           Colección
@@ -360,6 +362,6 @@ export default function CollectionSettings() {
         )}
         <p role="status">{status}</p>
       </div>
-    </details>
+    </Container>
   );
 }

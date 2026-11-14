@@ -30,7 +30,9 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
-El dashboard agrupa contenido y categorías en desplegables y mantiene campos, mensajes, foco y acciones con los tokens de los tres temas. «Contenido de la tienda» muestra una vista previa local antes de guardar; contacto y pie usan la misma fuente. El catálogo administrativo incorpora filtros, paginación y archivados/restauración; las colecciones conservan selecciones fuera de la página de búsqueda. No se ofrece edición de HTML/CSS ni se altera la estructura de la portada desde el panel.
+Las rutas administrativas comparten un menú lateral derecho a partir de 1100 px. Por debajo, se convierte en un desplegable nativo sobre el área de trabajo; no usa una superposición ni reduce el ancho del formulario. Mantener objetivos de 48 px, sección activa con texto y `aria-current`, y foco al cambiar de tamaño. Contenido, categorías y colecciones tienen páginas propias con formularios visibles y retorno al panel. Reutilizar los tokens de los tres temas.
+
+Los editores administrativos mantienen campos, mensajes, foco y acciones con los tokens de los tres temas. «Contenido de la tienda» muestra una vista previa local antes de guardar; contacto y pie usan la misma fuente. El catálogo administrativo incorpora filtros, paginación y archivados/restauración; las colecciones conservan selecciones fuera de la página de búsqueda. No se ofrece edición de HTML/CSS ni se altera la estructura de la portada desde el panel.
 
 La mascota TechBot conserva una sola instancia: aparece en la portada y, al terminar esa sección, se acopla bajo el borde derecho de la navegación fija. Regresa al subir; conserva el foco al cambiar de ubicación, admite teclado y toque y se oculta mientras hay diálogos o carrito abiertos. El movimiento de entrada respeta la preferencia de movimiento reducido y usa los tokens de cada tema.
 

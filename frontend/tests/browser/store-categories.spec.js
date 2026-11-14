@@ -46,8 +46,8 @@ test('category editor previews, reorders and saves structured settings', async (
     return route.fulfill({ json: { success: true, revision: 2, categories: saved.categories } });
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/admin/dashboard');
-  await page.getByText('Administrar categorías', { exact: true }).click();
+  await page.goto('/admin/categorias');
+
   const settings = page.locator('.category-settings');
   await settings.getByLabel('Nombre', { exact: true }).fill('Portátiles y laptops');
   await settings.getByRole('button', { name: 'Bajar categoría' }).click();
@@ -70,8 +70,8 @@ test('category reload locks editing until the response arrives', async ({ page, 
       });
     return route.fulfill({ json: { success: true, revision: count, categories: entries } });
   });
-  await page.goto('/admin/dashboard');
-  await page.getByText('Administrar categorías', { exact: true }).click();
+  await page.goto('/admin/categorias');
+
   const editor = page.locator('.category-settings');
   await expect(editor.getByLabel('Nombre', { exact: true })).toBeEnabled();
   page.on('dialog', (dialog) => dialog.accept());

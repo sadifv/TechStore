@@ -12,8 +12,8 @@ test('el propietario guarda una colección que puede ver un visitante', async ({
       json: { success: true, collections: selection ? { setup: [mock.product] } : {} },
     }),
   );
-  await page.goto('/admin/dashboard');
-  await page.getByText('Editar colecciones de la portada', { exact: true }).click();
+  await page.goto('/admin/colecciones');
+
   await page.getByRole('checkbox', { name: mock.product.name }).check();
   await page.getByRole('button', { name: 'Guardar colección' }).click();
   await expect(page.getByText('Colección guardada.')).toBeVisible();

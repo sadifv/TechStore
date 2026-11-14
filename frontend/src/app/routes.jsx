@@ -2,6 +2,8 @@ import { lazy } from 'react';
 import AccountAccess from '../components/account/AccountAccess.jsx';
 import HomePage from '../pages/HomePage.jsx';
 import NewsletterUnsubscribePage from '../components/marketing/NewsletterUnsubscribePage.jsx';
+import AdminLayout from '../components/admin/AdminLayout.jsx';
+const StoreEditorPage = lazy(() => import('../components/admin/StoreEditorPage.jsx'));
 const RestockPreferencePage = lazy(() => import('../components/catalog/RestockPreferencePage.jsx'));
 const CatalogPage = lazy(() => import('../pages/CatalogPage.jsx'));
 const BuildKitPage = lazy(() => import('../pages/BuildKitPage.jsx'));
@@ -121,6 +123,9 @@ const pages = {
   checkout: () => <CheckoutSuccessPage />,
   error: () => <ErrorPage />,
   dashboard: ({ user }) => <AdminDashboardPage user={user} />,
+  content: () => <StoreEditorPage kind="content" />,
+  categories: () => <StoreEditorPage kind="categories" />,
+  collections: () => <StoreEditorPage kind="collections" />,
   marketing: () => <AdminMarketingPage />,
   orders: () => <AdminOrdersPage />,
   packing: ({ parameter }) => <AdminPackingSlipPage orderId={parameter} />,
@@ -131,5 +136,24 @@ const pages = {
   notFound: () => <NotFoundPage />,
 };
 export function RoutedPage({ route, user, authReady }) {
-  return pages[route.name]({ user, authReady, parameter: route.parameter });
+  const page = pages[route.name]({ user, authReady, parameter: route.parameter });
+  const adminRoutes = [
+    'dashboard',
+    'content',
+    'categories',
+    'collections',
+    'marketing',
+    'orders',
+    'order',
+    'users',
+    'reviews',
+    'audit',
+  ];
+  return adminRoutes.includes(route.name) ? (
+    <AdminLayout route={route.name} user={user} authReady={authReady}>
+      {page}
+    </AdminLayout>
+  ) : (
+    page
+  );
 }
