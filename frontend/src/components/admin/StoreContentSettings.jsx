@@ -1,3 +1,4 @@
+import useConfirmation from '../../hooks/useConfirmation.js';
 import { useEffect, useState } from 'react';
 import { requestJson } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
@@ -58,6 +59,11 @@ const limit = (key) =>
         : 120;
 
 function ContentForm() {
+  const confirm = useConfirmation({
+    title: 'Descartar cambios',
+    confirmLabel: 'Descartar y recargar',
+    danger: true,
+  });
   const { setContent } = useStoreContent();
   const [draft, setDraft] = useState(null);
   const [revision, setRevision] = useState(0);
@@ -122,10 +128,10 @@ function ContentForm() {
         className="btn btn-outline"
         type="button"
         disabled={busy || loading}
-        onClick={() => {
+        onClick={async () => {
           if (
             draft &&
-            !window.confirm('Recargar descarta los cambios de este formulario. ¿Continuar?')
+            !(await confirm('Recargar descarta los cambios de este formulario. ¿Continuar?'))
           )
             return;
           setLoading(true);

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { adminMutation } from '../../services/adminMutation.js';
 import { money } from '../../utils/formatters.js';
 
@@ -13,6 +13,7 @@ export default function FlashSaleDialog({
   setBusy,
   refresh,
 }) {
+  const [error, setError] = useState('');
   const flashDialog = useRef(null);
   useEffect(() => {
     if (flashDialog.current)
@@ -21,6 +22,7 @@ export default function FlashSaleDialog({
   async function submitFlash(event) {
     event.preventDefault();
     setBusy(true);
+    setError('');
     try {
       await adminMutation(`/api/admin/products/${flashProduct._id}/flash-sale`, {
         method: 'POST',
@@ -33,13 +35,20 @@ export default function FlashSaleDialog({
       setFlashProduct(null);
       refresh();
     } catch (cause) {
-      window.alert(cause.message);
+      setError(cause.message);
     } finally {
       setBusy(false);
     }
   }
   return (
-    <dialog ref={flashDialog} className="modal-dialog" onClose={() => setFlashProduct(null)}>
+    <dialog
+      ref={flashDialog}
+      className="modal-dialog"
+      onClose={() => {
+        setFlashProduct(null);
+        setError('');
+      }}
+    >
       <article className="modal-card">
         <header className="modal-header">
           <h2>Configurar oferta relámpago</h2>
@@ -53,6 +62,11 @@ export default function FlashSaleDialog({
           </button>
         </header>
         <form onSubmit={submitFlash}>
+          {error && (
+            <p role="alert" className="form-status error">
+              {error}
+            </p>
+          )}
           <p className="form-field">
             <span>Producto</span>
             <output>{flashProduct?.name}</output>

@@ -1,3 +1,4 @@
+import useConfirmation from '../../hooks/useConfirmation.js';
 import { useState } from 'react';
 import { ADMIN_REFRESH_INTERVAL_MS } from '../../config/requestCadence.js';
 import { AdminNotice } from './AdminNotice.jsx';
@@ -24,6 +25,7 @@ const campaignStatusLabel = (campaign) => {
 };
 
 export function AdminMarketingPage() {
+  const confirm = useConfirmation({ title: 'Enviar campaña', confirmLabel: 'Enviar campaña' });
   const { data, error, refresh } = useAdminData('/api/admin/marketing', {
     refreshIntervalMs: ADMIN_REFRESH_INTERVAL_MS,
   });
@@ -53,13 +55,15 @@ export function AdminMarketingPage() {
   }
   async function sendCampaign(event) {
     event.preventDefault();
+    const formData = Object.fromEntries(new FormData(event.currentTarget).entries());
+
     if (
-      !window.confirm(
+      !(await confirm(
         'La campaña se enviará en segundo plano al público seleccionado. ¿Quieres continuar?',
-      )
+      ))
     )
       return;
-    const formData = Object.fromEntries(new FormData(event.currentTarget).entries());
+
     setBusy(true);
     setStatus('Agregando campaña a la cola…');
     try {
@@ -188,8 +192,8 @@ export function AdminMarketingPage() {
         <article className="admin-marketing-card">
           <h2>Enviar campaña</h2>
           <p>
-            El envío respeta las bajas y usa el transporte de correo configurado en el backend. Si no
-            está disponible, la campaña quedará fallida en producción; en desarrollo puede quedar
+            El envío respeta las bajas y usa el transporte de correo configurado en el backend. Si
+            no está disponible, la campaña quedará fallida en producción; en desarrollo puede quedar
             registrada como simulada.
           </p>
           <p>

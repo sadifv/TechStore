@@ -30,6 +30,14 @@ En móvil, los campos editables mantienen al menos 16px de texto, incluidos MFA,
 
 ## Componentes y comportamiento
 
+Los selectores comparten colores, bordes y foco en los tres temas. En navegadores
+compatibles se mejora el desplegable de escritorio con `base-select`; móvil y
+navegadores sin soporte conservan el control nativo. No sustituir etiquetas ni
+semántica por menús genéricos. Las confirmaciones comunes usan un `dialog` modal
+con Cancelar enfocado inicialmente, Escape y retorno del foco; la acción de riesgo
+se diferencia con texto explícito y un contraste de alerta. Los errores simples
+permanecen dentro de su sección o formulario, sin `window.alert`.
+
 Las rutas administrativas comparten un menú lateral derecho a partir de 1100 px. Por debajo, se convierte en un desplegable nativo sobre el área de trabajo; no usa una superposición ni reduce el ancho del formulario. Mantener objetivos de 48 px, sección activa con texto y `aria-current`, y foco al cambiar de tamaño. Contenido, categorías y colecciones tienen páginas propias con formularios visibles y retorno al panel. Reutilizar los tokens de los tres temas.
 
 Los editores administrativos mantienen campos, mensajes, foco y acciones con los tokens de los tres temas. «Contenido de la tienda» muestra una vista previa local antes de guardar; contacto y pie usan la misma fuente. El catálogo administrativo incorpora filtros, paginación y archivados/restauración; las colecciones conservan selecciones fuera de la página de búsqueda. No se ofrece edición de HTML/CSS ni se altera la estructura de la portada desde el panel.

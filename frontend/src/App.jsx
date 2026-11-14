@@ -12,12 +12,15 @@ import { matchRoute } from './app/routeDefinitions.js';
 import { RoutedPage, PageLoading } from './app/routes.jsx';
 import StoreContentProvider from './components/content/StoreContentProvider.jsx';
 import StoreCategoriesProvider from './components/catalog/StoreCategoriesProvider.jsx';
+import ConfirmationProvider from './components/dialogs/ConfirmationProvider.jsx';
 
 export default function App() {
   return (
     <StoreContentProvider>
       <StoreCategoriesProvider>
-        <StoreApp />
+        <ConfirmationProvider>
+          <StoreApp />
+        </ConfirmationProvider>
       </StoreCategoriesProvider>
     </StoreContentProvider>
   );

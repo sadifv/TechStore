@@ -1,3 +1,4 @@
+import useConfirmation from '../../hooks/useConfirmation.js';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { requestJson } from '../../services/api.js';
 import GuestAssistantPreview from './GuestAssistantPreview.jsx';
@@ -16,6 +17,11 @@ function appendMessage(current, message) {
 }
 
 export default function AiAssistant({ user }) {
+  const confirm = useConfirmation({
+    title: 'Borrar conversación',
+    confirmLabel: 'Borrar conversación',
+    danger: true,
+  });
   const promptInput = useRef(null);
   const [mode, setMode] = useState('chat');
   const [messages, setMessages] = useState([]);
@@ -114,7 +120,7 @@ export default function AiAssistant({ user }) {
     }
   }
   async function clearHistory() {
-    if (!window.confirm('¿Borrar toda la conversación?')) return;
+    if (!(await confirm('¿Borrar toda la conversación?'))) return;
     historyChangedLocally.current = true;
     try {
       await requestJson('/api/ai/history', { method: 'DELETE' });
@@ -210,7 +216,11 @@ export default function AiAssistant({ user }) {
             </p>
             <section id="ai-chat-messages" ref={historyRef} className="ai-history">
               {messages.length === 0 && (
-                <section id="ai-empty-state" className="ai-empty" aria-label="Sugerencias iniciales">
+                <section
+                  id="ai-empty-state"
+                  className="ai-empty"
+                  aria-label="Sugerencias iniciales"
+                >
                   <i className="ri-robot-line ai-empty-icon" aria-hidden="true" />
                   <h3>¡Hola! Soy TechBot</h3>
                   <p>Elige una pregunta y edítala antes de enviarla.</p>
@@ -237,7 +247,9 @@ export default function AiAssistant({ user }) {
                   className={`ai-message ${item.role === 'user' ? 'ai-message-user' : 'ai-message-bot'}`}
                   key={`${index}-${item.role}`}
                 >
-                  <span className="ai-message-sender">{item.role === 'user' ? 'Tú' : 'TechBot'}</span>
+                  <span className="ai-message-sender">
+                    {item.role === 'user' ? 'Tú' : 'TechBot'}
+                  </span>
                   <p>{item.content}</p>
                   {item.role === 'bot' && item.products?.length > 0 && (
                     <section className="ai-mentioned-products" aria-label="Productos mencionados">
@@ -287,7 +299,12 @@ export default function AiAssistant({ user }) {
                   onChange={(event) => setMessage(event.target.value)}
                   disabled={busy}
                 />
-                <button type="submit" className="ai-send" aria-label="Enviar mensaje" disabled={busy}>
+                <button
+                  type="submit"
+                  className="ai-send"
+                  aria-label="Enviar mensaje"
+                  disabled={busy}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"

@@ -1,9 +1,15 @@
+import useConfirmation from '../../hooks/useConfirmation.js';
 import { useEffect, useRef, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
 import useStoreCategories from '../../hooks/useStoreCategories.js';
 
 export default function CategorySettings({ standalone = false }) {
+  const confirm = useConfirmation({
+    title: 'Eliminar categoría',
+    confirmLabel: 'Eliminar categoría',
+    danger: true,
+  });
   const { refresh } = useStoreCategories();
   const [mode, setMode] = useState('browse');
   const snapshot = useRef(null);
@@ -232,7 +238,7 @@ export default function CategorySettings({ standalone = false }) {
               <button
                 className="btn btn-outline"
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   finish(snapshot.current);
                   setStatus('');
                   setFailed(false);
@@ -251,9 +257,9 @@ export default function CategorySettings({ standalone = false }) {
                 className="btn btn-outline"
                 type="button"
                 disabled={entries.length < 2}
-                onClick={() => {
+                onClick={async () => {
                   if (
-                    window.confirm(
+                    await confirm(
                       '¿Eliminar esta categoría? Esta acción se guardará inmediatamente.',
                     )
                   )
@@ -274,10 +280,13 @@ export default function CategorySettings({ standalone = false }) {
             className="btn btn-outline"
             type="button"
             disabled={busy || loading}
-            onClick={() => {
+            onClick={async () => {
               if (
                 mode !== 'browse' &&
-                !window.confirm('¿Descartar los cambios sin guardar y recargar categorías?')
+                !(await confirm('¿Descartar los cambios sin guardar y recargar categorías?', {
+                  title: 'Descartar cambios',
+                  confirmLabel: 'Descartar y recargar',
+                }))
               )
                 return;
               setRetry((value) => value + 1);

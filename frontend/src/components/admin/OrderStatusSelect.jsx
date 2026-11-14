@@ -16,9 +16,11 @@ function allowedOrderStatuses(order) {
 export function OrderStatusSelect({ order, onUpdated }) {
   const [status, setStatus] = useState(order.status);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   async function change(event) {
     const next = event.target.value;
     setBusy(true);
+    setError('');
     try {
       await adminMutation(`/api/admin/orders/${order._id}/status`, {
         method: 'PUT',
@@ -26,9 +28,8 @@ export function OrderStatusSelect({ order, onUpdated }) {
       });
       setStatus(next);
       onUpdated?.();
-    } catch (error) {
-      window.alert(error.message);
-      event.target.value = status;
+    } catch (cause) {
+      setError(cause.message);
     } finally {
       setBusy(false);
     }
@@ -50,6 +51,11 @@ export function OrderStatusSelect({ order, onUpdated }) {
           </option>
         ))}
       </select>
+      {error && (
+        <small role="alert" className="form-status error">
+          {error}
+        </small>
+      )}
       {order.paymentStatus !== 'paid' && (
         <small className="text-muted">Disponible después del pago</small>
       )}

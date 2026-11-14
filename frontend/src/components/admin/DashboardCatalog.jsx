@@ -1,3 +1,4 @@
+import useConfirmation from '../../hooks/useConfirmation.js';
 import { useState } from 'react';
 import { backendAssetUrl } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
@@ -10,6 +11,8 @@ import ProductEditorDialog from './ProductEditorDialog.jsx';
 import FlashSaleDialog from './FlashSaleDialog.jsx';
 
 export default function DashboardCatalog({ refresh: refreshDashboard }) {
+  const confirm = useConfirmation({ title: 'Actualizar catálogo', confirmLabel: 'Continuar' });
+  const [actionError, setActionError] = useState('');
   const { categories } = useStoreCategories();
   const [filters, setFilters] = useState({ q: '', category: '', status: 'active', page: 1 });
   const [search, setSearch] = useState('');
@@ -27,35 +30,57 @@ export default function DashboardCatalog({ refresh: refreshDashboard }) {
   const [flashDiscount, setFlashDiscount] = useState(20);
   const [flashDuration, setFlashDuration] = useState(24);
   async function restoreProduct(item) {
-    if (!window.confirm(`¿Restaurar “${item.name}” al catálogo? Se conservarán su stock y precio.`))
+    if (
+      !(await confirm(`¿Restaurar “${item.name}” al catálogo? Se conservarán su stock y precio.`, {
+        title: 'Restaurar producto',
+        confirmLabel: 'Restaurar',
+      }))
+    )
       return;
     setBusy(true);
+    setActionError('');
     try {
       await adminMutation(`/api/admin/products/${item._id}/restore`, { method: 'PATCH' });
       refresh();
     } catch (cause) {
-      window.alert(cause.message);
+      setActionError(cause.message);
     } finally {
       setBusy(false);
     }
   }
   async function deleteProduct(item) {
-    if (!window.confirm(`¿Archivar el producto “${item.name}”?`)) return;
+    if (
+      !(await confirm(`¿Archivar el producto “${item.name}”?`, {
+        title: 'Archivar producto',
+        confirmLabel: 'Archivar',
+        danger: true,
+      }))
+    )
+      return;
+    setActionError('');
     try {
       await adminMutation(`/api/admin/products/${item._id}`, { method: 'DELETE' });
       refresh();
     } catch (cause) {
-      window.alert(cause.message);
+      setActionError(cause.message);
     }
   }
   async function toggleFlash(item) {
     if (item.flashSale) {
-      if (!window.confirm('Se detendrá la oferta y el precio volverá a su valor original.')) return;
+      if (
+        !(await confirm('Se detendrá la oferta y el precio volverá a su valor original.', {
+          title: 'Detener oferta',
+          confirmLabel: 'Detener oferta',
+          danger: true,
+        }))
+      )
+        return;
+      setActionError('');
       try {
         await adminMutation(`/api/admin/products/${item._id}/flash-sale`, { method: 'DELETE' });
         refresh();
       } catch (cause) {
-        window.alert(cause.message);
+        setActionError(cause.message);
       }
     } else {
       setFlashDiscount(20);
@@ -66,6 +91,11 @@ export default function DashboardCatalog({ refresh: refreshDashboard }) {
   return (
     <>
       <section className="dashboard-products">
+        {actionError && (
+          <p role="alert" className="form-status error">
+            {actionError}
+          </p>
+        )}
         <header className="section-heading">
           <h2 className="section-title">Gestión del catálogo</h2>
           <button type="button" className="btn btn-primary" onClick={() => setProduct({})}>

@@ -1,3 +1,4 @@
+import useConfirmation from '../../hooks/useConfirmation.js';
 import { AdminPagination } from './AdminPagination.jsx';
 import { adminMutation } from '../../services/adminMutation.js';
 import { date } from '../../utils/formatters.js';
@@ -10,6 +11,12 @@ export default function DashboardContacts({
   setSubscriberPage,
   refresh,
 }) {
+  const confirm = useConfirmation({
+    title: 'Eliminar registro',
+    confirmLabel: 'Eliminar',
+    danger: true,
+  });
+  const [actionError, setActionError] = useState('');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -19,24 +26,30 @@ export default function DashboardContacts({
   const messages = result?.messages || [];
   async function removeResource(kind, id) {
     if (
-      !window.confirm(
+      !(await confirm(
         kind === 'messages'
           ? 'Este mensaje se eliminará permanentemente.'
           : 'Se eliminará este suscriptor.',
-      )
+      ))
     )
       return;
+    setActionError('');
     try {
       await adminMutation(`/api/admin/${kind}/${id}`, { method: 'DELETE' });
       if (kind === 'messages') reload();
       refresh();
     } catch (cause) {
-      window.alert(cause.message);
+      setActionError(cause.message);
     }
   }
 
   return (
     <>
+      {actionError && (
+        <p role="alert" className="form-status error">
+          {actionError}
+        </p>
+      )}
       <section className="dashboard-messages">
         <h2 className="section-title">Mensajes de contacto</h2>
         <form

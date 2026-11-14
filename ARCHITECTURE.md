@@ -2,6 +2,13 @@
 
 ## Estructura
 
+`ConfirmationProvider` y `useConfirmation` comparten una confirmación asíncrona
+para administración y TechBot. El proveedor permite una solicitud pendiente,
+cancela al desmontar su solicitante y devuelve el foco al origen. No ejecuta
+mutaciones: cada consumidor conserva su API y espera una aceptación explícita.
+Los errores se muestran en sus formularios o secciones. Véase
+[controles y confirmaciones](docs/frontend/controls-and-confirmations.md).
+
 `AdminLayout` comparte navegación y acceso de interfaz entre las rutas administrativas; el backend conserva la autoridad de sesión/rol/MFA. `StoreEditorPage` carga bajo demanda el editor de contenido, categorías o colecciones desde sus rutas propias. El dashboard ya no importa esos editores. El layout no se aplica al albarán independiente.
 
 El panel consulta productos y mensajes mediante listados paginados independientes del resumen de dashboard. `adminCatalogController` valida filtros y restaura archivados sin modificar inventario. `StoreCategories` guarda categorías versionadas y alias; su renombre actualiza la categoría del producto con auditoría transaccional. `StoreCollection` añade definiciones editables a las selecciones compatibles de `StoreAppearance`. `StoreContent` conserva un esquema cerrado de textos e imágenes y control de revisión; sus providers comparten una consulta pública por carga. Véase [editor de tienda](docs/features/store-editor.md).

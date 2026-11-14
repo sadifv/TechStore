@@ -98,11 +98,17 @@ test('category modes cancel drafts, create and confirm deletion without publishi
   expect(writes[0].categories.map((e) => e.name)).toEqual(['Portátiles', 'Muebles', 'Café']);
   await editor.getByRole('button', { name: 'Editar categoría', exact: true }).click();
   await editor.getByLabel('Nombre', { exact: true }).fill('No publicar');
-  page.once('dialog', (dialog) => dialog.dismiss());
   await editor.getByRole('button', { name: 'Eliminar categoría', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Eliminar categoría' })
+    .getByRole('button', { name: 'Cancelar', exact: true })
+    .click();
   expect(writes).toHaveLength(1);
-  page.once('dialog', (dialog) => dialog.accept());
   await editor.getByRole('button', { name: 'Eliminar categoría', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Eliminar categoría' })
+    .getByRole('button', { name: 'Eliminar categoría', exact: true })
+    .click();
   await expect(editor.getByRole('button', { name: 'Editar categoría', exact: true })).toBeVisible();
   expect(writes[1].categories.map((e) => e.name)).toEqual(['Portátiles', 'Muebles']);
 });
@@ -128,8 +134,11 @@ test('failed saves preserve draft and reload locks editing', async ({ page, mock
   await editor.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
   await expect(editor.getByRole('alert')).toContainText('Recarga');
   await expect(editor.getByLabel('Nombre', { exact: true })).toHaveValue('Mi borrador');
-  page.once('dialog', (dialog) => dialog.accept());
   await editor.getByRole('button', { name: 'Recargar categorías', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Descartar cambios' })
+    .getByRole('button', { name: 'Descartar y recargar', exact: true })
+    .click();
   await expect(editor.getByLabel('Nombre', { exact: true })).toBeDisabled();
   await expect.poll(() => Boolean(release)).toBe(true);
   release();

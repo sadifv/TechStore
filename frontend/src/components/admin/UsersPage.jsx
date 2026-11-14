@@ -1,3 +1,4 @@
+import useConfirmation from '../../hooks/useConfirmation.js';
 import { useState } from 'react';
 import { ADMIN_REFRESH_INTERVAL_MS } from '../../config/requestCadence.js';
 import { AdminNotice } from './AdminNotice.jsx';
@@ -7,6 +8,11 @@ import { date } from '../../utils/formatters.js';
 import { useAdminData } from '../../hooks/useAdminData.js';
 
 export function AdminUsersPage() {
+  const confirm = useConfirmation({
+    title: 'Gestionar usuario',
+    confirmLabel: 'Confirmar cambio',
+    danger: true,
+  });
   const query = new URLSearchParams(location.search);
   const [search, setSearch] = useState(query.get('search') || '');
   const [role, setRole] = useState(query.get('role') || '');
@@ -20,13 +26,19 @@ export function AdminUsersPage() {
   );
   async function remove(user) {
     if (busy) return;
-    if (!window.confirm(`¿Eliminar la cuenta de ${user.name}?`)) return;
+    if (
+      !(await confirm(`¿Eliminar la cuenta de ${user.name}?`, {
+        title: 'Eliminar cuenta',
+        confirmLabel: 'Eliminar cuenta',
+      }))
+    )
+      return;
     setBusy(true);
     try {
       await adminMutation(`/api/admin/users/${user._id}`, { method: 'DELETE' });
       refresh();
     } catch (cause) {
-      window.alert(cause.message);
+      setNotice(cause.message);
     } finally {
       setBusy(false);
     }
@@ -39,9 +51,9 @@ export function AdminUsersPage() {
         ? 'Dar acceso de administrador a'
         : 'Retirar el acceso de administrador a';
     if (
-      !window.confirm(
+      !(await confirm(
         `${action} ${user.name}? Sus sesiones se cerrarán y deberá iniciar sesión de nuevo. Los administradores deben usar MFA.`,
-      )
+      ))
     )
       return;
     setBusy(true);

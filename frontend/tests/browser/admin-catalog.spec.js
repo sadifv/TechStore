@@ -61,8 +61,11 @@ test('admin encuentra productos fuera de la primera página y restaura sin edita
     .getByRole('combobox', { name: 'Estado del catálogo', exact: true })
     .selectOption('archived');
   await expect(catalog.getByText('Producto archivado', { exact: true })).toBeVisible();
-  page.once('dialog', (dialog) => dialog.accept());
   await catalog.getByRole('button', { name: 'Restaurar', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Restaurar producto' })
+    .getByRole('button', { name: 'Restaurar', exact: true })
+    .click();
   await expect(catalog.getByText('0 productos encontrados.', { exact: true })).toBeVisible();
   const request = mock.requests.find((item) => item.key.startsWith('PATCH /api/admin/products/'));
   expect(request.body).toBeNull();

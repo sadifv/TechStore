@@ -4262,6 +4262,41 @@ h3.order-id {
   min-width: 0;
   margin-top: 28px;
 }
+/* Native semantics and mobile pickers; shared theme for every store select. */
+html:root body select {
+  color-scheme: dark;
+  min-height: 48px;
+  max-width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--store-focus-border);
+  border-radius: var(--border-radius);
+  font: inherit;
+  cursor: pointer;
+}
+html:root body select option,
+html:root body select optgroup { color: var(--store-ink); background: var(--store-field); }
+html:root body select:disabled { cursor: not-allowed; opacity: 0.65; }
+.confirmation-dialog {
+  width: min(92vw, 480px);
+  max-height: 85svh;
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--store-focus-border);
+  border-radius: 1.25rem;
+  background: var(--store-surface);
+  color: var(--store-ink);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 45%);
+  overflow: auto;
+}
+.confirmation-dialog::backdrop { background: rgb(0 0 0 / 72%); }
+.confirmation-card { padding: clamp(1.25rem, 4vw, 2rem); }
+.confirmation-eyebrow { color: var(--store-link); font-size: 0.8rem; font-weight: 700; margin-bottom: 0.6rem; }
+.confirmation-card h2 { font-size: clamp(1.3rem, 5vw, 1.65rem); line-height: 1.2; margin: 0; }
+#confirmation-description { margin-block: 1rem 1.5rem; color: var(--store-muted); overflow-wrap: anywhere; }
+.confirmation-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.confirmation-actions .btn { flex: 1 1 10rem; min-height: 48px; white-space: normal; }
+html:root body .confirmation-danger { background: #991b1b; color: #fff; border: 1px solid #fca5a5; }
+html:root body .confirmation-danger:hover { background: #7f1d1d; }
 .category-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-block: 1rem; }
 .category-actions .btn { flex: 1 1 12rem; }
 .category-danger { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
@@ -8139,6 +8174,27 @@ html:root body .ai-console .ai-fieldset:focus-within { border-color: var(--store
   .admin-editor-page > .admin-header h1 { grid-column: 1; grid-row: 1; }
   .admin-editor-page > .admin-header p { grid-column: 1; grid-row: 2; }
   .admin-editor-page > .admin-header > a { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+}
+
+/* Enhanced desktop picker where supported, native fallback everywhere else. */
+@supports (appearance: base-select) {
+  @media (hover: hover) and (pointer: fine) {
+    html:root body select:not([multiple]):not([size]),
+    html:root body select:not([multiple]):not([size])::picker(select) { appearance: base-select; }
+    html:root body select::picker(select) {
+      color: var(--store-ink);
+      background: var(--store-field);
+      border: 1px solid var(--store-focus-border);
+      border-radius: 0.75rem;
+      padding: 0.35rem;
+      margin-block: 0.35rem;
+      max-height: min(24rem, 60svh);
+      box-shadow: 0 16px 40px rgb(0 0 0 / 35%);
+    }
+    html:root body select option { padding: 0.7rem; min-height: 44px; border-radius: 0.4rem; }
+    html:root body select option:is(:hover, :focus, :checked) { background: var(--store-raised); color: var(--store-link); }
+    html:root body select::picker-icon { color: var(--store-link); }
+  }
 }
 
 @media print {
