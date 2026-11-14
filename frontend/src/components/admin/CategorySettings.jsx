@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { backendAssetUrl, requestJson } from '../../services/api.js';
 import { adminMutation } from '../../services/adminMutation.js';
 import useStoreCategories from '../../hooks/useStoreCategories.js';
 
 export default function CategorySettings({ standalone = false }) {
   const { refresh } = useStoreCategories();
+  const [mode, setMode] = useState('browse');
+  const snapshot = useRef(null);
+  const editButton = useRef(null);
+  const nameInput = useRef(null);
+  const [failed, setFailed] = useState(false);
   const [settings, setSettings] = useState(null);
   const [selected, setSelected] = useState('');
   const [status, setStatus] = useState('');
@@ -18,6 +23,8 @@ export default function CategorySettings({ standalone = false }) {
       .then((result) => {
         if (!controller.signal.aborted) {
           setSettings(result);
+          setFailed(false);
+          setMode('browse');
           setSelected(result.categories?.[0]?.id || '');
           setStatus('');
           setLoadedRetry(retry);
@@ -26,11 +33,15 @@ export default function CategorySettings({ standalone = false }) {
       .catch((error) => {
         if (!controller.signal.aborted) {
           setStatus(error.message);
+          setFailed(true);
           setLoadedRetry(retry);
         }
       });
     return () => controller.abort();
   }, [retry]);
+  useEffect(() => {
+    if (mode !== 'browse') nameInput.current?.focus();
+  }, [mode]);
   const entries = settings?.categories || [];
   const current = entries.find((entry) => entry.id === selected);
   const change = (field, value) =>
@@ -49,8 +60,32 @@ export default function CategorySettings({ standalone = false }) {
     [values[index], values[target]] = [values[target], values[index]];
     setSettings((previous) => ({ ...previous, categories: orderEntries(values) }));
   };
-  async function save(event) {
-    event.preventDefault();
+  function begin(nextMode) {
+    snapshot.current = settings;
+    setStatus('');
+    setFailed(false);
+    setMode(nextMode);
+    if (nextMode === 'create') {
+      const id = 'category-' + crypto.randomUUID();
+      setSettings({
+        ...settings,
+        categories: [...entries, { id, name: '', image: '', order: entries.length }],
+      });
+      setSelected(id);
+    }
+  }
+  function finish(result) {
+    setSettings(result);
+    setSelected(
+      result.categories.find((entry) => entry.id === selected)?.id ||
+        result.categories[0]?.id ||
+        '',
+    );
+    setMode('browse');
+    requestAnimationFrame(() => editButton.current?.focus());
+  }
+  async function persist(values) {
+    if (busy || loading || !settings) return;
     setBusy(true);
     setStatus('');
     try {
@@ -58,19 +93,25 @@ export default function CategorySettings({ standalone = false }) {
         method: 'PATCH',
         body: JSON.stringify({
           revision: settings.revision,
-          categories: entries.map(({ id, name, image, order }) => ({ id, name, image, order })),
+          categories: values.map(({ id, name, image, order }) => ({ id, name, image, order })),
         }),
       });
-      setSettings(result);
+      finish(result);
+      setFailed(false);
       refresh();
       setStatus(
         'Categorías guardadas. Los productos conservan su clasificación y los enlaces anteriores siguen funcionando.',
       );
     } catch (error) {
+      setFailed(true);
       setStatus(error.message);
     } finally {
       setBusy(false);
     }
+  }
+  function save(event) {
+    event.preventDefault();
+    if (mode !== 'browse') persist(entries);
   }
   const Container = standalone ? 'section' : 'details';
   return (
@@ -86,22 +127,52 @@ export default function CategorySettings({ standalone = false }) {
         </p>
         {loading && <p role="status">Cargando categorías…</p>}
         <fieldset disabled={!settings || busy || loading}>
-          <legend>Categorías del catálogo</legend>
-          <label className="collection-select">
-            Categoría
-            <select value={selected} onChange={(event) => setSelected(event.target.value)}>
-              {entries.map((entry) => (
-                <option value={entry.id} key={entry.id}>
-                  {entry.order + 1}. {entry.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {current && (
+          <legend>
+            {mode === 'browse'
+              ? 'Categorías del catálogo'
+              : mode === 'create'
+                ? 'Nueva categoría'
+                : 'Editar categoría'}
+          </legend>
+          {mode === 'browse' && (
+            <label className="collection-select">
+              Categoría
+              <select value={selected} onChange={(event) => setSelected(event.target.value)}>
+                {entries.map((entry) => (
+                  <option value={entry.id} key={entry.id}>
+                    {entry.order + 1}. {entry.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {mode === 'browse' && (
+            <div className="category-actions">
+              <button
+                ref={editButton}
+                className="btn btn-primary"
+                type="button"
+                disabled={!current}
+                onClick={() => begin('edit')}
+              >
+                Editar categoría
+              </button>
+              <button
+                className="btn btn-outline"
+                type="button"
+                disabled={entries.length >= 40}
+                onClick={() => begin('create')}
+              >
+                Añadir categoría
+              </button>
+            </div>
+          )}
+          {mode !== 'browse' && current && (
             <>
               <p className="form-field">
                 <label htmlFor="category-name">Nombre</label>
                 <input
+                  ref={nameInput}
                   id="category-name"
                   value={current.name}
                   onChange={(event) => change('name', event.target.value)}
@@ -131,84 +202,91 @@ export default function CategorySettings({ standalone = false }) {
                   />
                 </figure>
               )}
-              <nav className="admin-header-actions" aria-label="Orden de categoría">
-                <button
-                  className="btn btn-outline"
-                  type="button"
-                  disabled={current.order === 0}
-                  onClick={() => move(-1)}
-                >
-                  Subir categoría
-                </button>
-                <button
-                  className="btn btn-outline"
-                  type="button"
-                  disabled={current.order === entries.length - 1}
-                  onClick={() => move(1)}
-                >
-                  Bajar categoría
-                </button>
-              </nav>
+              {mode === 'edit' && (
+                <div className="category-actions" role="group" aria-label="Orden de categoría">
+                  <button
+                    className="btn btn-outline"
+                    type="button"
+                    disabled={current.order === 0}
+                    onClick={() => move(-1)}
+                  >
+                    Subir categoría
+                  </button>
+                  <button
+                    className="btn btn-outline"
+                    type="button"
+                    disabled={current.order === entries.length - 1}
+                    onClick={() => move(1)}
+                  >
+                    Bajar categoría
+                  </button>
+                </div>
+              )}
             </>
           )}
-          <nav className="admin-header-actions" aria-label="Acciones de categorías">
-            <button
-              className="btn btn-outline"
-              type="button"
-              disabled={entries.length >= 40}
-              onClick={() => {
-                const id = `category-${crypto.randomUUID()}`;
-                setSettings((previous) => ({
-                  ...previous,
-                  categories: [
-                    ...previous.categories,
-                    { id, name: 'Nueva categoría', image: '', order: previous.categories.length },
-                  ],
-                }));
-                setSelected(id);
-              }}
-            >
-              Añadir categoría
-            </button>
-            <button
-              className="btn btn-outline"
-              type="button"
-              disabled={entries.length < 2 || !current}
-              onClick={() => {
-                if (
-                  !window.confirm(
-                    '¿Eliminar esta categoría al guardar? Solo se permite si no contiene productos.',
+          {mode !== 'browse' && (
+            <div className="category-actions">
+              <button className="btn btn-primary" type="submit">
+                {busy ? 'Guardando…' : mode === 'create' ? 'Crear categoría' : 'Guardar cambios'}
+              </button>
+              <button
+                className="btn btn-outline"
+                type="button"
+                onClick={() => {
+                  finish(snapshot.current);
+                  setStatus('');
+                  setFailed(false);
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+          {mode === 'edit' && (
+            <aside className="category-danger" aria-label="Eliminar categoría">
+              <p>
+                Solo puedes eliminar una categoría que no tenga productos. Se pedirá confirmación.
+              </p>
+              <button
+                className="btn btn-outline"
+                type="button"
+                disabled={entries.length < 2}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      '¿Eliminar esta categoría? Esta acción se guardará inmediatamente.',
+                    )
                   )
-                )
-                  return;
-                const remaining = orderEntries(entries.filter((entry) => entry.id !== selected));
-                setSettings((previous) => ({ ...previous, categories: remaining }));
-                setSelected(remaining[0]?.id || '');
-              }}
-            >
-              Eliminar categoría
-            </button>
-            <button className="btn btn-primary" type="submit">
-              {busy ? 'Guardando…' : 'Guardar categorías'}
-            </button>
-          </nav>
+                    persist(
+                      orderEntries(
+                        snapshot.current.categories.filter((entry) => entry.id !== selected),
+                      ),
+                    );
+                }}
+              >
+                Eliminar categoría
+              </button>
+            </aside>
+          )}
         </fieldset>
-        <button
-          className="btn btn-outline"
-          type="button"
-          disabled={busy || loading}
-          onClick={() => {
-            if (
-              settings &&
-              !window.confirm('¿Descartar los cambios sin guardar y recargar categorías?')
-            )
-              return;
-            setRetry((value) => value + 1);
-          }}
-        >
-          Recargar categorías
-        </button>
-        <p role="status">{status}</p>
+        {failed && (
+          <button
+            className="btn btn-outline"
+            type="button"
+            disabled={busy || loading}
+            onClick={() => {
+              if (
+                mode !== 'browse' &&
+                !window.confirm('¿Descartar los cambios sin guardar y recargar categorías?')
+              )
+                return;
+              setRetry((value) => value + 1);
+            }}
+          >
+            {settings ? 'Recargar categorías' : 'Reintentar carga'}
+          </button>
+        )}
+        <p role={failed ? 'alert' : 'status'}>{status}</p>
       </form>
     </Container>
   );

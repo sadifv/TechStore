@@ -27,6 +27,13 @@ No se duplica el producto ni se restituyen existencias como parte de esa operaci
 
 ## Categorías
 
+La vista inicial muestra el selector y las acciones «Editar categoría» y «Añadir
+categoría». Editar abre nombre, imagen y orden; crear abre un formulario vacío.
+«Cancelar» descarta el borrador sin solicitudes de escritura. Eliminar se presenta
+aparte durante la edición, pide confirmación y guarda solo la eliminación, sin
+publicar otros cambios pendientes. Recargar aparece únicamente ante errores;
+si hay un borrador, descartarlo requiere confirmación.
+
 «Administrar categorías» permite crear, renombrar, cambiar imagen y ordenar hasta
 40 categorías. Incluye Muebles en la configuración inicial. No se puede eliminar
 una categoría con productos, incluidos los archivados. Renombrar actualiza los
