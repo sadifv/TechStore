@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
+    define: {
+      'import.meta.env.VITE_VERCEL_MEASUREMENTS': JSON.stringify(
+        mode === 'production' && process.env.VERCEL_ENV === 'production',
+      ),
+    },
     plugins: [react()],
     publicDir: 'public',
     server: {

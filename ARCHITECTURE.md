@@ -2,6 +2,7 @@
 
 ## Estructura
 
+`StoreMeasurements` carga Analytics y Speed Insights por separado del bundle inicial, solo en builds de producción de Vercel y rutas públicas permitidas. `measurementPrivacy` centraliza filtrado y agrupación de URLs y referidos. No depende del backend ni envía formularios. Ver [métricas](docs/operations/vercel-measurements.md).
 `ConfirmationProvider` y `useConfirmation` comparten una confirmación asíncrona
 para administración y TechBot. El proveedor permite una solicitud pendiente,
 cancela al desmontar su solicitante y devuelve el foco al origen. No ejecuta

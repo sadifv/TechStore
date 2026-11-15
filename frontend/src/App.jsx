@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { CartProvider } from './components/cart/Cart.jsx';
 import SiteFooter from './components/layout/SiteFooter.jsx';
 import SiteHeader from './components/layout/SiteHeader.jsx';
@@ -13,6 +13,8 @@ import { RoutedPage, PageLoading } from './app/routes.jsx';
 import StoreContentProvider from './components/content/StoreContentProvider.jsx';
 import StoreCategoriesProvider from './components/catalog/StoreCategoriesProvider.jsx';
 import ConfirmationProvider from './components/dialogs/ConfirmationProvider.jsx';
+import { measurementPath } from './utils/measurementPrivacy.js';
+const StoreMeasurements = lazy(() => import('./components/telemetry/StoreMeasurements.jsx'));
 
 export default function App() {
   return (
@@ -20,6 +22,11 @@ export default function App() {
       <StoreCategoriesProvider>
         <ConfirmationProvider>
           <StoreApp />
+          {import.meta.env.VITE_VERCEL_MEASUREMENTS && measurementPath(location.pathname) && (
+            <Suspense fallback={null}>
+              <StoreMeasurements />
+            </Suspense>
+          )}
         </ConfirmationProvider>
       </StoreCategoriesProvider>
     </StoreContentProvider>

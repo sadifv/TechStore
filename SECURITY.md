@@ -10,6 +10,7 @@ La referencia mantenida es `main`. No se promete soporte de seguridad para versi
 
 ## Controles implementados
 
+- **Métricas de Vercel:** solo en producción y páginas públicas permitidas, con query/fragmento eliminados y fichas agrupadas; no se inicializan en rutas privadas ni con referidos potencialmente sensibles. No hay eventos personalizados. La cabecera `no-referrer` evita adjuntar URLs completas en solicitudes. Ver `docs/operations/vercel-measurements.md`.
 La compra guiada de TechBot requiere autenticación y limita solicitudes con los mismos controles del chat. Acepta categorías/usos de listas cerradas y presupuesto numérico positivo hasta 100.000 USD o `null`. Precios efectivos y disponibilidad descontando reservas se calculan en servidor; la respuesta solo contiene campos públicos y no se cachea. Consultar no escribe pedidos ni reservas, y no certifica compatibilidad o rendimiento.
 
 - **Boletín público:** las solicitudes válidas nuevas, repetidas y reactivadas devuelven el mismo estado y mensaje, también ante inserciones concurrentes del mismo correo. Los errores de almacenamiento siguen siendo errores; no se garantiza igualdad de tiempos de respuesta.

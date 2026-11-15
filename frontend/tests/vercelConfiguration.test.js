@@ -27,6 +27,7 @@ test('Vercel mantiene las cabeceras de seguridad y no cachea respuestas API', as
   const config = await loadConfig();
   const source = await readFile(new URL('../public/_headers', import.meta.url), 'utf8');
   const headers = config.headers.find(({ source }) => source === '/(.*)').headers;
+  assert.equal(headers.find(({ key }) => key === 'Referrer-Policy').value, 'no-referrer');
   for (const line of source.split(/\r?\n/)) {
     const match = line.match(/^\s+([A-Za-z-]+):\s*(.+)$/);
     if (match)

@@ -14,6 +14,7 @@ estado de Atlas, el correo, los respaldos o los despliegues de producción.
 
 ## Operación
 
+- [Métricas públicas en Vercel](operations/vercel-measurements.md): activación, filtrado de datos y verificación de recepción.
 - [Frontend en Vercel](operations/vercel-deployment.md): configuración, transición desde Netlify y validación del dominio.
 
 - [Gmail API](operations/gmail-api.md): OAuth, variables del backend y comprobación de entrega.

@@ -33,6 +33,16 @@ export function LegalPage() {
           se envían a Google Gemini para generar una respuesta y se conservan en la sesión de tu
           cuenta. Puedes borrar la conversación desde el asistente.
         </p>
+        <h3>Métricas de uso y rendimiento</h3>
+        <p>
+          En la versión de producción alojada en Vercel utilizamos Vercel Web Analytics y Speed
+          Insights para conocer visitas a páginas públicas y su rendimiento. Esta integración
+          excluye administración, cuenta, recuperación y enlaces de pedidos o bajas. Elimina
+          parámetros y fragmentos de las URLs enviadas y agrupa las fichas de productos, sin enviar
+          búsquedas, correos ni datos de formularios como eventos personalizados. Las herramientas
+          de Vercel no necesitan cookies de analítica. Algunas visitas se omiten si su página de
+          origen puede contener datos sensibles.
+        </p>
         <h3>Protección de datos</h3>
         <p>
           Implementamos medidas de seguridad para proteger tu información personal contra acceso no
@@ -73,8 +83,8 @@ export function LegalPage() {
         <p>Última actualización: Octubre 2026</p>
         <p>
           Utilizamos cookies esenciales para mantener tu sesión y las funciones necesarias de la
-          tienda. La versión actual del sitio no incluye cookies ni herramientas de analítica de
-          tráfico.
+          tienda. Las métricas de uso y rendimiento de Vercel descritas en la política de privacidad
+          no añaden cookies de analítica.
         </p>
         <h3>Tipos de cookies que usamos</h3>
         <ul>
