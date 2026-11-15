@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import useGuideNarration from './useGuideNarration.js';
 import GuideScene from './GuideScene.jsx';
 import { purchaseGuideSteps as steps } from './purchaseGuideSteps.js';
@@ -187,7 +188,7 @@ export default function PurchaseGuide() {
       >
         Cómo comprar
       </button>
-      {open && <PurchaseGuideDialog onClose={close} />}
+      {open && createPortal(<PurchaseGuideDialog onClose={close} />, document.body)}
     </>
   );
 }

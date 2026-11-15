@@ -1,12 +1,60 @@
 import { test, expect } from './fixtures.js';
+import { checkContrast } from './contrast.js';
 
-test('el recorrido presenta TechStore y solo avanza al elegir una escena', async ({ page, mock }) => {
+for (const theme of ['normal', 'halloween', 'christmas']) {
+  test(`contraste de las cinco escenas y controles: ${theme}`, async ({ page, mock }, testInfo) => {
+    mock.theme = theme;
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
+      const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
+      for (let step = 0; step < 5; step += 1) {
+        await checkContrast(page, [
+          '.purchase-guide-header h2',
+          '.purchase-guide-disclaimer',
+          '.purchase-guide-window',
+          '.purchase-guide-window > span:last-child',
+          '.purchase-guide-explanation h3',
+          '.purchase-guide-explanation p',
+          '.purchase-guide-steps button[aria-current="step"]',
+          '.purchase-guide-steps button:not([aria-current])',
+          '.purchase-guide-voice-note',
+          ...(step === 0
+            ? [
+                '.purchase-guide-overview-kicker',
+                '.purchase-guide-overview header > strong',
+                '.purchase-guide-overview-item strong',
+                '.purchase-guide-overview-item p',
+              ]
+            : step < 4
+              ? ['.purchase-guide-action']
+              : ['.purchase-guide-message', '.purchase-guide-send', '.purchase-guide-payment']),
+        ]);
+        if (step === 0 || step === 4) {
+          await dialog.screenshot({
+            path: testInfo.outputPath(`${theme}-${width}-scene-${step}.png`),
+          });
+        }
+        if (step < 4) await dialog.getByRole('button', { name: 'Siguiente paso' }).click();
+      }
+      await page.keyboard.press('Escape');
+    }
+  });
+}
+
+test('el recorrido presenta TechStore y solo avanza al elegir una escena', async ({
+  page,
+  mock,
+}) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
   await page.clock.install();
   await page.clock.runFor(14000);
-  await expect(dialog.getByRole('heading', { name: 'Conoce TechStore', exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole('heading', { name: 'Conoce TechStore', exact: true }),
+  ).toBeVisible();
   await expect(
     dialog.locator('.purchase-guide-explanation').getByText(/configurador/),
   ).toBeVisible();
@@ -28,7 +76,9 @@ for (const [theme, width] of [
     await page.goto('/');
     await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
-    await expect(dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true })).toBeVisible();
+    await expect(
+      dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }),
+    ).toBeVisible();
     if (width < 761) {
       const explanation = dialog.locator('.purchase-guide-explanation');
       const content = await explanation.boundingBox();
@@ -36,10 +86,12 @@ for (const [theme, width] of [
       expect(content.y + content.height).toBeLessThanOrEqual(controls.y);
       const heading = explanation.getByRole('heading', { name: 'Conoce TechStore', exact: true });
       await expect(heading).toBeVisible();
-      expect(await heading.evaluate((node) => {
-        const bounds = node.getBoundingClientRect();
-        return node.contains(document.elementFromPoint(bounds.x + 8, bounds.y + 8));
-      })).toBe(true);
+      expect(
+        await heading.evaluate((node) => {
+          const bounds = node.getBoundingClientRect();
+          return node.contains(document.elementFromPoint(bounds.x + 8, bounds.y + 8));
+        }),
+      ).toBe(true);
     }
     await expect(dialog.locator('img')).toBeVisible();
     expect(
@@ -69,7 +121,9 @@ test('la guía recorre una compra ficticia sin mutaciones y devuelve el foco', a
   await expect(
     dialog.getByRole('heading', { name: 'Elige un producto', exact: true }),
   ).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }),
+  ).toBeVisible();
   await dialog.getByRole('button', { name: 'Siguiente paso' }).click();
   await expect(
     dialog.getByRole('heading', { name: 'Revisa tu carrito', exact: true }),
@@ -103,10 +157,14 @@ test('guía móvil con movimiento reducido conserva pasos estáticos y no desbor
   const nextButton = dialog.getByRole('button', { name: 'Siguiente paso' });
   const nextBox = await nextButton.boundingBox();
   expect(nextBox.y + nextBox.height).toBeLessThanOrEqual(740);
-  await dialog.locator('.purchase-guide-layout').evaluate((node) => { node.scrollTop = node.scrollHeight; });
+  await dialog.locator('.purchase-guide-layout').evaluate((node) => {
+    node.scrollTop = node.scrollHeight;
+  });
   const scrolledBox = await nextButton.boundingBox();
   expect(scrolledBox.y).toBeCloseTo(nextBox.y, 0);
-  await expect(dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }),
+  ).toBeVisible();
   await expect(dialog.getByText(/Animaciones reducidas/)).toBeVisible();
   await dialog.getByRole('button', { name: 'Paso 4. Coordina por WhatsApp' }).click();
   await expect(

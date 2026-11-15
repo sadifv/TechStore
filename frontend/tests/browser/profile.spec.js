@@ -1,4 +1,5 @@
 import { test, expect, product } from './fixtures.js';
+import { checkContrast } from './contrast.js';
 
 const order = {
   _id: 'cccccccccccccccccccccccc',
@@ -56,6 +57,7 @@ for (const [theme, width] of [
     await expect(card.getByRole('heading', { name: 'Seguimiento del pedido' })).not.toBeVisible();
     await card.getByText('Ver detalles', { exact: true }).click();
     await expect(card.getByRole('heading', { name: 'Seguimiento del pedido' })).toBeVisible();
+    await checkContrast(page, ['.order-tracking-states dd', '.order-total strong']);
     await expect(card.getByRole('button', { name: /Cancelar/ }).first()).toBeVisible();
     await page.locator('.order-details summary').click();
     await expect(card.getByRole('heading', { name: 'Seguimiento del pedido' })).not.toBeVisible();

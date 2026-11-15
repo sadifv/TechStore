@@ -1,4 +1,5 @@
 import { test, expect, product } from './fixtures.js';
+import { checkContrast } from './contrast.js';
 
 test('datos iguales no certifican equivalencia técnica', async ({ page, mock }) => {
   mock.handlers.set('GET /api/products', (route) =>
@@ -16,6 +17,7 @@ test('datos iguales no certifican equivalencia técnica', async ({ page, mock })
   await page.goto('/catalogo');
   await page.locator('.product-card input[type="checkbox"]').nth(0).check();
   await page.locator('.product-card input[type="checkbox"]').nth(1).check();
+  await checkContrast(page, ['.comparison-price', '.comparison-stock[data-available="true"]']);
   await page.getByRole('checkbox', { name: 'Mostrar solo diferencias' }).check();
   await expect(page.getByText(/No hay diferencias en los datos publicados/)).toBeVisible();
   await expect(page.getByText(/Los campos faltantes no permiten confirmar/)).toBeVisible();
