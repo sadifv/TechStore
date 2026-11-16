@@ -4,13 +4,22 @@ export default function useGuideNarration() {
   const supported = typeof window.Audio === 'function';
   const audioRef = useRef(null);
   const finishRef = useRef(null);
+  const playRequestRef = useRef(0);
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
   const [error, setError] = useState('');
 
+  const playAudio = useCallback((audio, onError) => {
+    const request = ++playRequestRef.current;
+    audio.play().catch(() => {
+      if (request === playRequestRef.current) onError();
+    });
+  }, []);
+
   const releaseAudio = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    playRequestRef.current += 1;
     audioRef.current = null;
     audio.onended = null;
     audio.onerror = null;
@@ -30,6 +39,8 @@ export default function useGuideNarration() {
   const pause = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !speaking) return;
+    // Intentional pause invalidates a pending play() rejection (including AbortError).
+    playRequestRef.current += 1;
     audio.pause();
     setSpeaking(false);
     setPaused(true);
@@ -40,17 +51,17 @@ export default function useGuideNarration() {
     if (!audio || !paused) return;
     setPaused(false);
     setSpeaking(true);
-    audio.play().catch(() => finishRef.current?.(true));
-  }, [paused]);
+    playAudio(audio, () => finishRef.current?.(true));
+  }, [paused, playAudio]);
 
   useEffect(() => releaseAudio, [releaseAudio]);
   useEffect(() => {
     const onVisibilityChange = () => {
-      if (document.hidden) stop();
+      if (document.hidden) pause();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, [stop]);
+  }, [pause]);
 
   function listen(startStep, onStepChange) {
     stop();
@@ -81,7 +92,7 @@ export default function useGuideNarration() {
           step += 1;
           playStep();
         };
-        audio.play().catch(() => finish(true));
+        playAudio(audio, () => finish(true));
       };
       audio.onerror = () => finish(true);
       setPaused(false);

@@ -17,7 +17,9 @@ async function mockAudio(page) {
         this.currentTime = 12;
         return Promise.resolve();
       }
-      pause() { window.guideAudioTest.paused += 1; }
+      pause() {
+        window.guideAudioTest.paused += 1;
+      }
       removeAttribute() {
         this.src = '';
         this.currentTime = 0;
@@ -28,7 +30,99 @@ async function mockAudio(page) {
   });
 }
 
-test('la narración reanuda desde la posición pausada y se detiene al cambiar de escena o cerrar', async ({ page, mock }) => {
+test('ocultar la pestaña pausa sin reiniciar escena ni audio y volver no reproduce automáticamente', async ({
+  page,
+  mock,
+}) => {
+  await mockAudio(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
+  const visibility = async (hidden) =>
+    page.evaluate((value) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, value });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+  await visibility(true);
+  await visibility(false);
+  await expect(
+    dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Paso 2. Revisa tu carrito', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }).click();
+  await visibility(true);
+  await expect(
+    dialog.getByRole('button', { name: 'Reanudar narración', exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => window.guideAudioTest.current.currentTime)).toBe(12);
+  await visibility(false);
+  await visibility(true);
+  await visibility(false);
+  expect(await page.evaluate(() => window.guideAudioTest.starts)).toHaveLength(1);
+  await expect(
+    dialog.getByRole('heading', { name: 'Revisa tu carrito', exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Reanudar narración', exact: true }).click();
+  expect(await page.evaluate(() => window.guideAudioTest.starts)).toEqual([
+    { source: '/audio/como-comprar/paso-3.mp3', time: 0 },
+    { source: '/audio/como-comprar/paso-3.mp3', time: 12 },
+  ]);
+  await visibility(true);
+  await visibility(false);
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.guideAudioTest.current.src)).toBe('');
+  await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Iniciar recorrido', exact: true })).toBeVisible();
+  expect(mock.requests.filter(({ key }) => !key.startsWith('GET '))).toEqual([]);
+});
+
+test('pausar mientras play está pendiente conserva el audio aunque la promesa sea interrumpida', async ({
+  page,
+  mock,
+}) => {
+  await mockAudio(page);
+  await page.goto('/');
+  await page.evaluate(() => {
+    const play = window.Audio.prototype.play;
+    const pause = window.Audio.prototype.pause;
+    window.Audio.prototype.play = function () {
+      play.call(this);
+      return new Promise((resolve, reject) => {
+        this.rejectPendingPlay = reject;
+      });
+    };
+    window.Audio.prototype.pause = function () {
+      pause.call(this);
+      this.rejectPendingPlay?.(new DOMException('Playback interrupted', 'AbortError'));
+    };
+  });
+  await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
+  await dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }).click();
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(
+    dialog.getByRole('button', { name: 'Reanudar narración', exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => window.guideAudioTest.current.currentTime)).toBe(12);
+  await page.evaluate(() =>
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false }),
+  );
+  await dialog.getByRole('button', { name: 'Reanudar narración', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Pausar narración', exact: true }).click();
+  await expect(
+    dialog.getByRole('button', { name: 'Reanudar narración', exact: true }),
+  ).toBeVisible();
+  await expect(dialog.locator('.purchase-guide-audio-error')).toBeEmpty();
+  expect(mock.requests.filter(({ key }) => !key.startsWith('GET '))).toEqual([]);
+});
+
+test('la narración reanuda desde la posición pausada y se detiene al cambiar de escena o cerrar', async ({
+  page,
+  mock,
+}) => {
   await mockAudio(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
@@ -36,9 +130,13 @@ test('la narración reanuda desde la posición pausada y se detiene al cambiar d
   expect(await page.evaluate(() => window.guideAudioTest.sources)).toEqual([]);
   await dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }).click();
   await expect(dialog.getByRole('button', { name: 'Pausar narración', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => window.guideAudioTest.sources)).toEqual(['/audio/como-comprar/paso-1.mp3']);
+  expect(await page.evaluate(() => window.guideAudioTest.sources)).toEqual([
+    '/audio/como-comprar/paso-1.mp3',
+  ]);
   await dialog.getByRole('button', { name: 'Pausar narración', exact: true }).click();
-  await expect(dialog.getByRole('button', { name: 'Reanudar narración', exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Reanudar narración', exact: true }),
+  ).toBeVisible();
   expect(await page.evaluate(() => window.guideAudioTest.paused)).toBe(1);
   await dialog.getByRole('button', { name: 'Reanudar narración', exact: true }).click();
   expect(await page.evaluate(() => window.guideAudioTest.starts)).toEqual([
@@ -49,12 +147,17 @@ test('la narración reanuda desde la posición pausada y se detiene al cambiar d
   expect(await page.evaluate(() => window.guideAudioTest.paused)).toBe(2);
   await dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }).click();
   await page.keyboard.press('Escape');
-  expect(await page.evaluate(() => window.guideAudioTest.sources.at(-1))).toBe('/audio/como-comprar/paso-2.mp3');
+  expect(await page.evaluate(() => window.guideAudioTest.sources.at(-1))).toBe(
+    '/audio/como-comprar/paso-2.mp3',
+  );
   expect(await page.evaluate(() => window.guideAudioTest.paused)).toBe(3);
   expect(mock.requests.filter(({ key }) => !key.startsWith('GET '))).toEqual([]);
 });
 
-test('el audio real conserva la posición al pausar y reanudar sin repetir la escena', async ({ page, mock }) => {
+test('el audio real conserva la posición al pausar y reanudar sin repetir la escena', async ({
+  page,
+  mock,
+}) => {
   mock.role = 'guest';
   await page.addInitScript(() => {
     const NativeAudio = window.Audio;
@@ -73,14 +176,22 @@ test('el audio real conserva la posición al pausar y reanudar sin repetir la es
   await page.getByRole('button', { name: 'Cómo comprar', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Así compras en TechStore' });
   await dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => window.guideRealAudio.instances[0]?.currentTime || 0)).toBeGreaterThan(0.1);
+  await expect
+    .poll(() => page.evaluate(() => window.guideRealAudio.instances[0]?.currentTime || 0))
+    .toBeGreaterThan(0.1);
   await dialog.getByRole('button', { name: 'Pausar narración', exact: true }).click();
-  await expect(dialog.getByRole('button', { name: 'Reanudar narración', exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Reanudar narración', exact: true }),
+  ).toBeVisible();
   expect(await page.evaluate(() => window.guideRealAudio.instances[0].paused)).toBe(true);
 
   // Seek while paused to a known position; the browser must resume that same MP3 there.
-  await page.evaluate(() => { window.guideRealAudio.instances[0].currentTime = 4.25; });
-  await expect.poll(() => page.evaluate(() => window.guideRealAudio.instances[0].seeking)).toBe(false);
+  await page.evaluate(() => {
+    window.guideRealAudio.instances[0].currentTime = 4.25;
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.guideRealAudio.instances[0].seeking))
+    .toBe(false);
   await dialog.getByRole('button', { name: 'Reanudar narración', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.guideRealAudio.starts.length)).toBe(2);
   const result = await page.evaluate(() => ({
@@ -91,12 +202,17 @@ test('el audio real conserva la posición al pausar y reanudar sin repetir la es
   expect(result.resumed.source).toContain('/audio/como-comprar/paso-1.mp3');
   expect(result.resumed.time).toBeGreaterThanOrEqual(4.2);
   expect(result.resumed.time).toBeLessThan(4.75);
-  await expect(dialog.getByRole('heading', { name: 'Conoce TechStore', exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole('heading', { name: 'Conoce TechStore', exact: true }),
+  ).toBeVisible();
   await page.keyboard.press('Escape');
   expect(await page.evaluate(() => window.guideRealAudio.instances[0].paused)).toBe(true);
 });
 
-test('la narración sincroniza las cinco escenas, termina y permite reintentar errores', async ({ page, mock }) => {
+test('la narración sincroniza las cinco escenas, termina y permite reintentar errores', async ({
+  page,
+  mock,
+}) => {
   await mockAudio(page);
   mock.theme = 'halloween';
   await page.goto('/');
@@ -112,21 +228,29 @@ test('la narración sincroniza las cinco escenas, termina y permite reintentar e
   ]) {
     await page.evaluate(() => window.guideAudioTest.current.onended());
     await expect(dialog.getByRole('heading', { name: title, exact: true })).toBeVisible();
-    expect(await page.evaluate(() => window.guideAudioTest.sources.at(-1)))
-      .toBe(`/audio/como-comprar/paso-${step}.mp3`);
+    expect(await page.evaluate(() => window.guideAudioTest.sources.at(-1))).toBe(
+      `/audio/como-comprar/paso-${step}.mp3`,
+    );
   }
   await page.evaluate(() => window.guideAudioTest.current.onended());
-  await expect(dialog.getByRole('button', { name: 'Volver a escuchar', exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Volver a escuchar', exact: true }),
+  ).toBeVisible();
   expect(await page.evaluate(() => window.guideAudioTest.sources)).toHaveLength(5);
   await dialog.getByRole('button', { name: 'Volver a escuchar', exact: true }).click();
   await page.evaluate(() => window.guideAudioTest.current.onerror());
   const retry = dialog.getByRole('button', { name: 'Iniciar recorrido', exact: true });
-  await expect(dialog.getByText('No se pudo reproducir la narración. Puedes leer el recorrido.')).toBeVisible();
+  await expect(
+    dialog.getByText('No se pudo reproducir la narración. Puedes leer el recorrido.'),
+  ).toBeVisible();
   await retry.click();
   await expect(dialog.getByRole('button', { name: 'Pausar narración', exact: true })).toBeVisible();
 });
 
-test('los cinco MP3 locales se pueden decodificar y no se descargan al abrir la guía', async ({ page, mock }) => {
+test('los cinco MP3 locales se pueden decodificar y no se descargan al abrir la guía', async ({
+  page,
+  mock,
+}) => {
   mock.theme = 'christmas';
   const audioRequests = [];
   page.on('request', (request) => {
@@ -146,7 +270,9 @@ test('los cinco MP3 locales se pueden decodificar y no se descargan al abrir la 
         durations.push(buffer.duration);
       }
       return durations;
-    } finally { await context.close(); }
+    } finally {
+      await context.close();
+    }
   });
   for (const duration of durations) {
     expect(duration).toBeGreaterThan(5);

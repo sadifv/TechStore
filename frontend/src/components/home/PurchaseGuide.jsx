@@ -12,7 +12,6 @@ function PurchaseGuideDialog({ onClose }) {
   );
   const narration = useGuideNarration();
   const playing = narration.speaking;
-  const stopNarration = narration.stop;
   let playbackLabel = 'Iniciar recorrido';
   if (playing) playbackLabel = 'Pausar narración';
   else if (narration.paused) playbackLabel = 'Reanudar narración';
@@ -27,18 +26,13 @@ function PurchaseGuideDialog({ onClose }) {
     const updateMotion = () => {
       setReducedMotion(media.matches);
     };
-    const pauseWhenHidden = () => {
-      if (document.hidden) stopNarration();
-    };
     media.addEventListener('change', updateMotion);
-    document.addEventListener('visibilitychange', pauseWhenHidden);
     return () => {
       media.removeEventListener('change', updateMotion);
-      document.removeEventListener('visibilitychange', pauseWhenHidden);
       document.body.style.overflow = previousOverflow;
       dialog.close();
     };
-  }, [stopNarration]);
+  }, []);
 
   function selectStep(nextStep) {
     narration.stop();

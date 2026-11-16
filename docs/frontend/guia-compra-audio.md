@@ -2,6 +2,11 @@
 
 La guía presenta primero TechStore y luego acompaña cuatro escenas de compra. Cada MP3 local se reproduce en orden; el texto y la escena visible avanzan juntos. El audio solo inicia cuando la persona lo solicita, se puede pausar y retomar desde el mismo punto, y no se precarga al abrir la guía.
 
+Al ocultar la pestaña o minimizar el navegador, la narración se pausa conservando
+la escena y la posición del MP3. Al regresar, la persona pulsa «Reanudar narración»
+para continuar; no se reproduce automáticamente. Cerrar la guía o elegir otra
+escena detiene y libera el audio.
+
 ## Procedencia
 
 Audio sintético generado para TechStore con la voz masculina `es-EC-LuisNeural`, a velocidad `-5%`, mediante [edge-tts](https://github.com/rany2/edge-tts) 7.3.1 en un entorno Python temporal. Esta herramienta no forma parte de las dependencias del proyecto ni del despliegue. No se usaron voces clonadas ni datos de clientes.
