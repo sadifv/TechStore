@@ -1341,6 +1341,7 @@ summary:focus-visible {
 }
 .flash-sale-card {
   display: grid;
+  overflow: hidden;
   gap: var(--space-8);
   align-items: center;
   background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%);
