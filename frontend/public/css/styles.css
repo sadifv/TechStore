@@ -5425,6 +5425,16 @@ body:has(#checkout-modal[open]) {
   opacity: 0.08;
   mask-image: none;
 }
+.cinema-seasonal {
+  position: absolute;
+  inset: 0;
+  opacity: 0.65;
+  pointer-events: none;
+}
+.cinema-seasonal > div {
+  width: 100%;
+  height: 100%;
+}
 .cinema-copy {
   position: relative;
   z-index: 3;
@@ -7199,7 +7209,6 @@ body:has(.cart-drawer.open, dialog[open]) .navbar-assistant {
 html:root body .ai-console .ai-fieldset:focus-within { border-color: var(--store-link); box-shadow: 0 0 0 4px color-mix(in srgb, var(--store-violet) 15%, transparent), 0 8px 32px color-mix(in srgb, var(--store-violet) 10%, transparent); }
 .ai-console .ai-send svg { transition: transform 180ms; }
 
-@keyframes selection-arrive { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
 
 @media (min-width: 521px) {
   .profile-container .favorites-section .products-grid {
@@ -8159,7 +8168,6 @@ html:root body .ai-console .ai-fieldset:focus-within { border-color: var(--store
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .build-kit-preview li[data-filled='true'] img { animation: selection-arrive 350ms ease-out both; }
   .build-kit-progress button { transition: border-color 180ms, background-color 180ms, transform 180ms; }
 }
 

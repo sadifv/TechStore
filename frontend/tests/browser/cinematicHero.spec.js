@@ -1,5 +1,30 @@
 import { test, expect } from './fixtures.js';
 
+for (const theme of ['christmas', 'halloween']) {
+  test(`el efecto de ${theme} se limita al hero y respeta movimiento reducido`, async ({
+    page,
+    mock,
+  }, testInfo) => {
+    mock.theme = theme;
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      const layer = page.locator(`#inicio [data-season="${theme}"]`);
+      await expect(layer.locator('canvas')).toBeVisible();
+      await expect(layer).toHaveCSS('pointer-events', 'none');
+      await expect(page.locator('.logo-intro')).toBeHidden();
+      await page
+        .locator('.cinema-stage')
+        .screenshot({ path: testInfo.outputPath(`${theme}-effect-${width}.png`) });
+    }
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(page.locator('.cinema-seasonal')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+}
+
 test('el scroll despliega el producto y se acerca a su interior sin bloquear la página', async ({
   page,
   mock,

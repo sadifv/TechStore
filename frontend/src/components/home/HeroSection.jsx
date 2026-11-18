@@ -1,4 +1,5 @@
 import HeroBackground from './HeroBackground.jsx';
+import HeroSeasonalEffects from './HeroSeasonalEffects.jsx';
 import HeroMascot from './HeroMascot.jsx';
 import PurchaseGuide from './PurchaseGuide.jsx';
 import useCinematicHero from './useCinematicHero.js';
@@ -21,6 +22,7 @@ export default function HeroSection({ signedIn }) {
     >
       <div className="cinema-stage">
         <HeroBackground />
+        <HeroSeasonalEffects />
         <header className="cinema-copy">
           <p className="cinema-eyebrow">TECHSTORE / ECUADOR</p>
           <h1 id="cinema-title">
