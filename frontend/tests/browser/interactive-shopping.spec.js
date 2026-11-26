@@ -86,14 +86,14 @@ test('muestra piezas adicionales y avisa si la fuente queda corta para la gráfi
   await expect(
     page.getByText('La fuente queda por debajo de la potencia recomendada para la gráfica.'),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Añadir selección al carrito' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Añadir selección al carrito' })).toHaveCount(0);
 });
 
 test('recomienda únicamente complementos con stock y permite añadirlos', async ({ page, mock }) => {
   const keyboard = { ...kitProducts[7], name: 'Teclado Keychron renovado' };
   const mouse = { ...kitProducts[8], availableStock: 0 };
   mock.product.complements = [
-    { productId: keyboard._id, name: names[7] },
+    { productId: keyboard._id, name: names[7], reason: 'Escribe sin usar el teclado integrado.' },
     { productId: mouse._id, name: names[8] },
   ];
   for (const item of [keyboard, mouse]) {
@@ -104,6 +104,7 @@ test('recomienda únicamente complementos con stock y permite añadirlos', async
   await page.goto(`/producto/${mock.product._id}`);
   const complements = page.getByRole('region', { name: 'Complementos disponibles' });
   await expect(complements.getByRole('checkbox', { name: /Keychron/ })).toBeVisible();
+  await expect(complements.getByText('Escribe sin usar el teclado integrado.')).toBeVisible();
   await expect(complements.getByRole('checkbox', { name: /Logitech/ })).toHaveCount(0);
   await complements.getByRole('checkbox', { name: /Keychron/ }).check();
   await complements.getByRole('button', { name: 'Añadir complementos seleccionados' }).click();
@@ -143,7 +144,10 @@ test('guarda una selección y la vuelve a abrir desde Mi cuenta', async ({ page,
     return route.fulfill({ json: { success: true } });
   });
   mock.handlers.set('GET /api/saved-build', (route) =>
-    route.fulfill({ json: { success: true, selection } }),
+    route.fulfill({ json: { success: true, builds: [
+      { id: '1', selection, changes: [{ name: names[0], previousPrice: 100, currentPrice: 120, available: false }] },
+      { id: '2', selection: new URLSearchParams({ kit: 'pc', platform: 'AM5', part: names[3] }).toString(), changes: [] },
+    ] } }),
   );
   mock.handlers.set('GET /api/orders', (route) =>
     route.fulfill({ json: { success: true, orders: [] } }),
@@ -154,10 +158,20 @@ test('guarda una selección y la vuelve a abrir desde Mi cuenta', async ({ page,
 
   await page.goto('/arma-tu-equipo');
   await page.getByLabel('Procesador', { exact: true }).selectOption(names[0]);
-  await page.getByRole('button', { name: 'Guardar selección', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar armado', exact: true }).click();
   await expect(page.getByText('Selección guardada en Mi cuenta.')).toBeVisible();
   await page.goto('/profile');
-  await page.getByRole('link', { name: 'Retomar mi selección' }).click();
+  const builds = page.getByRole('region', { name: 'Mis armados' });
+  await expect(builds.getByRole('link', { name: 'Retomar armado' })).toHaveCount(2);
+  await expect(builds.getByText(/Precio:.*100.*120.*Agotado/)).toBeVisible();
+  await builds.getByRole('link', { name: 'Retomar armado' }).first().click();
+  await expect(page.getByLabel('Procesador', { exact: true })).toHaveValue(names[0]);
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'Compartir armado' }).click();
+  await expect(page.getByText('Enlace de la selección copiado.')).toBeVisible();
+  const shared = await page.evaluate(() => navigator.clipboard.readText());
+  mock.role = 'guest';
+  await page.goto(shared);
   await expect(page.getByLabel('Procesador', { exact: true })).toHaveValue(names[0]);
 });
 
@@ -187,7 +201,9 @@ for (const theme of ['normal', 'halloween', 'christmas']) {
       'aria-current',
       'step',
     );
-    await expect(page.getByRole('button', { name: 'Añadir selección al carrito' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Añadir selección al carrito' })).toHaveCount(0);
+    await expect(page.getByText(/^Subtotal estimado/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Compartir armado' })).toBeVisible();
     await page.getByLabel('Memoria RAM', { exact: true }).selectOption('');
     await expect(progress.getByRole('button', { name: /^Memoria RAM/ })).toHaveAttribute(
       'aria-current',

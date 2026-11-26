@@ -43,6 +43,21 @@ const userSchema = new mongoose.Schema(
     adminMfaRecoveryHashes: { type: [String], select: false, default: undefined },
     lastLoginAt: Date,
     savedBuild: { type: String, maxlength: 1800, select: false },
+    savedBuilds: {
+      type: [{
+        selection: { type: String, maxlength: 1800, required: true },
+        savedAt: { type: Date, required: true },
+        parts: [{
+          _id: false,
+          product: { type: mongoose.Schema.Types.ObjectId, required: true },
+          name: { type: String, maxlength: 100, required: true },
+          price: { type: Number, min: 0, required: true },
+          available: { type: Boolean, required: true },
+        }],
+      }],
+      default: undefined,
+      select: false,
+    },
     // Campos para Verificación de Email y Reset de Contraseña
     isVerified: {
       type: Boolean,

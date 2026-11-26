@@ -41,7 +41,14 @@ const productSchema = new mongoose.Schema(
     },
     gallery: { type: [String], default: [] },
     complements: {
-      type: [{ _id: false, productId: mongoose.Schema.Types.ObjectId, name: String }],
+      type: [
+        {
+          _id: false,
+          productId: mongoose.Schema.Types.ObjectId,
+          name: String,
+          reason: { type: String, maxlength: 160 },
+        },
+      ],
       default: undefined,
     },
     image: {

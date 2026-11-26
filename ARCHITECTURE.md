@@ -14,7 +14,9 @@ Los errores se muestran en sus formularios o secciones. Véase
 
 El panel consulta productos y mensajes mediante listados paginados independientes del resumen de dashboard. `adminCatalogController` valida filtros y restaura archivados sin modificar inventario. `StoreCategories` guarda categorías versionadas y alias; su renombre actualiza la categoría del producto con auditoría transaccional. `StoreCollection` añade definiciones editables a las selecciones compatibles de `StoreAppearance`. `StoreContent` conserva un esquema cerrado de textos e imágenes y control de revisión; sus providers comparten una consulta pública por carga. Véase [editor de tienda](docs/features/store-editor.md).
 
-El editor de productos permite vincular hasta tres complementos activos. Al guardar, el servidor resuelve sus nombres a IDs. La ficha y el carrito usan esos IDs para consultar el precio y la disponibilidad al mostrar las sugerencias.
+El editor de productos permite vincular hasta tres complementos activos y escribir un motivo opcional por producto. Al guardar, el servidor resuelve los nombres nuevos a IDs y conserva las referencias existentes. La ficha y el carrito muestran el motivo y usan los IDs para consultar el precio y la disponibilidad.
+
+El modo PC es un simulador con subtotal estimado y opciones para guardar o compartir el armado. Cruza el socket, el tipo de memoria, la potencia recomendada y la longitud de la gráfica con los datos de las piezas seleccionadas. Muestra qué medidas faltan. Para confirmar la BIOS se requiere el modelo exacto de la placa, el procesador compatible y la versión instalada. Los demás kits conservan la opción de añadir la selección al carrito.
 
 TechBot conserva el chat libre y ofrece compra guiada con `GuidedShopping`. `POST /api/ai/recommendations` exige sesión vigente y comparte los límites de IA; el controlador consulta productos activos y reservas, y `services/guidedShopping.js` valida preferencias y selecciona hasta tres opciones por precio efectivo, disponibilidad y evidencia técnica. No llama a Gemini, modifica pedidos ni reserva inventario. Usa las tarjetas, el comparador y el carrito existentes. Las explicaciones son orientativas y reconocen especificaciones faltantes. Detalles en `docs/features/techbot-guided-shopping.md`.
 
@@ -88,6 +90,8 @@ La ficha del producto muestra solo reseñas aprobadas, paginadas de diez en diez
 
 `/api/reviews` gestiona la reseña propia, `/api/products/:id/reviews` sirve el listado público y `/api/admin/reviews` atiende moderación. Owner y admin requieren sesión vigente y MFA. Cualquiera puede tomar una decisión, sin doble aprobación; un moderador no aprueba su propia reseña. Edición, retiro y moderación usan versión/CAS para impedir aprobar texto anterior tras una edición concurrente. La auditoría guarda las últimas50 decisiones con actor/fecha. La escritura del cliente tiene límite propio y la moderación conserva el presupuesto administrativo. `/admin/reviews` se abre desde el dashboard.
 
+Las fotos de reseñas se guardan en el documento de la reseña, con un identificador opaco que cambia al sustituirlas. Los listados entregan la URL permitida para cada audiencia. Los bytes se leen por separado para la ficha pública, el autor o el panel de moderación.
+
 `AddressBook` es un documento privado `_id=usuario`, con máximo cinco entradas y referencia a una predeterminada. `/api/addresses` permite alta/listado y rutas por ID para editar, borrar y marcar predeterminada. Las altas usan CAS y deduplican entradas idénticas; las otras mutaciones exigen la versión vigente. Nunca se acepta un propietario aportado por el cliente. Eliminar la predeterminada elige otra existente o deja null si la libreta queda vacía. La respuesta privada usa no-store.
 
 El checkout admite `savedAddressId` propio o `shippingAddress` puntual, nunca ambos. La dirección es opcional y no se guarda implícitamente. `checkoutService` resuelve y valida dentro de la transacción después de buscar un checkout idempotente existente; copia campos permitidos al pedido y marca `shippingAddressProvided`. Un reintento recupera el pedido aunque se haya editado/borrado la libreta, y un ID ajeno o eliminado se rechaza sin reservar inventario. No ejecutar consultas paralelas en la sesión transaccional.
@@ -97,6 +101,10 @@ La copia se muestra solo en rutas autorizadas del cliente, personal y comprobant
 Ambos modelos nuevos tienen autoIndex:false. La unicidad y privacidad no dependen de índices secundarios. `npm run db:ensure-review-indexes` inspecciona sin escribir; aplicar requiere autorización específica y `-- --apply --database=TechStore`, con nombre exacto del destino. Durante desarrollo solo se aplicaron en MongoDB temporal.
 
 ## Integraciones y mantenimiento
+
+### Armados guardados
+
+Mi cuenta lista hasta diez armados nuevos por usuario y conserva el armado anterior hasta que se guarde de nuevo o se elimine. Al guardar, el servidor registra el ID, nombre, precio efectivo y disponibilidad de cada pieza. Al consultar vuelve a calcular el precio y el stock neto por lotes. Los enlaces compartidos conservan los nombres de las piezas y la configuración del armado.
 
 ### Favoritos y avisos de disponibilidad
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAdminData } from '../../hooks/useAdminData.js';
 import { adminMutation } from '../../services/adminMutation.js';
 import { AdminNotice } from './AdminNotice.jsx';
+import ReviewPhoto from '../reviews/ReviewPhoto.jsx';
 const labels = {
   pending: 'Pendientes',
   approved: 'Publicadas',
@@ -36,7 +37,7 @@ export default function ReviewModerationPage() {
         </a>
       </header>
       <p className="moderation-guidance">
-        Las reseñas requieren una compra verificada. Revisa el texto antes de publicarlo. No puedes
+        Las reseñas requieren una compra verificada. Revisa el texto y la foto antes de publicar. No puedes
         aprobar tu propia reseña.
       </p>
       <fieldset className="moderation-filter">
@@ -87,6 +88,7 @@ export default function ReviewModerationPage() {
                   </h2>
                   <p>{r.authorLabel} · compra verificada</p>
                   <p className="review-text">{r.text}</p>
+                  <ReviewPhoto url={r.photoUrl} alt="Abrir foto adjunta para moderación" />
                   <div className="customer-actions">
                     {[
                       ['approved', 'Aprobar'],

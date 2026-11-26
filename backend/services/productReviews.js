@@ -2,11 +2,36 @@ const Review = require('../models/ProductReview'),
   Order = require('../models/Order'),
   Product = require('../models/Product'),
   User = require('../models/User');
+const { randomUUID } = require('node:crypto');
+const sharp = require('sharp');
+const { detectImageType } = require('./productImageStorage');
 const fail = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode });
 const validId = (id) => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id);
+const photoTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const validReviewId = (id) => typeof id === 'string' && /^[a-f0-9]{24}:[a-f0-9]{24}$/i.test(id);
+const validPhotoKey = (key) => typeof key === 'string' && /^[a-f0-9-]{36}$/.test(key);
+const reviewPhotoPath = (id, key) => `${encodeURIComponent(id)}/photo/${key}`;
+
+async function validatePhoto(file) {
+  const contentType = detectImageType(file.buffer);
+  if (!photoTypes.has(contentType) || file.mimetype !== contentType || file.buffer.length > 1024 * 1024)
+    throw fail('La foto debe ser un archivo JPEG, PNG o WebP de hasta 1 MB.');
+  let photoData;
+  try {
+    photoData = await sharp(file.buffer, { limitInputPixels: 16_000_000, failOn: 'warning' })
+      .autoOrient()
+      .resize({ width: 1400, height: 1400, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+  } catch {
+    throw fail('No se pudo procesar la foto. Elige una imagen válida de hasta 16 megapíxeles.');
+  }
+  if (photoData.length > 1024 * 1024) throw fail('La foto procesada supera el límite de 1 MB.');
+  return { photoKey: randomUUID(), photoContentType: 'image/webp', photoData };
+}
 function validateReview(input = {}) {
   if (
-    !Number.isInteger(input.rating) ||
+    !Number.isInteger(input?.rating) ||
     input.rating < 1 ||
     input.rating > 5 ||
     typeof input.text !== 'string' ||
@@ -33,25 +58,38 @@ function reviewId(user, product) {
 }
 async function mine(user, product) {
   const id = reviewId(user, product);
+  const review = await Review.findById(id).select('-moderationEvents -user -__v').lean();
+  if (review?.photoKey) {
+    review.photoUrl = `/api/reviews/mine/${reviewPhotoPath(product, review.photoKey)}`;
+    delete review.photoKey;
+    delete review.photoContentType;
+  }
   return {
-    review: await Review.findById(id).select('-moderationEvents -user -__v').lean(),
+    review,
     eligible: await eligible(user, product),
   };
 }
-async function saveReview(user, product, input) {
+async function saveReview(user, product, input, file) {
   const id = reviewId(user, product),
     value = validateReview(input);
   if (!(await Product.exists({ _id: product, archivedAt: null })))
     throw fail('Producto no disponible.', 404);
   if (!(await eligible(user, product)))
     throw fail('Necesitas una compra propia pagada y entregada para reseñar este producto.', 403);
+  const removePhoto = input.removePhoto === true;
+  if (file && removePhoto) throw fail('Elige entre reemplazar o quitar la foto.');
+  const photoFields = file ? await validatePhoto(file) : {};
   const old = await Review.findById(id).lean();
   if (old) {
     if (!Number.isInteger(input.version) || input.version !== old.version)
       throw fail('La reseña cambió. Actualiza e inténtalo de nuevo.', 409);
     const updated = await Review.findOneAndUpdate(
       { _id: id, version: input.version },
-      { $set: { ...value, status: 'pending', withdrawn: false }, $inc: { version: 1 } },
+      {
+        $set: { ...value, ...photoFields, status: 'pending', withdrawn: false },
+        ...(removePhoto ? { $unset: { photoKey: '', photoContentType: '', photoData: '' } } : {}),
+        $inc: { version: 1 },
+      },
       { returnDocument: 'after' },
     ).lean();
     if (!updated) throw fail('La reseña cambió. Actualiza e inténtalo de nuevo.', 409);
@@ -71,6 +109,7 @@ async function saveReview(user, product, input) {
         product,
         user,
         ...value,
+        ...photoFields,
         authorLabel,
         status: 'pending',
         version: 1,
@@ -123,7 +162,7 @@ async function listPublicReviews(product, page = 1) {
   page = Math.max(1, Math.min(1000, parseInt(page, 10) || 1));
   const filter = { product, status: 'approved', withdrawn: { $ne: true } };
   const rows = await Review.find(filter)
-    .select('rating text authorLabel createdAt updatedAt -_id')
+    .select('rating text authorLabel createdAt updatedAt photoKey -_id')
     .sort({ createdAt: -1, _id: -1 })
     .skip((page - 1) * 10)
     .limit(10)
@@ -139,6 +178,7 @@ async function listPublicReviews(product, page = 1) {
       author: r.authorLabel || 'Comprador',
       createdAt: r.createdAt,
       verifiedPurchase: true,
+      photoUrl: r.photoKey ? `/api/products/${product}/reviews/photo/${r.photoKey}` : undefined,
     })),
     average: totals[0]?.average || 0,
     count: totals[0]?.count || 0,
@@ -161,15 +201,36 @@ async function listModeration(status = 'pending', page = 1) {
   const names = new Map(products.map((p) => [String(p._id), p.name]));
   const count = await Review.countDocuments(filter);
   return {
-    reviews: rows.map((r) => ({
+    reviews: rows.map(({ photoKey, photoContentType, ...r }) => ({
       ...r,
       productName: names.get(String(r.product)) || 'Producto retirado',
+      photoUrl: photoKey ? `/api/admin/reviews/${reviewPhotoPath(r._id, photoKey)}` : undefined,
     })),
     page,
     totalPages: Math.max(1, Math.ceil(count / 20)),
     count,
   };
 }
+
+async function findPhoto(filter, key) {
+  if (!validPhotoKey(key)) return null;
+  return Review.findOne({ ...filter, photoKey: key }).select('photoData photoContentType -_id');
+}
+
+function publicPhoto(product, key) {
+  if (!validId(product)) return null;
+  return findPhoto({ product, status: 'approved', withdrawn: { $ne: true } }, key);
+}
+
+function ownPhoto(user, product, key) {
+  return findPhoto({ _id: reviewId(user, product) }, key);
+}
+
+function moderationPhoto(id, key) {
+  if (!validReviewId(id)) return null;
+  return findPhoto({ _id: id, withdrawn: { $ne: true } }, key);
+}
+
 module.exports = {
   validateReview,
   saveReview,
@@ -178,4 +239,7 @@ module.exports = {
   listPublicReviews,
   listModeration,
   mine,
+  publicPhoto,
+  ownPhoto,
+  moderationPhoto,
 };

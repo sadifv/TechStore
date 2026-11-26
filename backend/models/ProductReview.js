@@ -7,6 +7,9 @@ const schema = new mongoose.Schema(
     rating: { type: Number, min: 1, max: 5, required: true },
     text: { type: String, maxlength: 2000, required: true },
     authorLabel: String,
+    photoKey: String,
+    photoContentType: String,
+    photoData: { type: Buffer, select: false },
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'hidden'],

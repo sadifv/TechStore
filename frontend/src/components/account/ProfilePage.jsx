@@ -23,7 +23,7 @@ export function ProfilePage({ user }) {
         <nav className="profile-navigation" aria-label="Secciones de mi cuenta">
           <a href="#profile-orders">Mis pedidos</a>
           <a href="#favorites-heading">Favoritos</a>
-          <a href="#saved-build-heading">Selección guardada</a>
+          <a href="#saved-build-heading">Mis armados</a>
           <a href="#address-book-heading">Direcciones</a>
           <a href="#account-security-heading">Datos y seguridad</a>
         </nav>

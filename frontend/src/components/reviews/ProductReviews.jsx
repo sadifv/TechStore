@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { requestJson } from '../../services/api.js';
+import ReviewPhoto from './ReviewPhoto.jsx';
+
+const photoTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const labels = {
   pending: 'Pendiente de moderación',
   approved: 'Publicada',
@@ -17,8 +20,11 @@ export default function ProductReviews({ productId, user }) {
     [busy, setBusy] = useState(false),
     [rating, setRating] = useState(5),
     [text, setText] = useState(''),
+    [photo, setPhoto] = useState(null),
+    [removePhoto, setRemovePhoto] = useState(false),
     [mineLoading, setMineLoading] = useState(true);
   const sending = useRef(false);
+  const photoInput = useRef(null);
   useEffect(() => {
     let active = true;
     requestJson(`/api/products/${encodeURIComponent(productId)}/reviews?page=${page}`)
@@ -64,15 +70,28 @@ export default function ProductReviews({ productId, user }) {
     setMineError('');
     setMessage('');
     try {
+      const version = mine?.review?.version;
+      let body = JSON.stringify(
+        withdraw ? { version } : { rating, text, version, removePhoto },
+      );
+      if (!withdraw && photo) {
+        if (!photoTypes.includes(photo.type) || photo.size > 1024 * 1024) {
+          throw new Error('Elige una foto JPEG, PNG o WebP de hasta 1 MB.');
+        }
+        body = new FormData();
+        body.set('rating', String(rating));
+        body.set('text', text);
+        if (version !== undefined) body.set('version', String(version));
+        body.set('photo', photo);
+      }
       const result = await requestJson(`/api/reviews/${encodeURIComponent(productId)}`, {
         method: withdraw ? 'DELETE' : 'PUT',
-        body: JSON.stringify(
-          withdraw
-            ? { version: mine.review.version }
-            : { rating, text, ...(mine?.review ? { version: mine.review.version } : {}) },
-        ),
+        body,
       });
       setMine(result.data);
+      setPhoto(null);
+      setRemovePhoto(false);
+      if (photoInput.current) photoInput.current.value = '';
       setMessage(
         withdraw
           ? 'Tu reseña se retiró.'
@@ -112,6 +131,7 @@ export default function ProductReviews({ productId, user }) {
                   </p>
                   <p className="customer-badge">Compra verificada</p>
                   <p className="review-text">{r.text}</p>
+                  <ReviewPhoto url={r.photoUrl} alt={`Abrir foto de la reseña de ${r.author}`} />
                   <time dateTime={r.createdAt}>
                     {new Date(r.createdAt).toLocaleDateString('es-EC')}
                   </time>
@@ -206,6 +226,37 @@ export default function ProductReviews({ productId, user }) {
             Texto plano, de 10 a 2000 caracteres. No incluyas datos personales. Las ediciones
             vuelven a moderación.
           </p>
+          {!removePhoto && (
+            <ReviewPhoto url={mine.review?.photoUrl} alt="Abrir foto de tu reseña" />
+          )}
+          <label htmlFor="review-photo">
+            {mine.review?.photoUrl ? 'Reemplazar foto' : 'Adjuntar foto (opcional)'}
+          </label>
+          <input
+            id="review-photo"
+            ref={photoInput}
+            type="file"
+            accept={photoTypes.join(',')}
+            aria-describedby="review-photo-help"
+            disabled={busy || mineLoading || removePhoto}
+            onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
+          />
+          <p id="review-photo-help">JPEG, PNG o WebP de hasta 1 MB. Evita incluir datos personales.</p>
+          {mine.review?.photoUrl && (
+            <label>
+              <input
+                type="checkbox"
+                checked={removePhoto}
+                disabled={busy || mineLoading}
+                onChange={(event) => {
+                  setRemovePhoto(event.target.checked);
+                  setPhoto(null);
+                  if (photoInput.current) photoInput.current.value = '';
+                }}
+              />
+              Quitar foto al guardar
+            </label>
+          )}
           <button type="submit" className="btn btn-primary" disabled={busy || mineLoading}>
             {busy ? 'Guardando…' : 'Enviar para revisión'}
           </button>

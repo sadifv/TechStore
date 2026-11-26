@@ -218,7 +218,12 @@ const createProduct = async (req, res, next) => {
 
     const specifications = normalizeSpecifications(req.body.specifications);
     const gallery = normalizeGallery(req.body.gallery);
-    const complements = await resolveProductComplements(req.body.complements);
+    const complements = await resolveProductComplements(
+      req.body.complements,
+      undefined,
+      undefined,
+      req.body.complementDetails,
+    );
     const newProduct = await Product.create({
       ...(complements !== undefined ? { complements } : {}),
       ...(specifications !== undefined ? { specifications } : {}),
@@ -257,13 +262,13 @@ const updateProduct = async (req, res, next) => {
     if (specifications !== undefined) product.specifications = specifications;
     const gallery = normalizeGallery(req.body.gallery);
     if (gallery !== undefined) product.gallery = gallery;
-    if (req.body.complements !== undefined) {
-      const savedNames = product.complements?.map(({ name }) => name).join('\n');
-      if (
-        typeof req.body.complements !== 'string' ||
-        req.body.complements.replace(/\r\n/g, '\n') !== savedNames
-      )
-        product.complements = await resolveProductComplements(req.body.complements, product._id);
+    if (req.body.complements !== undefined || req.body.complementDetails !== undefined) {
+      product.complements = await resolveProductComplements(
+        req.body.complements,
+        product._id,
+        product.complements,
+        req.body.complementDetails,
+      );
     }
     product.name = name || product.name;
     product.description = description !== undefined ? description : product.description;

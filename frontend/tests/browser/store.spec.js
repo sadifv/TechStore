@@ -260,3 +260,24 @@ test('editor añade, retira y envía especificaciones en FormData', async ({ pag
   await expect(editor).not.toBeVisible();
   expect(body).toMatch(/name="specifications"\r\n\r\n\[\]/);
 });
+
+test('editor envía el motivo del complemento con el nombre del producto', async ({ page, mock }) => {
+  mock.role = 'owner';
+  let body;
+  mock.handlers.set(`PUT /api/admin/products/${product._id}`, async (route) => {
+    body = route.request().postData();
+    await route.fulfill({ json: { success: true } });
+  });
+  await page.goto('/admin/dashboard');
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
+  const editor = page.getByRole('dialog');
+  await editor.getByRole('button', { name: 'Añadir complemento', exact: true }).click();
+  const row = editor.getByRole('group', { name: 'Complemento 1', exact: true });
+  await expect(row.getByLabel('Nombre del producto')).toBeFocused();
+  await row.getByLabel('Nombre del producto').fill('Ratón inalámbrico');
+  await row.getByLabel('Motivo de la recomendación (opcional)').fill('Libera un puerto USB.');
+  await editor.getByRole('button', { name: 'Guardar producto', exact: true }).click();
+  await expect(editor).not.toBeVisible();
+  expect(body).toContain('name="complementDetails"');
+  expect(body).toContain(JSON.stringify([{ name: 'Ratón inalámbrico', reason: 'Libera un puerto USB.' }]));
+});

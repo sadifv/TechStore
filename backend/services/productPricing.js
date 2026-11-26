@@ -34,9 +34,10 @@ const toPublicProduct = (product, now = Date.now()) => {
       .map(({ name, value }) => ({ name, value }));
   }
   if (Array.isArray(product.complements)) {
-    publicProduct.complements = product.complements.map(({ productId, name }) => ({
+    publicProduct.complements = product.complements.map(({ productId, name, reason }) => ({
       productId: String(productId),
       name,
+      ...(typeof reason === 'string' && reason ? { reason } : {}),
     }));
   }
   if (!saleExpired(product, now)) return publicProduct;

@@ -102,20 +102,41 @@ test(
       items: [{ product: p._id, price: 10, quantity: 1 }],
       totalAmount: 10,
     });
-    const created = await call(
-      `/reviews/${p.id}`,
-      'PUT',
-      {
-        rating: 5,
-        text: 'Compra entregada con buena calidad.',
-        status: 'approved',
-        user: other.id,
-      },
-      user,
-    );
+    const sharp = require('sharp');
+    const photo = await sharp({
+      create: { width: 12, height: 8, channels: 3, background: '#304050' },
+    }).withExif({ IFD0: { Artist: 'Metadato de prueba' } }).png().toBuffer();
+    const attachment = new FormData();
+    attachment.set('rating', '5');
+    attachment.set('text', 'Compra entregada con buena calidad.');
+    attachment.set('photo', new Blob([photo], { type: 'image/png' }), 'foto.png');
+    const upload = await fetch(base + `/reviews/${p.id}`, {
+      method: 'PUT',
+      headers: { 'x-user': user.id },
+      body: attachment,
+    });
+    const created = { status: upload.status, data: await upload.json() };
     assert.equal(created.status, 200);
     const review = created.data.data.review;
     assert.equal(review.status, 'pending');
+    assert.equal(review.photoData, undefined);
+    const photoKey = review.photoUrl.split('/').at(-1);
+    const publicPhoto = `/products/${p.id}/reviews/photo/${photoKey}`;
+    const ownPhoto = review.photoUrl.slice('/api'.length);
+    const moderatorPhoto = `/admin/reviews/${encodeURIComponent(review._id)}/photo/${photoKey}`;
+    const fetchPhoto = (path, account, level = 'password') =>
+      fetch(base + path, { headers: account ? { 'x-user': account.id, 'x-level': level } : {} });
+    assert.equal((await fetchPhoto(publicPhoto)).status, 404);
+    assert.equal((await fetchPhoto(ownPhoto)).status, 401);
+    assert.equal((await fetchPhoto(ownPhoto, other, 'mfa')).status, 404);
+    assert.equal((await fetchPhoto(moderatorPhoto, other)).status, 403);
+    const staffImage = await fetchPhoto(moderatorPhoto, other, 'mfa');
+    assert.equal(staffImage.status, 200);
+    const sanitizedPhoto = Buffer.from(await staffImage.arrayBuffer());
+    const metadata = await sharp(sanitizedPhoto).metadata();
+    assert.equal(metadata.format, 'webp');
+    assert.equal(metadata.width, 12);
+    assert.equal(metadata.exif, undefined);
     assert.equal((await call(`/products/${p.id}/reviews`)).data.data.count, 0);
     assert.equal(
       (
@@ -141,6 +162,28 @@ test(
       200,
     );
     assert.equal((await call(`/products/${p.id}/reviews`)).data.data.count, 1);
+    const publishedPhoto = await fetchPhoto(publicPhoto);
+    assert.equal(publishedPhoto.status, 200);
+    assert.equal(publishedPhoto.headers.get('content-type'), 'image/webp');
+    assert.equal(publishedPhoto.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(Buffer.from(await publishedPhoto.arrayBuffer()), sanitizedPhoto);
+    const edited = await call(
+      `/reviews/${p.id}`,
+      'PUT',
+      { rating: 5, text: 'Edición de una compra entregada.', version: review.version + 1 },
+      user,
+    );
+    assert.equal(edited.data.data.review.photoUrl, review.photoUrl);
+    assert.equal((await fetchPhoto(publicPhoto)).status, 404);
+    const removed = await call(
+      `/reviews/${p.id}`,
+      'PUT',
+      { rating: 5, text: 'Editada y sin foto adjunta.', version: review.version + 2, removePhoto: true },
+      user,
+    );
+    assert.equal(removed.status, 200);
+    assert.equal(removed.data.data.review.photoUrl, undefined);
+    assert.equal((await fetchPhoto(ownPhoto, user)).status, 404);
     const book = await call('/addresses', 'POST', { ...address, userId: other.id }, user);
     assert.equal(book.status, 200);
     assert.match(book.cache, /no-store/);

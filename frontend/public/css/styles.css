@@ -3958,6 +3958,25 @@ button.login-register-action {
 .order-tracking .form-status:empty {
   display: none;
 }
+.saved-build-list {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.saved-build-list > li {
+  padding-block: 1rem;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.saved-build-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+}
+
 .order-card h2 {
   margin-top: 0;
 }

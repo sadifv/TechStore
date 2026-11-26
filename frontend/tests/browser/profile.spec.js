@@ -50,7 +50,7 @@ for (const [theme, width] of [
     expect(headings).toEqual([
       'Mis pedidos',
       'Mis favoritos',
-      'Mi selección guardada',
+      'Mis armados',
       'Mis direcciones',
       'Datos y seguridad',
     ]);

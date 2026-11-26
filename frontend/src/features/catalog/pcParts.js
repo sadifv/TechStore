@@ -59,7 +59,34 @@ export function pcCompatibility(parts) {
   }
   const power = spec(parts.Fuente, 'Potencia (W)');
   const required = spec(parts.Gráfica, 'Fuente recomendada (W)');
-  if (/^\d+$/.test(power) && /^\d+$/.test(required) && Number(power) < Number(required))
-    messages.push('La fuente queda por debajo de la potencia recomendada para la gráfica.');
+  if (parts.Fuente && parts.Gráfica) {
+    if (!isPositiveInteger(power) || !isPositiveInteger(required))
+      messages.push('Por confirmar: potencia de la fuente y potencia recomendada para la gráfica.');
+    else if (Number(power) < Number(required))
+      messages.push('La fuente queda por debajo de la potencia recomendada para la gráfica.');
+  }
+  if (parts.Gabinete && parts.Gráfica) {
+    const clearance = spec(parts.Gabinete, 'Longitud máxima de gráfica (mm)');
+    const dimensions = spec(parts.Gráfica, 'Dimensiones');
+    const length =
+      spec(parts.Gráfica, 'Longitud (mm)') ||
+      dimensions.match(/^(\d+)\s*[×x]\s*\d+\s*[×x]\s*\d+\s*mm$/u)?.[1];
+    if (!isPositiveInteger(clearance) || !isPositiveInteger(length))
+      messages.push('Por confirmar: espacio del gabinete para instalar la gráfica.');
+    else if (Number(length) > Number(clearance))
+      messages.push('La gráfica supera la longitud máxima admitida por el gabinete.');
+  }
+  const board = parts['Placa madre'];
+  if (parts.Procesador && board) {
+    messages.push(
+      spec(board, 'Modelo de placa')
+        ? 'Por confirmar: versión de BIOS instalada y soporte para este procesador.'
+        : 'Por confirmar: modelo exacto de placa, versión de BIOS y soporte del procesador.',
+    );
+  }
   return messages;
+}
+
+function isPositiveInteger(value) {
+  return /^[1-9]\d*$/.test(value ?? '') && Number.isSafeInteger(Number(value));
 }

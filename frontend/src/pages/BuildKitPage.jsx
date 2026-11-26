@@ -178,11 +178,9 @@ export default function BuildKitPage({ user }) {
     ? 'Hay productos de la selección que ya no están en el catálogo. Actualiza tu selección.'
     : hasSoldOut
       ? 'Tu selección incluye productos agotados.'
-      : kit === 'pc'
-        ? 'La compra se habilitará cuando se confirme la compatibilidad de las placas y su BIOS.'
-        : !chosen.length
-          ? 'Selecciona al menos un producto disponible.'
-          : '';
+      : !chosen.length
+        ? 'Selecciona al menos un producto disponible.'
+        : '';
 
   function selectionParams() {
     const params = new URLSearchParams({ kit });
@@ -207,11 +205,13 @@ export default function BuildKitPage({ user }) {
   async function saveSelection() {
     setSaving(true);
     try {
-      await requestJson('/api/saved-build', {
+      const { alreadySaved } = await requestJson('/api/saved-build', {
         method: 'PUT',
         body: JSON.stringify({ selection: selectionParams() }),
       });
-      setStatus('Selección guardada en Mi cuenta.');
+      setStatus(
+        alreadySaved ? 'Esta selección ya está en Mis armados.' : 'Selección guardada en Mi cuenta.',
+      );
     } catch (error) {
       setStatus(error.message);
     } finally {
@@ -220,6 +220,7 @@ export default function BuildKitPage({ user }) {
   }
 
   async function addKit() {
+    if (kit === 'pc' || blockedReason) return;
     setBusy(true);
     const added = [];
     try {
@@ -289,8 +290,8 @@ export default function BuildKitPage({ user }) {
                     </select>
                   </fieldset>
                   <p className="build-kit-guide">
-                    Selección orientativa. La compatibilidad de cada placa y su BIOS está pendiente
-                    de confirmar.
+                    Simula un armado para comparar piezas y estimar su costo. Puedes guardarlo o
+                    compartirlo.
                   </p>
                   <label>
                     <input
@@ -469,35 +470,39 @@ export default function BuildKitPage({ user }) {
             <p>Aquí aparecerán los productos que elijas.</p>
           )}
           <p className="product-price" aria-live="polite">
-            Subtotal {price(subtotal)}
+            {kit === 'pc' ? 'Subtotal estimado' : 'Subtotal'} {price(subtotal)}
           </p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={Boolean(blockedReason) || busy}
-            onClick={addKit}
-          >
-            {busy ? 'Añadiendo…' : 'Añadir selección al carrito'}
-          </button>
-          {blockedReason && <p className="build-kit-note">{blockedReason}</p>}
+          {kit !== 'pc' && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={Boolean(blockedReason) || busy}
+              onClick={addKit}
+            >
+              {busy ? 'Añadiendo…' : 'Añadir selección al carrito'}
+            </button>
+          )}
+          {blockedReason && (kit !== 'pc' || missing.length > 0 || hasSoldOut) && (
+            <p className="build-kit-note">{blockedReason}</p>
+          )}
           {user && chosen.length > 0 && (
             <button
               type="button"
-              className="btn btn-secondary"
+              className={kit === 'pc' ? 'btn btn-primary' : 'btn btn-secondary'}
               disabled={busy || saving}
               onClick={saveSelection}
             >
-              {saving ? 'Guardando…' : 'Guardar selección'}
+              {saving ? 'Guardando…' : kit === 'pc' ? 'Guardar armado' : 'Guardar selección'}
             </button>
           )}
           {chosen.length > 0 && (
             <button
               type="button"
-              className="btn btn-secondary"
+              className={kit === 'pc' && !user ? 'btn btn-primary' : 'btn btn-secondary'}
               disabled={busy}
               onClick={copySelection}
             >
-              Copiar enlace de la selección
+              {kit === 'pc' ? 'Compartir armado' : 'Copiar enlace de la selección'}
             </button>
           )}
           <p role="status">{status}</p>

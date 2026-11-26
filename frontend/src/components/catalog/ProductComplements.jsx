@@ -64,11 +64,13 @@ export default function ProductComplements({ anchors }) {
       Array.isArray(complements)
         ? complements
             .filter(({ productId }) => !excludedIds.has(productId))
-            .map(({ productId }) => [productId, null])
-        : (recommendations.get(name) ?? []).filter(([candidate]) => !excludedNames.has(candidate)),
+            .map(({ productId, reason }) => [productId, { productId, reason }])
+        : (recommendations.get(name) ?? [])
+            .filter(([candidate]) => !excludedNames.has(candidate))
+            .map(([candidate, reason]) => [candidate, { name: candidate, reason }]),
     ),
   );
-  const key = JSON.stringify([...candidates].slice(0, 3));
+  const key = JSON.stringify([...candidates.values()].slice(0, 3));
   if (!candidates.size) return null;
   return <ComplementResults key={key} candidates={key} />;
 }
@@ -84,14 +86,16 @@ function ComplementResults({ candidates }) {
   useEffect(() => {
     const controller = new AbortController();
     Promise.allSettled(
-      JSON.parse(candidates).map(async ([reference, reason]) => {
+      JSON.parse(candidates).map(async ({ productId, name, reason }) => {
         const options = { signal: controller.signal };
-        const query = new URLSearchParams({ search: reference, limit: '10' });
-        const product = reason
-          ? (await requestJson(`/api/products?${query}`, options)).products.find(
-              (item) => item.name === reference,
-            )
-          : (await requestJson(`/api/products/${encodeURIComponent(reference)}`, options)).data;
+        const product = productId
+          ? (await requestJson(`/api/products/${encodeURIComponent(productId)}`, options)).data
+          : (
+              await requestJson(
+                `/api/products?${new URLSearchParams({ search: name, limit: '10' })}`,
+                options,
+              )
+            ).products.find((item) => item.name === name);
         return (product?.availableStock ?? product?.stock ?? 0) > 0 ? { product, reason } : null;
       }),
     ).then((results) => {
@@ -100,7 +104,8 @@ function ComplementResults({ candidates }) {
       for (const entry of results) {
         if (entry.status !== 'fulfilled' || !entry.value) continue;
         const id = String(entry.value.product._id);
-        if (!distinct.has(id)) distinct.set(id, entry.value);
+        if (!distinct.has(id) || (!distinct.get(id).reason && entry.value.reason))
+          distinct.set(id, entry.value);
       }
       setProducts([...distinct.values()]);
     });
