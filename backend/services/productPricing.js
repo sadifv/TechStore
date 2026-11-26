@@ -33,6 +33,12 @@ const toPublicProduct = (product, now = Date.now()) => {
       .filter((pair) => pair && typeof pair.name === 'string' && typeof pair.value === 'string')
       .map(({ name, value }) => ({ name, value }));
   }
+  if (Array.isArray(product.complements)) {
+    publicProduct.complements = product.complements.map(({ productId, name }) => ({
+      productId: String(productId),
+      name,
+    }));
+  }
   if (!saleExpired(product, now)) return publicProduct;
   return {
     ...publicProduct,

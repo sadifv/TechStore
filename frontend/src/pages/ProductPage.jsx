@@ -8,6 +8,7 @@ import RestockRequest from '../components/catalog/RestockRequest.jsx';
 import ProductReviews from '../components/reviews/ProductReviews.jsx';
 import ProductSpecifications from '../components/catalog/ProductSpecifications.jsx';
 import BeforeBuying from '../components/catalog/BeforeBuying.jsx';
+import ProductComplements from '../components/catalog/ProductComplements.jsx';
 
 export default function ProductPage({ productId, user }) {
   const { add, notify } = useCartActions();
@@ -132,6 +133,7 @@ export default function ProductPage({ productId, user }) {
         </p>
       </section>
       <ProductSpecifications specifications={product.specifications} />
+      <ProductComplements anchors={[product]} />
       <BeforeBuying />
       <ProductReviews key={productId} productId={productId} user={user} />
     </article>

@@ -47,7 +47,13 @@ for (const [theme, width] of [
     await page.goto('/profile');
     await expect(page.getByRole('navigation', { name: 'Secciones de mi cuenta' })).toBeVisible();
     const headings = await page.locator('.profile-container h2').allTextContents();
-    expect(headings).toEqual(['Mis pedidos', 'Mis favoritos', 'Mis direcciones', 'Datos y seguridad']);
+    expect(headings).toEqual([
+      'Mis pedidos',
+      'Mis favoritos',
+      'Mi selección guardada',
+      'Mis direcciones',
+      'Datos y seguridad',
+    ]);
     const card = page.locator('.orders-list .order-card');
     await expect(
       card
@@ -63,19 +69,35 @@ for (const [theme, width] of [
     await expect(card.getByRole('heading', { name: 'Seguimiento del pedido' })).not.toBeVisible();
     const favoritesSection = page.locator('.favorites-section');
     await expect(favoritesSection.locator('.products-grid > li')).toHaveCount(4);
-    const columns = await favoritesSection.locator('.products-grid').evaluate((element) =>
-      getComputedStyle(element).gridTemplateColumns.split(' ').length);
+    const columns = await favoritesSection
+      .locator('.products-grid')
+      .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
     expect(columns).toBe(width < 521 ? 1 : 4);
-    await expect(page.getByRole('button', { name: 'Recargar direcciones', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Recargar direcciones', exact: true }),
+    ).toBeVisible();
     const addressReads = mock.requests.filter(({ key }) => key === 'GET /api/addresses').length;
     await page.getByRole('button', { name: 'Recargar direcciones', exact: true }).click();
-    await expect.poll(() => mock.requests.filter(({ key }) => key === 'GET /api/addresses').length)
+    await expect
+      .poll(() => mock.requests.filter(({ key }) => key === 'GET /api/addresses').length)
       .toBe(addressReads + 1);
     if (width === 1440) {
-      for (const [screenWidth, expectedColumns] of [[520, 1], [521, 2], [1000, 2], [1001, 4]]) {
+      for (const [screenWidth, expectedColumns] of [
+        [520, 1],
+        [521, 2],
+        [1000, 2],
+        [1001, 4],
+      ]) {
         await page.setViewportSize({ width: screenWidth, height: 844 });
-        await expect.poll(() => favoritesSection.locator('.products-grid').evaluate((element) =>
-          getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(expectedColumns);
+        await expect
+          .poll(() =>
+            favoritesSection
+              .locator('.products-grid')
+              .evaluate(
+                (element) => getComputedStyle(element).gridTemplateColumns.split(' ').length,
+              ),
+          )
+          .toBe(expectedColumns);
       }
       await page.setViewportSize({ width, height: 844 });
     }
@@ -109,7 +131,9 @@ for (const [theme, width] of [
     await favoritesSection.getByRole('button', { name: /Ver más/ }).click();
     await expect(favoritesSection.locator('.products-grid > li')).toHaveCount(8);
     await expect(favoritesSection.getByRole('status')).toContainText('8 de 10');
-    await expect(favoritesSection.locator('.products-grid > li').nth(4).locator('a').first()).toBeFocused();
+    await expect(
+      favoritesSection.locator('.products-grid > li').nth(4).locator('a').first(),
+    ).toBeFocused();
     await favoritesSection.getByRole('button', { name: /Ver más/ }).click();
     await expect(favoritesSection.locator('.products-grid > li')).toHaveCount(10);
     await expect(favoritesSection.getByRole('status')).toContainText('10 de 10');

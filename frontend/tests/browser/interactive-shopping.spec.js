@@ -48,6 +48,119 @@ const kitProducts = names.map((name, index) => ({
   category: 'Componentes',
 }));
 
+test('muestra piezas adicionales y avisa si la fuente queda corta para la gráfica', async ({
+  page,
+  mock,
+}) => {
+  const extra = [
+    { name: 'SSD de prueba', specifications: [{ name: 'Tipo de pieza', value: 'Almacenamiento' }] },
+    {
+      name: 'Fuente de prueba',
+      specifications: [
+        { name: 'Tipo de pieza', value: 'Fuente de alimentación' },
+        { name: 'Potencia (W)', value: '400' },
+      ],
+    },
+    {
+      name: 'Gráfica de prueba',
+      specifications: [
+        { name: 'Tipo de pieza', value: 'Tarjeta gráfica' },
+        { name: 'Fuente recomendada (W)', value: '650' },
+      ],
+    },
+  ].map((item, index) => ({
+    ...product,
+    ...item,
+    category: 'Componentes',
+    _id: String(index + 10).padStart(24, '0'),
+  }));
+  mock.handlers.set('GET /api/products', (route) =>
+    route.fulfill({ json: { success: true, products: [...kitProducts, ...extra] } }),
+  );
+  await page.goto('/arma-tu-equipo');
+  await page.getByLabel('Procesador', { exact: true }).selectOption(names[0]);
+  await page.getByLabel('Placa madre', { exact: true }).selectOption(names[1]);
+  await page.getByLabel('Memoria RAM', { exact: true }).selectOption(names[2]);
+  await page.getByLabel('Fuente', { exact: true }).selectOption(extra[1].name);
+  await page.getByLabel('Gráfica', { exact: true }).selectOption(extra[2].name);
+  await expect(
+    page.getByText('La fuente queda por debajo de la potencia recomendada para la gráfica.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Añadir selección al carrito' })).toBeDisabled();
+});
+
+test('recomienda únicamente complementos con stock y permite añadirlos', async ({ page, mock }) => {
+  const keyboard = { ...kitProducts[7], name: 'Teclado Keychron renovado' };
+  const mouse = { ...kitProducts[8], availableStock: 0 };
+  mock.product.complements = [
+    { productId: keyboard._id, name: names[7] },
+    { productId: mouse._id, name: names[8] },
+  ];
+  for (const item of [keyboard, mouse]) {
+    mock.handlers.set(`GET /api/products/${item._id}`, (route) =>
+      route.fulfill({ json: { success: true, data: item } }),
+    );
+  }
+  await page.goto(`/producto/${mock.product._id}`);
+  const complements = page.getByRole('region', { name: 'Complementos disponibles' });
+  await expect(complements.getByRole('checkbox', { name: /Keychron/ })).toBeVisible();
+  await expect(complements.getByRole('checkbox', { name: /Logitech/ })).toHaveCount(0);
+  await complements.getByRole('checkbox', { name: /Keychron/ }).check();
+  await complements.getByRole('button', { name: 'Añadir complementos seleccionados' }).click();
+  await expect(complements).toHaveCount(0);
+});
+
+test('el carrito de invitado consulta complementos de productos añadidos antes de configurarlos', async ({
+  page,
+  mock,
+}) => {
+  const keyboard = kitProducts[7];
+  mock.product.complements = [{ productId: keyboard._id, name: keyboard.name }];
+  mock.handlers.set(`GET /api/products/${keyboard._id}`, (route) =>
+    route.fulfill({ json: { success: true, data: keyboard } }),
+  );
+  await page.addInitScript(
+    (item) => {
+      localStorage.setItem('techstore_guest_cart', JSON.stringify([item]));
+    },
+    { id: mock.product._id, name: mock.product.name, price: mock.product.price, quantity: 1 },
+  );
+  await page.goto('/catalogo');
+  await page.locator('#cart-btn').click();
+  await expect(
+    page.getByRole('dialog', { name: 'Tu Carrito' }).getByRole('checkbox', { name: /Keychron/ }),
+  ).toBeVisible();
+});
+
+test('guarda una selección y la vuelve a abrir desde Mi cuenta', async ({ page, mock }) => {
+  mock.role = 'user';
+  let selection;
+  mock.handlers.set('GET /api/products', (route) =>
+    route.fulfill({ json: { success: true, products: kitProducts } }),
+  );
+  mock.handlers.set('PUT /api/saved-build', (route) => {
+    ({ selection } = route.request().postDataJSON());
+    return route.fulfill({ json: { success: true } });
+  });
+  mock.handlers.set('GET /api/saved-build', (route) =>
+    route.fulfill({ json: { success: true, selection } }),
+  );
+  mock.handlers.set('GET /api/orders', (route) =>
+    route.fulfill({ json: { success: true, orders: [] } }),
+  );
+  mock.handlers.set('GET /api/addresses', (route) =>
+    route.fulfill({ json: { success: true, data: { addresses: [], defaultAddressId: null } } }),
+  );
+
+  await page.goto('/arma-tu-equipo');
+  await page.getByLabel('Procesador', { exact: true }).selectOption(names[0]);
+  await page.getByRole('button', { name: 'Guardar selección', exact: true }).click();
+  await expect(page.getByText('Selección guardada en Mi cuenta.')).toBeVisible();
+  await page.goto('/profile');
+  await page.getByRole('link', { name: 'Retomar mi selección' }).click();
+  await expect(page.getByLabel('Procesador', { exact: true })).toHaveValue(names[0]);
+});
+
 for (const theme of ['normal', 'halloween', 'christmas']) {
   test(`pasos, vista y reinicio del configurador en ${theme}`, async ({ page, mock }, testInfo) => {
     mock.theme = theme;

@@ -49,7 +49,7 @@ const listing =
       const totalPages = Math.max(1, Math.ceil(totalCount / limit));
       const currentPage = Math.min(requestedPage, totalPages);
       const projection = products
-        ? '_id name description price category stock image gallery specifications archivedAt flashSale originalPrice flashSaleDiscount flashSaleEndsAt createdAt updatedAt'
+        ? '_id name description price category stock image gallery specifications complements archivedAt flashSale originalPrice flashSaleDiscount flashSaleEndsAt createdAt updatedAt'
         : '_id name email message createdAt';
       const items = await Model.find(filter)
         .select(projection)

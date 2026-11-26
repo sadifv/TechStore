@@ -1,4 +1,5 @@
 const { normalizeGallery, normalizeMainImage } = require('../services/productGallery');
+const { resolveProductComplements } = require('../services/productComplements');
 const { normalizeSpecifications } = require('../services/productSpecifications');
 const { auditedHandler } = require('../services/adminAudit');
 const Product = require('../models/Product');
@@ -110,11 +111,11 @@ const getHomeProducts = async (req, res, next) => {
   try {
     const settings = await getCategorySettings();
     const homeCategories = ['category-1', 'category-3', 'category-5']
-      .map(id => settings.categories.find(category => category.id === id)?.name)
+      .map((id) => settings.categories.find((category) => category.id === id)?.name)
       .filter(Boolean);
     const now = new Date();
     const productFields =
-      '_id name category price image stock flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';
+      '_id name category price image stock complements flashSale flashSaleDiscount flashSaleEndsAt originalPrice createdAt';
     const [products, sales, categoryImages] = await Promise.all([
       Product.find({
         ...activeProductFilter(),
@@ -184,6 +185,26 @@ const getProductById = async (req, res, next) => {
   }
 };
 
+const getComplementAnchors = async (req, res, next) => {
+  try {
+    const { ids } = req.query;
+    if (typeof ids !== 'string' || !/^[a-f\d]{24}(,[a-f\d]{24}){0,29}$/i.test(ids))
+      return res.status(400).json({ success: false, error: 'Selección de productos inválida.' });
+    const products = await Product.find({
+      ...activeProductFilter(),
+      _id: { $in: ids.split(',') },
+    })
+      .select('_id name complements')
+      .lean();
+    return res.set('Cache-Control', 'no-store').json({
+      success: true,
+      data: products.map((product) => toPublicProduct(product)),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const createProduct = async (req, res, next) => {
   try {
     const { name, description, price, category, stock, image } = req.body;
@@ -197,7 +218,9 @@ const createProduct = async (req, res, next) => {
 
     const specifications = normalizeSpecifications(req.body.specifications);
     const gallery = normalizeGallery(req.body.gallery);
+    const complements = await resolveProductComplements(req.body.complements);
     const newProduct = await Product.create({
+      ...(complements !== undefined ? { complements } : {}),
       ...(specifications !== undefined ? { specifications } : {}),
       ...(gallery !== undefined ? { gallery } : {}),
       name,
@@ -234,6 +257,14 @@ const updateProduct = async (req, res, next) => {
     if (specifications !== undefined) product.specifications = specifications;
     const gallery = normalizeGallery(req.body.gallery);
     if (gallery !== undefined) product.gallery = gallery;
+    if (req.body.complements !== undefined) {
+      const savedNames = product.complements?.map(({ name }) => name).join('\n');
+      if (
+        typeof req.body.complements !== 'string' ||
+        req.body.complements.replace(/\r\n/g, '\n') !== savedNames
+      )
+        product.complements = await resolveProductComplements(req.body.complements, product._id);
+    }
     product.name = name || product.name;
     product.description = description !== undefined ? description : product.description;
     product.price = price !== undefined ? Number(price) : product.price;
@@ -321,6 +352,7 @@ module.exports = {
   getProducts,
   getHomeProducts,
   getProductById,
+  getComplementAnchors,
   createProduct: auditedHandler(createProduct, 'product.created', undefined),
   updateProduct: auditedHandler(updateProduct, 'product.updated', undefined),
   deleteProduct: auditedHandler(deleteProduct, 'product.archived', (body, req) => ({

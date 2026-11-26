@@ -35,6 +35,7 @@ export default function ProductEditorDialog({ product, setProduct, refresh, busy
     setFormError('');
     const form = new FormData(event.currentTarget);
     const id = form.get('id');
+    if (!product?.complements && !form.get('complements').trim()) form.delete('complements');
     try {
       await adminMutation(id ? `/api/admin/products/${id}` : '/api/admin/products', {
         method: id ? 'PUT' : 'POST',
@@ -104,6 +105,20 @@ export default function ProductEditorDialog({ product, setProduct, refresh, busy
               aria-describedby="prod-gallery-help"
             />
             <small id="prod-gallery-help">Hasta cinco enlaces HTTPS, uno por línea.</small>
+          </p>
+          <p className="form-field">
+            <label htmlFor="prod-complements">Complementos recomendados</label>
+            <textarea
+              id="prod-complements"
+              name="complements"
+              rows="3"
+              maxLength={302}
+              defaultValue={product?.complements?.map(({ name }) => name).join('\n') || ''}
+              aria-describedby="prod-complements-help"
+            />
+            <small id="prod-complements-help">
+              Escribe hasta tres nombres tal como aparecen en el catálogo, uno por línea.
+            </small>
           </p>
           <fieldset className="form-group-inline">
             <p className="form-field">

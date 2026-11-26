@@ -105,6 +105,11 @@ export const test = base.extend({
             pagination: { currentPage: 1, totalPages: 1, totalCount: 1 },
           });
           break;
+        case 'GET /api/products/complement-anchors':
+          json.data = url.searchParams.get('ids')?.split(',').includes(state.product._id)
+            ? [state.product]
+            : [];
+          break;
         case `GET /api/products/${product._id}`:
           json.data = state.product;
           break;
@@ -113,6 +118,9 @@ export const test = base.extend({
           break;
         case 'GET /api/reviews/mine':
           json.data = { review: null, eligible: false };
+          break;
+        case 'GET /api/saved-build':
+          json.selection = null;
           break;
         case 'GET /api/favorites':
           Object.assign(json, { ids: [], items: [] });

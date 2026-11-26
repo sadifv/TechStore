@@ -6,6 +6,7 @@ const privateResponsePaths = [
   '/api/orders',
   '/api/addresses',
   '/api/favorites',
+  '/api/saved-build',
   '/api/reviews',
   '/api/ai',
   '/api/presence',

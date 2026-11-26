@@ -57,6 +57,7 @@ export function useCartItems(user, notify) {
             image: product.image || placeholder,
             quantity: Number(item.quantity) || 1,
             availableStock: product.availableStock ?? product.stock,
+            complements: product.complements,
             unavailable: !item.product,
           };
         }),

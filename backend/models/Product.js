@@ -40,6 +40,10 @@ const productSchema = new mongoose.Schema(
       min: 0,
     },
     gallery: { type: [String], default: [] },
+    complements: {
+      type: [{ _id: false, productId: mongoose.Schema.Types.ObjectId, name: String }],
+      default: undefined,
+    },
     image: {
       type: String,
       default: '/images/products/catalog-fallback.jpg',

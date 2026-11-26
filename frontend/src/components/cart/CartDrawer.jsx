@@ -1,8 +1,10 @@
 import { money } from '../../utils/formatters.js';
 import { productImageSources } from '../../services/productImages.js';
+import ProductComplements, { GuestCartComplements } from '../catalog/ProductComplements.jsx';
 
 export default function CartDrawer({
   cartDrawer,
+  guest,
   drawerOpen,
   setDrawerOpen,
   items,
@@ -57,7 +59,13 @@ export default function CartDrawer({
           ) : (
             items.map((item) => (
               <article className="cart-item" data-id={item.id} key={item.cartItemId || item.id}>
-                <img {...productImageSources(item.image)} width={64} height={64} sizes="64px" alt={item.name} />
+                <img
+                  {...productImageSources(item.image)}
+                  width={64}
+                  height={64}
+                  sizes="64px"
+                  alt={item.name}
+                />
                 <section className="cart-item-details">
                   <h4>{item.name}</h4>
                   {item.unavailable ? (
@@ -99,6 +107,13 @@ export default function CartDrawer({
               </article>
             ))
           )}
+          {drawerOpen &&
+            items.length > 0 &&
+            (guest ? (
+              <GuestCartComplements items={items} />
+            ) : (
+              <ProductComplements anchors={items.filter((item) => !item.unavailable)} />
+            ))}
         </section>
         <footer className="cart-drawer-footer">
           <p className="cart-summary-row">

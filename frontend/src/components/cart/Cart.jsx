@@ -54,6 +54,7 @@ export function CartProvider({ user, children }) {
       <CartActionsContext.Provider value={actionsValue}>
         {children}
         <CartDrawer
+          guest={!user}
           cartDrawer={cartDrawer}
           drawerOpen={drawerOpen}
           setDrawerOpen={setDrawerOpen}

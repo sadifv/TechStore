@@ -42,6 +42,7 @@ const userSchema = new mongoose.Schema(
     adminMfaLastTotpStep: { type: Number, select: false },
     adminMfaRecoveryHashes: { type: [String], select: false, default: undefined },
     lastLoginAt: Date,
+    savedBuild: { type: String, maxlength: 1800, select: false },
     // Campos para Verificación de Email y Reset de Contraseña
     isVerified: {
       type: Boolean,

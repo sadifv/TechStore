@@ -2263,6 +2263,25 @@ summary:focus-visible {
 .purchase-guide button:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
 .purchase-guide button:disabled { opacity: 0.5; cursor: default; }
 .purchase-guide-pointer { display: none; }
+
+.product-complements {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  min-width: 0;
+}
+.product-detail-page > .product-complements { grid-column: 1 / -1; }
+.cart-drawer-body > .product-complements { margin-block-start: var(--space-4); }
+.product-complements fieldset { border: 0; padding: 0; min-width: 0; }
+.product-complements label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+}
+.product-complements input { flex: none; margin-top: 0.25rem; }
+.product-complements small { display: block; color: var(--color-text-muted); }
 @media (prefers-reduced-motion: no-preference) {
   .purchase-guide-pointer {
     display: block;

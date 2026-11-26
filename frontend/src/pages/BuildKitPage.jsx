@@ -5,6 +5,7 @@ import { useCartActions } from '../components/cart/CartContext.js';
 import { money as price } from '../utils/formatters.js';
 import BuildKitProgress from '../components/catalog/BuildKitProgress.jsx';
 import BuildKitPreview from '../components/catalog/BuildKitPreview.jsx';
+import { extraPcSteps, pcCompatibility } from '../features/catalog/pcParts.js';
 
 const kits = {
   pc: ['Arma la base de tu PC'],
@@ -17,6 +18,18 @@ const kits = {
   kitchen: ['Cocina práctica', 'Freidora de aire', 'Licuadora de vaso', 'Batidora de mano'],
   desk: [
     'Escritorio',
+    "Monitor LG UltraGear 27'' 144Hz",
+    'Teclado Mecánico Keychron K2',
+    'Mouse Logitech MX Master 3S',
+  ],
+  study: [
+    'Estudio',
+    "Monitor LG UltraGear 27'' 144Hz",
+    'Teclado Mecánico Keychron K2',
+    'Cámara Web Logitech Brio 4K',
+  ],
+  gaming: [
+    'Gaming',
     "Monitor LG UltraGear 27'' 144Hz",
     'Teclado Mecánico Keychron K2',
     'Mouse Logitech MX Master 3S',
@@ -45,15 +58,39 @@ const platforms = {
 const stock = (product) => product.availableStock ?? product.stock ?? 0;
 const pcLabels = ['Procesador', 'Placa madre', 'Memoria RAM'];
 
-export default function BuildKitPage() {
+function readSharedSelection() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedKit = params.get('kit');
+  const kit = Object.hasOwn(kits, requestedKit) ? requestedKit : 'pc';
+  const requestedPlatform = params.get('platform');
+  const platform = Object.hasOwn(platforms, requestedPlatform) ? requestedPlatform : 'AM4';
+  const names = params.getAll('part').slice(0, 8);
+  const selected = [];
+  if (kit === 'pc') {
+    for (const options of platforms[platform]) {
+      const part = names[selected.length];
+      if (!options.includes(part)) break;
+      selected.push(part);
+    }
+  } else {
+    selected.push(...kits[kit].slice(1).filter((name) => names.includes(name)));
+  }
+  return { kit, platform, selected, extra: kit === 'pc' ? names.slice(3) : [] };
+}
+
+export default function BuildKitPage({ user }) {
   const { add } = useCartActions();
+  const [sharedSelection] = useState(readSharedSelection);
   const [products, setProducts] = useState(null);
-  const [kit, setKit] = useState('pc');
-  const [platform, setPlatform] = useState('AM4');
-  const [selected, setSelected] = useState([]);
+  const [kit, setKit] = useState(sharedSelection.kit);
+  const [platform, setPlatform] = useState(sharedSelection.platform);
+  const [selected, setSelected] = useState(sharedSelection.selected);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [onlyAvailable, setOnlyAvailable] = useState(true);
+  const [extras, setExtras] = useState(sharedSelection.extra);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -78,10 +115,22 @@ export default function BuildKitPage() {
 
   function resetSelection() {
     setSelected([]);
+    setExtras([]);
     setStatus('');
   }
 
-  const chosen = selected.map((name) => products?.get(name)).filter(Boolean);
+  const extraSteps = kit === 'pc' ? extraPcSteps(products) : [];
+  const extraSlots = extraSteps.map(({ label, names }) => ({
+    label,
+    product: products?.get(extras.find((name) => names.includes(name))),
+  }));
+  const chosen = [
+    ...selected.map((name) => products?.get(name)).filter(Boolean),
+    ...(selected.length === pcLabels.length
+      ? extraSlots.map(({ product }) => product).filter(Boolean)
+      : []),
+  ];
+  const missing = products ? [...selected, ...extras].filter((name) => !products.has(name)) : [];
   const subtotal = chosen.reduce((total, item) => total + Number(item.price), 0);
   const hasSoldOut = chosen.some((product) => stock(product) < 1);
   const steps =
@@ -117,18 +166,58 @@ export default function BuildKitPage() {
         ];
   const previewSlots =
     kit === 'pc'
-      ? pcLabels.map((label, index) => ({ label, product: products?.get(selected[index]) }))
+      ? [
+          ...pcLabels.map((label, index) => ({ label, product: products?.get(selected[index]) })),
+          ...extraSlots,
+        ]
       : kits[kit].slice(1).map((label) => ({
           label,
           product: selected.includes(label) ? products?.get(label) : null,
         }));
-  const blockedReason = hasSoldOut
-    ? 'Tu selección incluye productos agotados.'
-    : kit === 'pc'
-      ? 'La compra se habilitará cuando se confirme la compatibilidad de las placas y su BIOS.'
-      : !chosen.length
-        ? 'Selecciona al menos un producto disponible.'
-        : '';
+  const blockedReason = missing.length
+    ? 'Hay productos de la selección que ya no están en el catálogo. Actualiza tu selección.'
+    : hasSoldOut
+      ? 'Tu selección incluye productos agotados.'
+      : kit === 'pc'
+        ? 'La compra se habilitará cuando se confirme la compatibilidad de las placas y su BIOS.'
+        : !chosen.length
+          ? 'Selecciona al menos un producto disponible.'
+          : '';
+
+  function selectionParams() {
+    const params = new URLSearchParams({ kit });
+    if (kit === 'pc') params.set('platform', platform);
+    for (const name of selected) params.append('part', name);
+    if (kit === 'pc' && selected.length === pcLabels.length)
+      for (const { product } of extraSlots) if (product) params.append('part', product.name);
+    return params.toString();
+  }
+
+  async function copySelection() {
+    const url = new URL(window.location.pathname, window.location.origin);
+    url.search = selectionParams();
+    try {
+      await navigator.clipboard.writeText(url.href);
+      setStatus('Enlace de la selección copiado.');
+    } catch {
+      setStatus('No se pudo copiar el enlace de la selección.');
+    }
+  }
+
+  async function saveSelection() {
+    setSaving(true);
+    try {
+      await requestJson('/api/saved-build', {
+        method: 'PUT',
+        body: JSON.stringify({ selection: selectionParams() }),
+      });
+      setStatus('Selección guardada en Mi cuenta.');
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function addKit() {
     setBusy(true);
@@ -203,6 +292,14 @@ export default function BuildKitPage() {
                     Selección orientativa. La compatibilidad de cada placa y su BIOS está pendiente
                     de confirmar.
                   </p>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={onlyAvailable}
+                      onChange={(event) => setOnlyAvailable(event.target.checked)}
+                    />{' '}
+                    Mostrar solo piezas disponibles
+                  </label>
                   {platforms[platform].map((names, step) => (
                     <fieldset
                       className="form-group"
@@ -214,17 +311,24 @@ export default function BuildKitPage() {
                         id={`build-pc-${step}`}
                         aria-label={['Procesador', 'Placa madre', 'Memoria RAM'][step]}
                         value={selected[step] || ''}
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          setExtras([]);
                           setSelected(
                             event.target.value
                               ? [...selected.slice(0, step), event.target.value]
                               : selected.slice(0, step),
-                          )
-                        }
+                          );
+                        }}
                       >
                         <option value="">Elige una opción</option>
                         {names
-                          .filter((name) => products.has(name))
+                          .filter((name) => {
+                            const product = products.get(name);
+                            return (
+                              product &&
+                              (!onlyAvailable || stock(product) > 0 || name === selected[step])
+                            );
+                          })
                           .map((name) => {
                             const product = products.get(name);
                             return (
@@ -237,6 +341,49 @@ export default function BuildKitPage() {
                       </select>
                     </fieldset>
                   ))}
+                  {extraSteps.length > 0 && (
+                    <fieldset
+                      className="form-group"
+                      disabled={busy || selected.length < pcLabels.length}
+                    >
+                      <legend>Piezas adicionales</legend>
+                      {extraSteps.map(({ label, names }) => {
+                        const current = extras.find((name) => names.includes(name)) ?? '';
+                        return (
+                          <label key={label}>
+                            {label}
+                            <select
+                              aria-label={label}
+                              value={current}
+                              onChange={(event) => {
+                                const next = event.target.value;
+                                setExtras((previous) =>
+                                  previous
+                                    .filter((name) => !names.includes(name))
+                                    .concat(next ? [next] : []),
+                                );
+                              }}
+                            >
+                              <option value="">Sin seleccionar</option>
+                              {names
+                                .filter(
+                                  (name) =>
+                                    name === current ||
+                                    !onlyAvailable ||
+                                    stock(products.get(name)) > 0,
+                                )
+                                .map((name) => (
+                                  <option key={name} value={name}>
+                                    {name} · {price(products.get(name).price)}
+                                    {stock(products.get(name)) < 1 ? ' · Agotado' : ''}
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                        );
+                      })}
+                    </fieldset>
+                  )}
                 </>
               ) : (
                 <fieldset
@@ -246,32 +393,46 @@ export default function BuildKitPage() {
                   disabled={busy}
                 >
                   <legend>Productos del kit</legend>
+                  {!kits[kit]
+                    .slice(1)
+                    .some((name) => products.has(name) && stock(products.get(name)) > 0) && (
+                    <p>No hay productos disponibles para este kit.</p>
+                  )}
                   <ul>
-                    {kits[kit].slice(1).map((name) => {
-                      const product = products.get(name);
-                      return (
-                        <li key={name}>
-                          <label>
-                            <input
-                              type="checkbox"
-                              checked={selected.includes(name)}
-                              disabled={!product || stock(product) < 1}
-                              onChange={(event) => {
-                                setStatus('');
-                                setSelected(
-                                  event.target.checked
-                                    ? [...selected, name]
-                                    : selected.filter((item) => item !== name),
-                                );
-                              }}
-                            />{' '}
-                            {name}
-                            {product ? ` · ${price(product.price)}` : ''}
-                            {!product || stock(product) < 1 ? ' · No disponible' : ''}
-                          </label>
-                        </li>
-                      );
-                    })}
+                    {kits[kit]
+                      .slice(1)
+                      .filter(
+                        (name) =>
+                          selected.includes(name) ||
+                          (products.has(name) && stock(products.get(name)) > 0),
+                      )
+                      .map((name) => {
+                        const product = products.get(name);
+                        return (
+                          <li key={name}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={selected.includes(name)}
+                                disabled={
+                                  !selected.includes(name) && (!product || stock(product) < 1)
+                                }
+                                onChange={(event) => {
+                                  setStatus('');
+                                  setSelected(
+                                    event.target.checked
+                                      ? [...selected, name]
+                                      : selected.filter((item) => item !== name),
+                                  );
+                                }}
+                              />{' '}
+                              {name}
+                              {product ? ` · ${price(product.price)}` : ''}
+                              {!product || stock(product) < 1 ? ' · No disponible' : ''}
+                            </label>
+                          </li>
+                        );
+                      })}
                   </ul>
                 </fieldset>
               )}
@@ -283,6 +444,14 @@ export default function BuildKitPage() {
             Tu selección
           </h2>
           <BuildKitPreview slots={previewSlots} />
+          {kit === 'pc' &&
+            pcCompatibility(
+              Object.fromEntries(previewSlots.map(({ label, product }) => [label, product])),
+            ).map((message) => (
+              <p key={message} className="build-kit-note">
+                {message}
+              </p>
+            ))}
           {chosen.length ? (
             <ul>
               {chosen.map((product) => (
@@ -311,6 +480,26 @@ export default function BuildKitPage() {
             {busy ? 'Añadiendo…' : 'Añadir selección al carrito'}
           </button>
           {blockedReason && <p className="build-kit-note">{blockedReason}</p>}
+          {user && chosen.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={busy || saving}
+              onClick={saveSelection}
+            >
+              {saving ? 'Guardando…' : 'Guardar selección'}
+            </button>
+          )}
+          {chosen.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={busy}
+              onClick={copySelection}
+            >
+              Copiar enlace de la selección
+            </button>
+          )}
           <p role="status">{status}</p>
         </aside>
       </div>

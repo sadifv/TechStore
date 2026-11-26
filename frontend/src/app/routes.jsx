@@ -106,7 +106,7 @@ function ErrorPage() {
 const pages = {
   home: ({ user }) => <HomePage user={user} />,
   catalog: () => <CatalogPage />,
-  buildKit: () => <BuildKitPage />,
+  buildKit: ({ user }) => <BuildKitPage user={user} />,
   product: ({ user, parameter }) => <ProductPage productId={parameter} user={user} />,
   login: () => <LoginPage />,
   register: () => <RegisterPage />,

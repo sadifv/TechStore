@@ -3,11 +3,13 @@ const router = express.Router();
 router.use(require('./reviewRoutes'));
 router.use('/addresses', require('./addressRoutes'));
 router.use('/favorites', require('./favoriteRoutes'));
+router.use('/saved-build', require('./savedBuildRoutes'));
 router.use('/restock-alerts', require('./restockAlertRoutes'));
 const { sendContactMessage } = require('../controllers/contactController');
 const {
   getProducts,
   getProductById,
+  getComplementAnchors,
   getHomeProducts,
 } = require('../controllers/productController');
 const { processAiChat, getChatHistory, clearChatHistory } = require('../controllers/aiController');
@@ -115,6 +117,7 @@ router
 router.post('/presence/heartbeat', requireAuth, recordHeartbeat);
 router.get('/products', getProducts);
 router.get('/products/home', getHomeProducts);
+router.get('/products/complement-anchors', getComplementAnchors);
 router.get('/products/:id', getProductById);
 
 // APIs JSON del panel administrativo React.
