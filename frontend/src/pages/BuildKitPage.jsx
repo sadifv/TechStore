@@ -65,6 +65,13 @@ function readSharedSelection() {
   const requestedPlatform = params.get('platform');
   const platform = Object.hasOwn(platforms, requestedPlatform) ? requestedPlatform : 'AM4';
   const names = params.getAll('part').slice(0, 8);
+  const listedPrices = params.getAll('partPrice').slice(0, 8);
+  const listedSlots = params.getAll('partSlot').slice(0, 8);
+  const prices = new Map(names.flatMap((name, index) =>
+    /^\d{1,8}(?:\.\d{1,2})?$/.test(listedPrices[index] ?? '')
+      ? [[name, Number(listedPrices[index])]]
+      : [],
+  ));
   const selected = [];
   if (kit === 'pc') {
     for (const options of platforms[platform]) {
@@ -75,7 +82,13 @@ function readSharedSelection() {
   } else {
     selected.push(...kits[kit].slice(1).filter((name) => names.includes(name)));
   }
-  return { kit, platform, selected, extra: kit === 'pc' ? names.slice(3) : [] };
+  return {
+    kit, platform, selected, prices,
+    extra: kit === 'pc' && selected.length === pcLabels.length
+      ? [...new Set(names.slice(3).filter((name) => name && name.length <= 100 && !selected.includes(name)))]
+      : [],
+    extraLabels: new Map(names.slice(3).map((name, index) => [name, listedSlots[index + 3]])),
+  };
 }
 
 export default function BuildKitPage({ user }) {
@@ -120,9 +133,12 @@ export default function BuildKitPage({ user }) {
   }
 
   const extraSteps = kit === 'pc' ? extraPcSteps(products) : [];
+  const currentExtra = ({ label, names }) =>
+    extras.find((name) => names.includes(name) ||
+      (!products?.has(name) && sharedSelection.extraLabels.get(name) === label));
   const extraSlots = extraSteps.map(({ label, names }) => ({
     label,
-    product: products?.get(extras.find((name) => names.includes(name))),
+    product: products?.get(currentExtra({ label, names })),
   }));
   const chosen = [
     ...selected.map((name) => products?.get(name)).filter(Boolean),
@@ -133,6 +149,17 @@ export default function BuildKitPage({ user }) {
   const missing = products ? [...selected, ...extras].filter((name) => !products.has(name)) : [];
   const subtotal = chosen.reduce((total, item) => total + Number(item.price), 0);
   const hasSoldOut = chosen.some((product) => stock(product) < 1);
+  const hasReplacement = (names, current) =>
+    names.some((name) => name !== current && products?.has(name) && stock(products.get(name)) > 0);
+  const replacementTargets = new Map(kit === 'pc' ? [
+    ...selected.flatMap((name, index) => hasReplacement(platforms[platform][index], name)
+      ? [[name, `build-pc-${index}`]]
+      : []),
+    ...extraSteps.flatMap((step, index) => {
+      const name = currentExtra(step);
+      return name && hasReplacement(step.names, name) ? [[name, `build-extra-${index}`]] : [];
+    }),
+  ] : []);
   const steps =
     kit === 'pc'
       ? [
@@ -187,13 +214,19 @@ export default function BuildKitPage({ user }) {
     if (kit === 'pc') params.set('platform', platform);
     for (const name of selected) params.append('part', name);
     if (kit === 'pc' && selected.length === pcLabels.length)
-      for (const { product } of extraSlots) if (product) params.append('part', product.name);
+      for (const name of extras) params.append('part', name);
     return params.toString();
   }
 
   async function copySelection() {
     const url = new URL(window.location.pathname, window.location.origin);
     url.search = selectionParams();
+    for (const name of url.searchParams.getAll('part')) {
+      const part = products?.get(name);
+      url.searchParams.append('partPrice', part ? Number(part.price).toFixed(2) : '');
+      const slot = extraSteps.find((step) => currentExtra(step) === name)?.label;
+      url.searchParams.append('partSlot', slot ?? sharedSelection.extraLabels.get(name) ?? '');
+    }
     try {
       await navigator.clipboard.writeText(url.href);
       setStatus('Enlace de la selección copiado.');
@@ -313,15 +346,17 @@ export default function BuildKitPage({ user }) {
                         aria-label={['Procesador', 'Placa madre', 'Memoria RAM'][step]}
                         value={selected[step] || ''}
                         onChange={(event) => {
-                          setExtras([]);
-                          setSelected(
-                            event.target.value
-                              ? [...selected.slice(0, step), event.target.value]
-                              : selected.slice(0, step),
-                          );
+                          const name = event.target.value;
+                          if (!name) setExtras([]);
+                          setSelected(name
+                            ? [...selected.slice(0, step), name, ...selected.slice(step + 1)]
+                            : selected.slice(0, step));
                         }}
                       >
                         <option value="">Elige una opción</option>
+                        {selected[step] && !products.has(selected[step]) && (
+                          <option value={selected[step]}>{selected[step]} (fuera del catálogo)</option>
+                        )}
                         {names
                           .filter((name) => {
                             const product = products.get(name);
@@ -348,24 +383,28 @@ export default function BuildKitPage({ user }) {
                       disabled={busy || selected.length < pcLabels.length}
                     >
                       <legend>Piezas adicionales</legend>
-                      {extraSteps.map(({ label, names }) => {
-                        const current = extras.find((name) => names.includes(name)) ?? '';
+                      {extraSteps.map(({ label, names }, index) => {
+                        const current = currentExtra({ label, names }) ?? '';
                         return (
                           <label key={label}>
                             {label}
                             <select
+                              id={`build-extra-${index}`}
                               aria-label={label}
                               value={current}
                               onChange={(event) => {
                                 const next = event.target.value;
                                 setExtras((previous) =>
                                   previous
-                                    .filter((name) => !names.includes(name))
+                                    .filter((name) => name !== current && !names.includes(name))
                                     .concat(next ? [next] : []),
                                 );
                               }}
                             >
                               <option value="">Sin seleccionar</option>
+                              {current && !products.has(current) && (
+                                <option value={current}>{current} (fuera del catálogo)</option>
+                              )}
                               {names
                                 .filter(
                                   (name) =>
@@ -453,16 +492,42 @@ export default function BuildKitPage({ user }) {
                 {message}
               </p>
             ))}
-          {chosen.length ? (
-            <ul>
+          {chosen.length || missing.length ? (
+            <ul className="build-kit-parts">
               {chosen.map((product) => (
                 <li key={product._id}>
                   <img src={backendAssetUrl(product.image || placeholder)} alt="" loading="lazy" />
                   <span>
                     {product.name}
                     <small>{stock(product) < 1 ? 'Agotado' : 'Disponible'}</small>
+                    {sharedSelection.prices.has(product.name) &&
+                      sharedSelection.prices.get(product.name) !== Number(product.price) && (
+                        <small>Precio indicado en el enlace {price(sharedSelection.prices.get(product.name))}</small>
+                      )}
                   </span>
                   <strong>{price(product.price)}</strong>
+                  {stock(product) < 1 && replacementTargets.has(product.name) && (
+                    <button type="button" className="btn btn-secondary" onClick={() =>
+                      document.getElementById(replacementTargets.get(product.name))?.focus()}>
+                      Elegir reemplazo para {product.name}
+                    </button>
+                  )}
+                </li>
+              ))}
+              {missing.map((name) => (
+                <li key={name}>
+                  <span>{name} · Fuera del catálogo</span>
+                  {replacementTargets.has(name) ? (
+                    <button type="button" className="btn btn-secondary" onClick={() =>
+                      document.getElementById(replacementTargets.get(name))?.focus()}>
+                      Elegir reemplazo para {name}
+                    </button>
+                  ) : extras.includes(name) && (
+                    <button type="button" className="btn btn-secondary" onClick={() =>
+                      setExtras((current) => current.filter((part) => part !== name))}>
+                      Quitar {name}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -489,7 +554,7 @@ export default function BuildKitPage({ user }) {
             <button
               type="button"
               className={kit === 'pc' ? 'btn btn-primary' : 'btn btn-secondary'}
-              disabled={busy || saving}
+              disabled={busy || saving || missing.length > 0}
               onClick={saveSelection}
             >
               {saving ? 'Guardando…' : kit === 'pc' ? 'Guardar armado' : 'Guardar selección'}

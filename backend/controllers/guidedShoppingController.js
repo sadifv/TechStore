@@ -1,5 +1,7 @@
 const Product = require('../models/Product');
 const Reservation = require('../models/Reservation');
+const GuidedShoppingNoRecommendation = require('../models/GuidedShoppingNoRecommendation');
+const logger = require('../config/logger');
 const { activeProductFilter } = require('../services/productAvailability');
 const {
   categories,
@@ -26,10 +28,18 @@ exports.getGuidedRecommendations = async (req, res, next) => {
     const reservations = await Reservation.getReservedStockByProducts(
       products.map((product) => product._id),
     );
+    const recommendations = selectGuidedProducts(products, reservations, preferences);
+    if (!recommendations.length) {
+      try {
+        await GuidedShoppingNoRecommendation.record(preferences);
+      } catch {
+        logger.warn('No se pudo actualizar el contador de compra guiada.');
+      }
+    }
     res.set('Cache-Control', 'no-store');
     return res.json({
       success: true,
-      products: selectGuidedProducts(products, reservations, preferences),
+      products: recommendations,
     });
   } catch (error) {
     return next(error);

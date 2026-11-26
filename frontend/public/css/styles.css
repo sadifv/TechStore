@@ -7139,6 +7139,16 @@ body:has(.cart-drawer.open, dialog[open]) .navbar-assistant {
   margin-inline-start: auto;
   white-space: nowrap;
 }
+.build-kit-parts li {
+  flex-wrap: wrap;
+}
+.build-kit-parts li > span {
+  flex: 1 1 8rem;
+  overflow-wrap: anywhere;
+}
+.build-kit-parts li > button {
+  flex-basis: 100%;
+}
 .build-kit-summary .product-price {
   margin: 0;
   padding: 0.75rem 0 0;

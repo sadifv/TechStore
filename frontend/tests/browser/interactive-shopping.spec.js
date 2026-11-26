@@ -48,6 +48,44 @@ const kitProducts = names.map((name, index) => ({
   category: 'Componentes',
 }));
 
+test('recupera la selección compartida con un reemplazo para la pieza retirada', async ({ page, mock }) => {
+  const replacement = 'Procesador AMD Ryzen 7 5700X';
+  mock.handlers.set('GET /api/products', (route) =>
+    route.fulfill({ json: { success: true, products: [
+      ...kitProducts.slice(1).map((item) =>
+        item.name === names[2] ? { ...item, availableStock: 0 } : item),
+      { ...product, _id: 'bbbbbbbbbbbbbbbbbbbbbbbb', name: replacement },
+      { ...product, _id: 'cccccccccccccccccccccccc', name: 'Kit RAM DDR4 32 GB' },
+      { ...product, _id: 'dddddddddddddddddddddddd', name: 'SSD vigente', category: 'Componentes',
+        specifications: [{ name: 'Tipo de pieza', value: 'Almacenamiento' }] },
+    ] } }),
+  );
+  const params = new URLSearchParams({ kit: 'pc', platform: 'AM4' });
+  for (const name of names.slice(0, 3)) params.append('part', name);
+  params.append('part', 'SSD retirado');
+  for (const previous of ['', '90.00', '', '']) params.append('partPrice', previous);
+  for (const slot of ['', '', '', 'SSD']) params.append('partSlot', slot);
+  await page.goto(`/arma-tu-equipo?${params}`);
+  await expect(page.getByText(`${names[0]} · Fuera del catálogo`, { exact: true })).toBeVisible();
+  await expect(page.getByText(/Precio indicado en el enlace/)).toBeVisible();
+  await expect(page.getByRole('button', { name: `Elegir reemplazo para ${names[2]}` })).toBeVisible();
+  await page.getByRole('button', { name: `Elegir reemplazo para ${names[0]}` }).click();
+  const processor = page.getByLabel('Procesador', { exact: true });
+  await expect(processor).toBeFocused();
+  await processor.selectOption(replacement);
+  await expect(page.getByLabel('Placa madre', { exact: true })).toHaveValue(names[1]);
+  await expect(page.getByLabel('Memoria RAM', { exact: true })).toHaveValue(names[2]);
+  await expect(page.getByText(`${names[0]} · Fuera del catálogo`, { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Elegir reemplazo para SSD retirado' }).click();
+  await expect(page.getByLabel('SSD', { exact: true })).toBeFocused();
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'Compartir armado' }).click();
+  await expect(page.getByText('Enlace de la selección copiado.')).toBeVisible();
+  const copied = new URL(await page.evaluate(() => navigator.clipboard.readText()));
+  expect(copied.searchParams.getAll('part')).toContain('SSD retirado');
+  expect(copied.searchParams.getAll('partSlot').at(-1)).toBe('SSD');
+});
+
 test('muestra piezas adicionales y avisa si la fuente queda corta para la gráfica', async ({
   page,
   mock,

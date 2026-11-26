@@ -66,3 +66,6 @@ Esto comprueba la inserción tardía, no acredita un valor de CLS ni un resultad
 Las pruebas de navegador verifican carga diferida de colecciones, acceso público después
 de guardar, ancla de contacto y foto adaptable en los tres temas. Las pruebas de Node
 verifican el presupuesto de fuentes y la conservación de URLs desconocidas/subidas.
+## Medición móvil del recorrido
+
+En dos recorridos de laboratorio con Chromium a 390 × 844, la portada registró un LCP de 0,83 a 3,43 s y el catálogo de 1,04 a 1,22 s. El catálogo registró un CLS de 0,094 asociado al movimiento del pie al cargar los productos. La portada, el catálogo, la ficha y el simulador abrieron sin desbordamiento horizontal. En el simulador, Enter sobre el paso Procesador enfocó el selector y el cambio de pieza actualizó el subtotal en la región de anuncios. Los scripts de medición respondieron correctamente. Las cifras de laboratorio no sustituyen las métricas de campo de Speed Insights, que quedan sin verificar.

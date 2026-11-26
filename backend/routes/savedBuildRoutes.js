@@ -8,20 +8,33 @@ const { getEffectivePrice } = require('../services/productPricing');
 
 const maxNewBuilds = 10;
 const objectId = /^[\da-f]{24}$/i;
+const extraSlots = new Map([
+  ['Almacenamiento', 'SSD'],
+  ['Fuente de alimentación', 'Fuente'],
+  ['Gabinete', 'Gabinete'],
+  ['Tarjeta gráfica', 'Gráfica'],
+]);
+const productSlot = (product) => extraSlots.get(Array.isArray(product.specifications)
+  ? product.specifications.find((entry) => entry?.name === 'Tipo de pieza')?.value
+  : undefined);
 
-async function catalogSnapshot(filter, limit) {
+async function catalogSnapshot(filter, limit, includeSlots = false) {
   const products = await Product.find({ ...activeProductFilter(), ...filter })
-    .select('_id name price stock flashSale flashSaleEndsAt originalPrice')
+    .select(`_id name price stock flashSale flashSaleEndsAt originalPrice${includeSlots ? ' specifications' : ''}`)
     .limit(limit)
     .lean();
   const reserved = await Reservation.getReservedStockByProducts(products.map(({ _id }) => _id));
   const now = Date.now();
-  return products.map((product) => ({
-    product: product._id,
-    name: product.name,
-    price: getEffectivePrice(product, now),
-    available: product.stock > (reserved.get(String(product._id)) ?? 0),
-  }));
+  return products.map((product) => {
+    const slot = productSlot(product);
+    return {
+      product: product._id,
+      name: product.name,
+      price: getEffectivePrice(product, now),
+      available: product.stock > (reserved.get(String(product._id)) ?? 0),
+      ...(slot ? { slot } : {}),
+    };
+  });
 }
 
 router.use((req, res, next) => {
@@ -36,10 +49,24 @@ router.get('/', async (req, res) => {
   const legacy = account?.savedBuild ?? null;
   const current = ids.length ? await catalogSnapshot({ _id: { $in: ids } }, ids.length) : [];
   const byId = new Map(current.map((part) => [String(part.product), part]));
+  const oldExtraIds = builds.flatMap(({ selection, parts }) => {
+    const params = new URLSearchParams(selection);
+    if (params.get('kit') !== 'pc') return [];
+    const extras = new Set(params.getAll('part').slice(3));
+    return parts.filter((part) => !part.slot && extras.has(part.name)).map((part) => part.product);
+  });
+  const oldExtras = oldExtraIds.length
+    ? await Product.find({ _id: { $in: oldExtraIds } }).select('_id specifications').lean()
+    : [];
+  const oldSlots = new Map(oldExtras.map((product) => [String(product._id), productSlot(product)]));
   const data = builds.map(({ _id, selection, savedAt, parts }) => ({
     id: String(_id),
     selection,
     savedAt,
+    slots: parts.flatMap(({ name, product, slot }) => {
+      const value = slot ?? oldSlots.get(String(product));
+      return value ? [{ name, slot: value }] : [];
+    }),
     changes: parts.flatMap((part) => {
       const latest = byId.get(String(part.product));
       if (!latest || latest.name !== part.name) return [{ name: part.name, unavailable: true }];
@@ -83,7 +110,7 @@ router.put('/', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Selección demasiado larga.' });
   const canonical = clean.toString();
   const accountId = req.user.id;
-  const snapshot = await catalogSnapshot({ name: { $in: parts } }, parts.length + 1);
+  const snapshot = await catalogSnapshot({ name: { $in: parts } }, parts.length + 1, kit === 'pc');
   if (snapshot.length !== parts.length || new Set(snapshot.map(({ name }) => name)).size !== parts.length)
     return res.status(409).json({ success: false, error: 'Revisa los productos de tu selección antes de guardarla.' });
   const entry = { selection: canonical, savedAt: new Date(), parts: snapshot };

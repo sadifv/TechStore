@@ -53,6 +53,7 @@ const userSchema = new mongoose.Schema(
           name: { type: String, maxlength: 100, required: true },
           price: { type: Number, min: 0, required: true },
           available: { type: Boolean, required: true },
+          slot: { type: String, enum: ['SSD', 'Fuente', 'Gabinete', 'Gráfica'] },
         }],
       }],
       default: undefined,

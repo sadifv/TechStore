@@ -79,8 +79,42 @@ test(
       result.products.map((product) => product.name),
       ['Disponible'],
     );
+    const metrics = mongoose.connection.collection('guidedshoppingnorecommendations');
+    assert.equal(await metrics.countDocuments(), 0);
+    const emptySearches = await Promise.all(
+      [45.99, 49.5].map((budget) =>
+        post({ ...preferences, budget, text: 'dato-privado@example.invalid' }),
+      ),
+    );
+    for (const empty of emptySearches) {
+      assert.equal(empty.status, 200);
+      assert.deepEqual((await empty.json()).products, []);
+    }
+    assert.deepEqual(await metrics.find().toArray(), [
+      { _id: 'Audio:videollamadas:menos-de-50', count: 2 },
+    ]);
+    const alternatives = { category: 'Laptops', use: 'estudiar' };
+    for (const budget of [null, 50, 150, 500]) {
+      const empty = await post({ ...alternatives, budget });
+      assert.deepEqual((await empty.json()).products, []);
+    }
+    assert.deepEqual(
+      (await metrics.find({ _id: /^Laptops:/ }).sort({ _id: 1 }).toArray()).map(({ _id }) => _id),
+      ['150-a-menos-de-500', '50-a-menos-de-150', '500-o-mas', 'sin-limite']
+        .map((range) => `Laptops:estudiar:${range}`),
+    );
+    const Metrics = require('../models/GuidedShoppingNoRecommendation');
+    const write = t.mock.method(Metrics, 'record', async () => { throw new Error('fixture'); });
+    const warning = t.mock.method(require('../config/logger'), 'warn', () => {});
+    const unavailableMetrics = await post({ ...alternatives, budget: 50 });
+    assert.equal(unavailableMetrics.status, 200);
+    assert.deepEqual((await unavailableMetrics.json()).products, []);
+    assert.equal(warning.mock.callCount(), 1);
+    write.mock.restore();
+    warning.mock.restore();
     assert.equal(await Reservation.countDocuments(), 1);
     await User.updateOne({ _id: user._id }, { $inc: { authVersion: 1 } });
     assert.equal((await post(preferences)).status, 401);
+    assert.equal(await metrics.countDocuments(), 5);
   },
 );

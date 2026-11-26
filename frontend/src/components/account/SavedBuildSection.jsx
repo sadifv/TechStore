@@ -53,11 +53,19 @@ export default function SavedBuildSection() {
       {result?.builds?.length === 0 && <p>Todavía no has guardado ningún armado.</p>}
       {result?.builds?.length > 0 && (
         <ul className="saved-build-list">
-          {result.builds.map(({ id, selection, savedAt, changes }) => {
+          {result.builds.map(({ id, selection, savedAt, changes, slots }) => {
             const params = new URLSearchParams(selection);
             const kit = kitNames[params.get('kit')] || 'Armado';
             const platform = params.get('platform');
             const products = params.getAll('part');
+            if (changes?.some((change) => change.previousPrice !== undefined)) {
+              const prices = new Map(changes.map((change) => [change.name, change.previousPrice]));
+              for (const name of products) params.append('partPrice', prices.get(name) ?? '');
+            }
+            if (slots?.length) {
+              const byName = new Map(slots.map(({ name, slot }) => [name, slot]));
+              for (const name of products) params.append('partSlot', byName.get(name) ?? '');
+            }
             return (
               <li key={id || selection}>
                 <h3>{platform ? `${kit} ${platform}` : kit}</h3>
@@ -78,7 +86,7 @@ export default function SavedBuildSection() {
                   </ul>
                 )}
                 <footer className="saved-build-actions">
-                  <a className="btn btn-secondary" href={`/arma-tu-equipo?${selection}`}>
+                  <a className="btn btn-secondary" href={`/arma-tu-equipo?${params}`}>
                     Retomar armado
                   </a>
                   {id && (
